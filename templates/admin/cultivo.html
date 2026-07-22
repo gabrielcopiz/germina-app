@@ -1,0 +1,358 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}{{ c.codigo }} — {{ c.variedad }} | Cannawaka{% endblock %}
+{% block topbar_title %}
+  <a href="{{ url_for('admin_cultivos') }}" style="color:var(--muted);font-size:0.85rem;">Cultivos</a>
+  <span style="color:var(--muted);margin:0 0.5rem;">›</span>
+  {{ c.codigo }} · {{ c.variedad }}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.cultivo-header {
+  background: var(--green-deep); border-radius: 14px;
+  padding: 1.8rem 2rem; margin-bottom: 1.5rem; color: var(--cream);
+  display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;
+}
+.cultivo-codigo-big {
+  font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--gold);
+  font-weight: 400; min-width: 90px; line-height: 1;
+}
+.cultivo-variedad-big { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 400; }
+.cultivo-meta { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 0.4rem; display:flex;gap:1.2rem;flex-wrap:wrap; }
+.cultivo-meta strong { color: rgba(255,255,255,0.8); }
+
+/* ciclo visual */
+.ciclo-wrap { display: flex; gap: 0; width: 100%; margin-top: 1.2rem; }
+.ciclo-etapa {
+  flex: 1; text-align: center; position: relative; padding-bottom: 0.6rem;
+}
+.ciclo-dot {
+  width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 0.4rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; border: 2px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.06);
+}
+.ciclo-dot.done { background: var(--green-light); border-color: var(--green-light); color: white; }
+.ciclo-dot.current { background: var(--gold); border-color: var(--gold); color: var(--green-deep); }
+.ciclo-label { font-size: 0.62rem; color: rgba(255,255,255,0.35); }
+.ciclo-label.current { color: var(--gold); font-weight: 600; }
+.ciclo-line {
+  position: absolute; top: 14px; left: 50%; right: -50%;
+  height: 2px; background: rgba(255,255,255,0.1); z-index: 0;
+}
+.ciclo-line.done { background: var(--green-light); }
+.ciclo-etapa:last-child .ciclo-line { display: none; }
+
+/* log timeline */
+.log-entry { display: flex; gap: 0.9rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.log-entry:last-child { border-bottom: none; }
+.log-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--green-mid);
+  flex-shrink: 0; margin-top: 0.35rem;
+}
+.log-text { font-size: 0.83rem; color: var(--text); }
+.log-meta { font-size: 0.7rem; color: var(--muted); margin-top: 0.1rem; }
+
+/* cosecha card */
+.cosecha-card {
+  background: #FAF8F5; border-radius: 10px; padding: 0.9rem 1.1rem;
+  border: 1px solid var(--border); margin-bottom: 0.6rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.cosecha-fecha { font-weight: 600; font-size: 0.88rem; color: var(--green-deep); }
+.cosecha-pesos { display: flex; gap: 1.5rem; }
+.cosecha-peso { text-align: center; }
+.cosecha-peso-num { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--text); }
+.cosecha-peso-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.estrellas { color: var(--gold); font-size: 0.8rem; }
+
+/* etapa selector */
+.etapa-selector-cult { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.etapa-btn-cult {
+  padding: 0.3rem 0.75rem; border-radius: 100px; font-size: 0.73rem;
+  font-weight: 600; border: 1.5px solid var(--border);
+  cursor: pointer; background: var(--white); color: var(--muted);
+  transition: all 0.15s;
+}
+.etapa-btn-cult.active { color: white; }
+.etapa-btn-cult:hover { border-color: var(--green-mid); }
+
+/* resumen producción */
+.prod-stat { text-align: center; }
+.prod-num { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--green-deep); }
+.prod-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="cultivo-header">
+  <div class="cultivo-codigo-big">{{ c.codigo }}</div>
+  <div style="flex:1;">
+    <div class="cultivo-variedad-big">{{ c.variedad }}</div>
+    <div class="cultivo-meta">
+      <span><strong>Socio:</strong> {{ c.nombre }} {{ c.apellido }}</span>
+      <span><strong>Genética:</strong> {{ genetica_label.get(c.genetica, c.genetica) }}</span>
+      <span><strong>Plantas:</strong> {{ c.num_plantas }}</span>
+      <span><strong>Tipo:</strong> {{ tipo_cultivo_label.get(c.tipo_cultivo, c.tipo_cultivo) }}</span>
+      <span><strong>Inicio:</strong> {{ c.fecha_inicio }}</span>
+      {% if c.cosecha_estimada %}<span><strong>Cosecha est.:</strong> {{ c.cosecha_estimada }}</span>{% endif %}
+      {% if c.sustrato %}<span><strong>Sustrato:</strong> {{ c.sustrato }}</span>{% endif %}
+    </div>
+    <!-- Ciclo visual -->
+    <div class="ciclo-wrap">
+      {% set etapas_list = etapas_cultivo %}
+      {% set idx_actual = etapas_list.index(c.etapa_actual) if c.etapa_actual in etapas_list else 0 %}
+      {% for e in etapas_list %}
+      {% set idx = loop.index0 %}
+      <div class="ciclo-etapa">
+        <div class="ciclo-line {% if idx < idx_actual %}done{% endif %}"></div>
+        <div class="ciclo-dot {% if idx < idx_actual %}done{% elif idx == idx_actual %}current{% endif %}">
+          {% if idx < idx_actual %}✓{% else %}{{ loop.index }}{% endif %}
+        </div>
+        <div class="ciclo-label {% if idx == idx_actual %}current{% endif %}">{{ etapa_cultivo_label[e] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div style="display:flex;gap:0.6rem;align-items:flex-start;">
+    <a href="{{ url_for('admin_socio', sid=c.socio_id_real) }}" class="btn btn-outline btn-sm" style="color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.2);">Ver socio →</a>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:1.5rem;align-items:start;">
+  <!-- Columna izq: etapa + cosechas -->
+  <div>
+    <!-- Cambiar etapa -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header"><span class="card-title">Etapa del ciclo</span></div>
+      <div class="card-body">
+        <div class="etapa-selector-cult" id="etapa-selector-cult">
+          {% for e in etapas_cultivo %}
+          <button type="button"
+            class="etapa-btn-cult {% if e == c.etapa_actual %}active{% endif %}"
+            style="{% if e == c.etapa_actual %}background:{{ etapa_cultivo_color[e] }};border-color:{{ etapa_cultivo_color[e] }};{% else %}{% endif %}"
+            onclick="setEtapaCultivo({{ c.id }}, '{{ e }}', this, '{{ etapa_cultivo_color[e] }}')">
+            {{ etapa_cultivo_label[e] }}
+          </button>
+          {% endfor %}
+        </div>
+        <p class="text-xs text-muted mt-2">
+          En etapa actual hace <strong>{{ dias_etapa_actual }} días</strong>.
+          {% if etapa_cultivo_dias.get(c.etapa_actual) %}
+          Duración típica: {{ etapa_cultivo_dias[c.etapa_actual] }} días.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <!-- Registrar cosecha -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header"><span class="card-title">🌾 Registrar cosecha</span></div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin_registrar_cosecha', cid=c.id) }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;">
+            <div class="form-group-a">
+              <label>Fecha de cosecha</label>
+              <input type="date" name="fecha" class="form-control-a" value="{{ today }}">
+            </div>
+            <div class="form-group-a">
+              <label>N° plantas cosechadas</label>
+              <input type="number" name="num_plantas" class="form-control-a" value="{{ c.num_plantas }}" min="1">
+            </div>
+            <div class="form-group-a">
+              <label>Peso húmedo (g)</label>
+              <input type="number" name="peso_humedo_g" class="form-control-a" placeholder="0" step="0.1" min="0">
+            </div>
+            <div class="form-group-a">
+              <label>Peso seco (g)</label>
+              <input type="number" name="peso_seco_g" class="form-control-a" placeholder="0" step="0.1" min="0">
+            </div>
+            <div class="form-group-a">
+              <label>Calidad (1–5)</label>
+              <select name="calidad" class="form-control-a">
+                <option value="5">⭐⭐⭐⭐⭐ Excelente</option>
+                <option value="4">⭐⭐⭐⭐ Muy buena</option>
+                <option value="3" selected>⭐⭐⭐ Buena</option>
+                <option value="2">⭐⭐ Regular</option>
+                <option value="1">⭐ Baja</option>
+              </select>
+            </div>
+            <div class="form-group-a">
+              <label>Registrado por</label>
+              <input type="text" name="registrado_por" class="form-control-a" placeholder="Nombre">
+            </div>
+          </div>
+          <div class="form-group-a">
+            <label>Notas <span style="font-weight:400;color:var(--muted);">opcional</span></label>
+            <textarea name="notas" class="form-control-a" rows="2" placeholder="Observaciones de la cosecha..."></textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button type="submit" class="btn btn-gold btn-sm">🌾 Registrar cosecha</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Historial de cosechas -->
+    {% if cosechas %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Historial de cosechas</span>
+        <div style="display:flex;gap:1.5rem;">
+          <div class="prod-stat">
+            <div class="prod-num">{{ total_seco|round(1) }}g</div>
+            <div class="prod-label">Total seco</div>
+          </div>
+          <div class="prod-stat">
+            <div class="prod-num">{{ total_humedo|round(1) }}g</div>
+            <div class="prod-label">Total húmedo</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        {% for cos in cosechas %}
+        <div class="cosecha-card">
+          <div>
+            <div class="cosecha-fecha">{{ fmt_fecha_larga(cos.fecha) }}</div>
+            <div class="text-xs text-muted">{{ cos.num_plantas }} planta{% if cos.num_plantas != 1 %}s{% endif %} · {{ cos.registrado_por }}</div>
+            {% if cos.notas %}<div class="text-sm text-muted" style="margin-top:0.2rem;">{{ cos.notas }}</div>{% endif %}
+          </div>
+          <div class="cosecha-pesos">
+            <div class="cosecha-peso">
+              <div class="cosecha-peso-num">{{ cos.peso_seco_g|round(1) }}g</div>
+              <div class="cosecha-peso-label">Seco</div>
+            </div>
+            <div class="cosecha-peso">
+              <div class="cosecha-peso-num" style="color:var(--muted);">{{ cos.peso_humedo_g|round(1) }}g</div>
+              <div class="cosecha-peso-label">Húmedo</div>
+            </div>
+            <div class="cosecha-peso">
+              <div class="estrellas">{{ '⭐' * cos.calidad }}</div>
+              <div class="cosecha-peso-label">Calidad</div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Columna der: log de etapas + info del cultivo -->
+  <div>
+    <!-- Info técnica -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header"><span class="card-title">Datos del cultivo</span></div>
+      <div class="card-body">
+        <table style="width:100%;">
+          {% macro row(k,v) %}{% if v %}<tr>
+            <td style="font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;padding:0.4rem 0;width:40%;border-bottom:1px solid #F0EAE3;">{{ k }}</td>
+            <td style="font-size:0.86rem;padding:0.4rem 0;border-bottom:1px solid #F0EAE3;">{{ v }}</td>
+          </tr>{% endif %}{% endmacro %}
+          {{ row('Código', c.codigo) }}
+          {{ row('Variedad', c.variedad) }}
+          {{ row('Genética', genetica_label.get(c.genetica, c.genetica)) }}
+          {{ row('Nº plantas', c.num_plantas) }}
+          {{ row('Tipo de cultivo', tipo_cultivo_label.get(c.tipo_cultivo, c.tipo_cultivo)) }}
+          {{ row('Sustrato', c.sustrato) }}
+          {{ row('Fecha inicio', c.fecha_inicio) }}
+          {{ row('Cosecha estimada', c.cosecha_estimada) }}
+          {{ row('Ubicación', c.ubicacion_detalle) }}
+          {{ row('Notas', c.notas) }}
+          {% if c.estado == 'finalizado' %}
+          <tr><td colspan="2" style="padding:0.4rem 0;"><span style="color:#999;font-size:0.8rem;">⏹ Cultivo finalizado</span></td></tr>
+          {% endif %}
+        </table>
+        {% if c.estado == 'activo' %}
+        <div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <form method="POST" action="{{ url_for('admin_cultivo_estado', cid=c.id) }}" style="display:flex;justify-content:flex-end;">
+            <input type="hidden" name="estado" value="finalizado">
+            <button type="submit" class="btn btn-outline btn-sm" style="color:#9B2222;border-color:#FBCACA;"
+              onclick="return confirm('¿Finalizar este cultivo?')">Finalizar cultivo</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Agregar nota de seguimiento al log -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header"><span class="card-title">Registrar seguimiento</span></div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin_cultivo_etapa', cid=c.id) }}">
+          <input type="hidden" name="etapa" value="{{ c.etapa_actual }}">
+          <div class="form-group-a">
+            <label>Nota de seguimiento</label>
+            <textarea name="notas" class="form-control-a" rows="2" placeholder="Observación, medición, problema detectado..." required></textarea>
+          </div>
+          <div style="display:flex;gap:0.5rem;justify-content:flex-end;align-items:center;">
+            <input type="text" name="registrado_por" class="form-control-a" placeholder="Tu nombre" style="max-width:140px;">
+            <button type="submit" class="btn btn-outline btn-sm">+ Guardar nota</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Log de etapas -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Historial del ciclo</span></div>
+      <div class="card-body">
+        {% if log %}
+          {% for entry in log %}
+          <div class="log-entry">
+            <div class="log-dot" style="background:{{ etapa_cultivo_color.get(entry.etapa_nueva,'#888') }};"></div>
+            <div>
+              <div class="log-text">
+                {% if entry.etapa_anterior %}
+                  <span style="color:var(--muted);">{{ etapa_cultivo_label.get(entry.etapa_anterior, entry.etapa_anterior) }}</span>
+                  → <strong style="color:{{ etapa_cultivo_color.get(entry.etapa_nueva,'#888') }};">{{ etapa_cultivo_label.get(entry.etapa_nueva, entry.etapa_nueva) }}</strong>
+                {% else %}
+                  <strong style="color:{{ etapa_cultivo_color.get(entry.etapa_nueva,'#888') }};">{{ etapa_cultivo_label.get(entry.etapa_nueva, entry.etapa_nueva) }}</strong>
+                {% endif %}
+                {% if entry.notas %} — {{ entry.notas }}{% endif %}
+              </div>
+              <div class="log-meta">{{ entry.fecha[:16] if entry.fecha else '' }} · {{ entry.registrado_por }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted text-sm">Sin historial todavía.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const hoy = new Date().toISOString().split('T')[0];
+document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = hoy; });
+
+function setEtapaCultivo(cid, etapa, btn, color) {
+  const fd = new FormData();
+  fd.append('etapa', etapa);
+  fd.append('notas', '');
+  fetch('/admin/cultivo/' + cid + '/etapa', {
+    method: 'POST',
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
+    body: fd
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      document.querySelectorAll('.etapa-btn-cult').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = '';
+        b.style.borderColor = '';
+        b.style.color = '';
+      });
+      btn.classList.add('active');
+      btn.style.background = color;
+      btn.style.borderColor = color;
+      btn.style.color = 'white';
+      setTimeout(() => location.reload(), 600);
+    }
+  });
+}
+</script>
+{% endblock %}

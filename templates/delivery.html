@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Confirmación de entrega — Cannawaka</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #1A3520;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+}
+.card {
+  background: #F5F2EC;
+  border-radius: 20px;
+  max-width: 400px; width: 100%;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.card-top {
+  background: #2D5C38;
+  padding: 1.5rem 2rem;
+  text-align: center;
+}
+.logo {
+  font-family: 'Playfair Display', serif;
+  color: #C8A44A; font-size: 1.4rem; margin-bottom: 0.2rem;
+}
+.logo span { color: #F5F2EC; }
+.card-body { padding: 2rem; }
+.pedido-code {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; color: #1A3520; font-weight: 400;
+  text-align: center; margin-bottom: 0.3rem;
+}
+.socio-name {
+  text-align: center; font-size: 1.1rem; font-weight: 600;
+  color: #1A3520; margin-bottom: 0.2rem;
+}
+.socio-dni { text-align: center; font-size: 0.82rem; color: #6B6560; margin-bottom: 1.5rem; }
+.detalle-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.6rem 0; border-bottom: 1px solid #E0DBD3;
+  font-size: 0.86rem;
+}
+.detalle-row:last-child { border-bottom: none; }
+.detalle-key { color: #6B6560; }
+.detalle-val { font-weight: 600; color: #1A3520; }
+.btn-confirm {
+  display: block; width: 100%; padding: 1.1rem;
+  background: #2D5C38; color: #F5F2EC;
+  border: none; border-radius: 12px; cursor: pointer;
+  font-size: 1rem; font-weight: 700; font-family: 'Inter', sans-serif;
+  margin-top: 1.5rem; transition: opacity 0.2s;
+}
+.btn-confirm:hover { opacity: 0.88; }
+.btn-confirm:active { transform: scale(0.98); }
+.entregado-box {
+  text-align: center; padding: 1.5rem 0;
+}
+.entregado-icon { font-size: 3.5rem; margin-bottom: 0.5rem; }
+.entregado-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #1A3520; }
+.entregado-sub { font-size: 0.84rem; color: #6B6560; margin-top: 0.4rem; }
+.error-box { text-align: center; padding: 2rem; }
+.error-icon { font-size: 3rem; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+
+{% if error %}
+<div class="card">
+  <div class="card-top"><div class="logo">Canna<span>waka</span></div></div>
+  <div class="card-body">
+    <div class="error-box">
+      <div class="error-icon">❌</div>
+      <div class="entregado-title">Link inválido</div>
+      <div class="entregado-sub" style="margin-top:0.5rem;">Este enlace no existe o ya expiró.</div>
+    </div>
+  </div>
+</div>
+
+{% elif p.estado == 'entregado' %}
+<div class="card">
+  <div class="card-top"><div class="logo">Canna<span>waka</span></div></div>
+  <div class="card-body">
+    <div class="entregado-box">
+      <div class="entregado-icon">✅</div>
+      <div class="entregado-title">Pedido entregado</div>
+      <div class="entregado-sub">{{ p.codigo }} · {{ p.variedad }} · {{ p.gramos }}g</div>
+      {% if p.fecha_entrega %}
+      <div class="entregado-sub" style="margin-top:0.8rem;font-size:0.78rem;">Confirmado el {{ p.fecha_entrega[:16] }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="card">
+  <div class="card-top">
+    <div class="logo">Canna<span>waka</span></div>
+    <div style="color:rgba(255,255,255,0.6);font-size:0.78rem;margin-top:0.2rem;">Confirmar entrega</div>
+  </div>
+  <div class="card-body">
+    <div class="pedido-code">{{ p.codigo }}</div>
+    <div class="socio-name">{{ p.nombre }} {{ p.apellido }}</div>
+    <div class="socio-dni">DNI {{ p.dni or '—' }}</div>
+
+    <div>
+      <div class="detalle-row">
+        <span class="detalle-key">Variedad</span>
+        <span class="detalle-val">{{ p.variedad }}</span>
+      </div>
+      <div class="detalle-row">
+        <span class="detalle-key">Cantidad</span>
+        <span class="detalle-val" style="color:#2D5C38;font-size:1.1rem;">{{ p.gramos }}g</span>
+      </div>
+      <div class="detalle-row">
+        <span class="detalle-key">Tipo de entrega</span>
+        <span class="detalle-val">{{ tipo_entrega_label.get(p.tipo_entrega, p.tipo_entrega) }}</span>
+      </div>
+      {% if p.direccion_entrega %}
+      <div class="detalle-row">
+        <span class="detalle-key">Dirección</span>
+        <span class="detalle-val" style="font-size:0.82rem;max-width:180px;text-align:right;">{{ p.direccion_entrega }}</span>
+      </div>
+      {% endif %}
+      <div class="detalle-row">
+        <span class="detalle-key">Estado actual</span>
+        <span class="detalle-val" style="color:{{ estado_pedido_color.get(p.estado,'#999') }};">{{ estado_pedido_label.get(p.estado, p.estado) }}</span>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('delivery_confirmar', token=p.token_entrega) }}">
+      <button type="submit" class="btn-confirm">
+        ✓ &nbsp; Marcar como entregado
+      </button>
+    </form>
+    <p style="text-align:center;font-size:0.72rem;color:#6B6560;margin-top:1rem;">Al confirmar, se registra la entrega con fecha y hora actuales.</p>
+  </div>
+</div>
+{% endif %}
+
+</body>
+</html>

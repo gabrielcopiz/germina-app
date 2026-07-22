@@ -1,0 +1,177 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Stock — Cannawaka Admin{% endblock %}
+{% block topbar_title %}Inventario de stock{% endblock %}
+
+{% block extra_head %}
+<style>
+.stock-bar-wrap { height: 8px; background: var(--cream-dark); border-radius: 4px; overflow: hidden; margin-top: 0.3rem; }
+.stock-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.stock-row {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.9rem 1.4rem; border-bottom: 1px solid var(--border);
+}
+.stock-row:last-child { border-bottom: none; }
+.stock-variedad { font-weight: 600; font-size: 0.92rem; min-width: 140px; }
+.stock-num { font-size: 0.9rem; font-weight: 700; min-width: 64px; text-align: right; }
+.mov-row { display: flex; align-items: center; gap: 1rem; padding: 0.65rem 1.4rem; border-bottom: 1px solid var(--border); }
+.mov-row:last-child { border-bottom: none; }
+.mov-badge {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.18rem 0.55rem; border-radius: 100px; white-space: nowrap;
+}
+.mov-entrada { background: #D4EAD9; color: #1A5C30; }
+.mov-salida  { background: #FEF9EC; color: #7A5C00; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPIs -->
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card" style="border-top-color:#2D5C38;">
+    <div class="kpi-value" style="color:#2D5C38;">{{ total_cosechado }}g</div>
+    <div class="kpi-label">Total cosechado</div>
+    <div class="kpi-sub">Peso seco acumulado histórico</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#C8A44A;">
+    <div class="kpi-value" style="color:#C8A44A;">{{ total_entregado }}g</div>
+    <div class="kpi-label">Total distribuido</div>
+    <div class="kpi-sub">Entregado a socios</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#E07B30;">
+    <div class="kpi-value" style="color:#E07B30;">{{ total_reservado }}g</div>
+    <div class="kpi-label">Reservado</div>
+    <div class="kpi-sub">Pedidos en proceso</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#1A3520;">
+    <div class="kpi-value" style="color:#1A3520;">{{ total_disponible }}g</div>
+    <div class="kpi-label">Stock disponible</div>
+    <div class="kpi-sub">Listo para distribuir</div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:1.5rem;margin-bottom:1.5rem;">
+
+  <!-- Stock por variedad -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📦 Stock por variedad</span>
+      <a href="{{ url_for('admin_pedidos') }}" class="btn btn-outline btn-sm">Ver pedidos →</a>
+    </div>
+    {% if stock %}
+    <div>
+      {% for row in stock %}
+      <div class="stock-row">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+            <span class="stock-variedad">{{ row.variedad }}</span>
+            {% if row.disponible_g <= 0 %}
+              <span style="font-size:0.65rem;background:#FDEAEA;color:#9B2222;padding:0.1rem 0.45rem;border-radius:100px;font-weight:700;">Sin stock</span>
+            {% elif row.disponible_g < 50 %}
+              <span style="font-size:0.65rem;background:#FEF9EC;color:#7A5C00;padding:0.1rem 0.45rem;border-radius:100px;font-weight:700;">Stock bajo</span>
+            {% endif %}
+          </div>
+          <div class="stock-bar-wrap">
+            <div class="stock-bar-fill" style="background:{% if row.pct_usado >= 90 %}#C0392B{% elif row.pct_usado >= 70 %}#E07B30{% else %}var(--green-mid){% endif %};width:{{ row.pct_usado }}%;"></div>
+          </div>
+          <div style="display:flex;gap:1rem;margin-top:0.3rem;">
+            <span class="text-xs text-muted">{{ row.entregado_g }}g distribuido</span>
+            {% if row.reservado_g > 0 %}<span class="text-xs" style="color:#E07B30;">{{ row.reservado_g }}g reservado</span>{% endif %}
+            <span class="text-xs text-muted">de {{ row.total_g }}g cosechado</span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="stock-num" style="color:{% if row.disponible_g <= 0 %}#C0392B{% elif row.disponible_g < 50 %}#E07B30{% else %}var(--green-mid){% endif %};">
+            {{ row.disponible_g }}g
+          </div>
+          <div class="text-xs text-muted">disponible</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card-body">
+      <p class="text-muted text-sm">Sin stock todavía. Registrá cosechas en los cultivos.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Últimas distribuciones -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">⚖️ Últimas entregas a socios</span></div>
+    {% if recientes %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Fecha</th><th>Socio</th><th>Variedad</th><th>Gramos</th></tr></thead>
+        <tbody>
+          {% for d in recientes %}
+          <tr onclick="location.href='{{ url_for('admin_pedido', pid=d.id) }}'">
+            <td class="text-xs text-muted">{{ fmt_fecha(d.fecha_entrega) }}</td>
+            <td class="text-sm fw-600">{{ d.nombre }} {{ d.apellido }}</td>
+            <td class="text-sm">{{ d.variedad }}</td>
+            <td class="text-sm" style="color:var(--gold);font-weight:700;">{{ d.gramos }}g</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body"><p class="text-muted text-sm">Sin distribuciones registradas todavía.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Historial de movimientos -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-header">
+    <span class="card-title">📑 Historial de movimientos de stock</span>
+    <div style="display:flex;gap:0.5rem;">
+      <a href="{{ url_for('admin_exportar_cultivos') }}" class="btn btn-outline btn-sm">⬇ Cultivos CSV</a>
+      <a href="{{ url_for('admin_exportar_pedidos') }}" class="btn btn-outline btn-sm">⬇ Pedidos CSV</a>
+    </div>
+  </div>
+  {% if movimientos %}
+  <div>
+    {% for m in movimientos %}
+    <div class="mov-row">
+      <span class="mov-badge {% if m.tipo == 'entrada' %}mov-entrada{% else %}mov-salida{% endif %}">
+        {% if m.tipo == 'entrada' %}▲ Cosecha{% else %}▼ Entrega{% endif %}
+      </span>
+      <span class="text-xs text-muted" style="min-width:70px;">{{ fmt_fecha(m.fecha) }}</span>
+      <span class="fw-600 text-sm" style="min-width:120px;">{{ m.variedad }}</span>
+      <span class="text-sm" style="min-width:60px;color:{% if m.tipo == 'entrada' %}var(--green-mid){% else %}var(--gold){% endif %};font-weight:700;">
+        {% if m.tipo == 'entrada' %}+{% else %}−{% endif %}{{ m.gramos|round(1) }}g
+      </span>
+      <span class="text-xs text-muted" style="flex:1;">
+        {{ m.referencia }}
+        {% if m.socio_nombre %} · {{ m.socio_nombre }}{% endif %}
+      </span>
+      <span class="text-xs text-muted">{{ m.registrado_por }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card-body"><p class="text-muted text-sm">Sin movimientos registrados todavía.</p></div>
+  {% endif %}
+</div>
+
+<!-- Cadena de trazabilidad -->
+<div class="card">
+  <div class="card-body" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+    <div style="font-size:0.82rem;color:var(--muted);">Trazabilidad completa:</div>
+    {% set steps = [('🌱','Cultivo','Criar la planta'),('🌾','Cosecha','Registrar peso'),('📦','Stock','Disponible aquí'),('🚚','Pedido','Asignado al socio'),('✓','Entrega','Confirmación por QR')] %}
+    {% for icon, label, desc in steps %}
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <span style="font-size:1.2rem;">{{ icon }}</span>
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--green-deep);">{{ label }}</div>
+        <div class="text-xs text-muted">{{ desc }}</div>
+      </div>
+    </div>
+    {% if not loop.last %}<span style="color:var(--border);font-size:1.2rem;">→</span>{% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}

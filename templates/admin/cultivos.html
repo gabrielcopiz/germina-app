@@ -1,0 +1,196 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Cultivos — Cannawaka Admin{% endblock %}
+{% block topbar_title %}Trazabilidad de cultivos{% endblock %}
+
+{% block extra_head %}
+<style>
+.etapa-pill {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.25rem 0.65rem; border-radius: 100px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em;
+}
+.cultivo-card {
+  background: var(--white); border-radius: 12px; border: 1px solid var(--border);
+  padding: 1rem 1.2rem; margin-bottom: 0.6rem;
+  display: flex; align-items: center; gap: 1rem;
+  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.cultivo-card:hover { border-color: var(--green-mid); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.cultivo-codigo {
+  font-family: 'Playfair Display', serif; font-size: 1.1rem;
+  color: var(--green-deep); font-weight: 400; min-width: 70px;
+}
+.cultivo-variedad { font-weight: 600; font-size: 0.92rem; color: var(--text); }
+.cultivo-meta { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+.progreso-barra { display: flex; gap: 2px; height: 5px; border-radius: 3px; overflow: hidden; margin-top: 0.4rem; }
+.progreso-seg { flex: 1; }
+.filters-bar {
+  background: var(--white); border-radius: 12px; border: 1px solid var(--border);
+  padding: 1rem 1.4rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 0.3rem 0.75rem; border-radius: 100px; font-size: 0.73rem; font-weight: 600;
+  border: 1.5px solid var(--border); cursor: pointer; background: var(--white);
+  color: var(--muted); transition: all 0.15s; text-decoration: none; display: inline-block;
+}
+.filter-btn.active { background: var(--green-deep); border-color: var(--green-deep); color: var(--cream); }
+.search-input {
+  padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px;
+  font-family: 'Inter', sans-serif; font-size: 0.82rem; background: var(--cream);
+  color: var(--text); min-width: 200px;
+}
+.search-input:focus { outline: none; border-color: var(--green-mid); background: var(--white); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPIs cultivos -->
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card" style="border-top-color:#2D5C38;">
+    <div class="kpi-value" style="color:#2D5C38;">{{ total_plantas }}</div>
+    <div class="kpi-label">Plantas activas</div>
+    <div class="kpi-sub">{{ cultivos|selectattr('estado','eq','activo')|list|length }} cultivos en curso</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#E07B30;">
+    <div class="kpi-value" style="color:#E07B30;">{{ por_etapa.get('floracion',0) }}</div>
+    <div class="kpi-label">En floración</div>
+    <div class="kpi-sub">{{ por_etapa.get('prefloracion',0) }} en pre-floración</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#C8A44A;">
+    <div class="kpi-value" style="color:#C8A44A;">{{ total_cosechado|round(0)|int }}g</div>
+    <div class="kpi-label">Total cosechado</div>
+    <div class="kpi-sub">Peso seco acumulado</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#5C3D8F;">
+    <div class="kpi-value" style="color:#5C3D8F;">{{ por_etapa.get('cosecha',0) + por_etapa.get('curado',0) }}</div>
+    <div class="kpi-label">En cosecha / curado</div>
+    <div class="kpi-sub">Listos o casi listos</div>
+  </div>
+</div>
+
+<!-- Funnel plantas por etapa -->
+<div class="grid-2" style="gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card">
+    <div class="card-header"><span class="card-title">🌱 Plantas por etapa del ciclo</span></div>
+    <div class="card-body">
+      {% set max_p = por_etapa.values()|max if por_etapa.values()|max > 0 else 1 %}
+      {% for e in etapas_cultivo %}
+      {% if por_etapa.get(e,0) > 0 or e in ['vegetativo','floracion'] %}
+      <div style="margin-bottom:0.6rem;">
+        <div class="flex-between" style="margin-bottom:0.2rem;">
+          <span style="font-size:0.82rem;color:var(--muted);">{{ etapa_cultivo_label[e] }}</span>
+          <span style="font-size:0.88rem;font-weight:700;color:{{ etapa_cultivo_color[e] }};">
+            {{ por_etapa.get(e,0) }} plantas
+          </span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-bar-fill" style="background:{{ etapa_cultivo_color[e] }};width:{{ ((por_etapa.get(e,0)/max_p)*100)|round }}%;"></div>
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">🧬 Variedades en cultivo</span></div>
+    <div class="card-body">
+      {% set all_vars = {} %}
+      {% for c in cultivos %}
+        {% if c.estado == 'activo' %}
+          {# count manually #}
+        {% endif %}
+      {% endfor %}
+      {% if cultivos %}
+        {% set var_counts = {} %}
+        {% for c in cultivos %}
+          {% if c.estado == 'activo' %}
+            {% set _ = var_counts.update({c.variedad: var_counts.get(c.variedad, 0) + c.num_plantas}) %}
+          {% endif %}
+        {% endfor %}
+        {% set max_v = var_counts.values()|max if var_counts.values()|list|length > 0 else 1 %}
+        {% for var, cnt in var_counts.items() %}
+        <div style="margin-bottom:0.6rem;">
+          <div class="flex-between" style="margin-bottom:0.2rem;">
+            <span class="text-sm text-muted">{{ var }}</span>
+            <span class="fw-600 text-sm" style="color:var(--green-deep);">{{ cnt }}p</span>
+          </div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="background:var(--green-mid);width:{{ ((cnt/max_v)*100)|round }}%;"></div></div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin cultivos activos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Filtros + lista -->
+<div class="filters-bar">
+  <form style="display:flex;gap:0.5rem;align-items:center;" method="GET">
+    <input type="text" class="search-input" name="q" value="{{ q }}" placeholder="Buscar variedad, código, socio...">
+    {% if estado_f %}<input type="hidden" name="estado" value="{{ estado_f }}">{% endif %}
+    <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+    {% if q or etapa_f %}<a href="{{ url_for('admin_cultivos') }}" class="btn btn-outline btn-sm">Limpiar</a>{% endif %}
+  </form>
+  <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+    <a href="{{ url_for('admin_cultivos') }}?estado=activo" class="filter-btn {% if estado_f == 'activo' %}active{% endif %}">Activos</a>
+    <a href="{{ url_for('admin_cultivos') }}?estado=finalizado" class="filter-btn {% if estado_f == 'finalizado' %}active{% endif %}">Finalizados</a>
+    <a href="{{ url_for('admin_cultivos') }}" class="filter-btn {% if not estado_f %}active{% endif %}">Todos</a>
+    <span style="color:var(--border);margin:0 0.2rem;">|</span>
+    {% for e in etapas_cultivo %}
+    <a href="{{ url_for('admin_cultivos') }}?estado={{ estado_f }}&etapa={{ e }}"
+       class="filter-btn {% if etapa_f == e %}active{% endif %}"
+       style="border-color:{{ etapa_cultivo_color[e] }}44;{% if etapa_f == e %}background:{{ etapa_cultivo_color[e] }};border-color:{{ etapa_cultivo_color[e] }};{% else %}color:{{ etapa_cultivo_color[e] }};{% endif %}">
+      {{ etapa_cultivo_label[e] }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">{{ cultivos|length }} cultivo{% if cultivos|length != 1 %}s{% endif %}</span>
+  </div>
+  {% if cultivos %}
+  <div class="card-body" style="padding:1rem 1.2rem;">
+    {% for c in cultivos %}
+    <div class="cultivo-card" onclick="location.href='{{ url_for('admin_cultivo', cid=c.id) }}'">
+      <div class="cultivo-codigo">{{ c.codigo }}</div>
+      <div style="flex:1;">
+        <div class="cultivo-variedad">{{ c.variedad }}
+          <span style="font-weight:400;font-size:0.78rem;color:var(--muted);">— {{ genetica_label.get(c.genetica, c.genetica) }}</span>
+        </div>
+        <div class="cultivo-meta">
+          {{ c.nombre }} {{ c.apellido }} · {{ c.num_plantas }} planta{% if c.num_plantas != 1 %}s{% endif %} · {{ tipo_cultivo_label.get(c.tipo_cultivo, c.tipo_cultivo) }} · Inicio: {{ fmt_fecha(c.fecha_inicio) }}
+          {% if c.cosecha_estimada %} · Cosecha est: {{ fmt_fecha(c.cosecha_estimada) }}{% endif %}
+        </div>
+        <!-- mini progreso del ciclo -->
+        <div class="progreso-barra">
+          {% set etapas_orden = ['germinacion','plantula','vegetativo','prefloracion','floracion','cosecha','curado','finalizado'] %}
+          {% set idx_actual = etapas_orden.index(c.etapa_actual) if c.etapa_actual in etapas_orden else 0 %}
+          {% for i in range(etapas_orden|length) %}
+          <div class="progreso-seg" style="background:{% if i <= idx_actual %}{{ etapa_cultivo_color[etapas_orden[i]] }}{% else %}var(--border){% endif %};"></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <span class="etapa-pill" style="background:{{ etapa_cultivo_color.get(c.etapa_actual,'#888') }}22;color:{{ etapa_cultivo_color.get(c.etapa_actual,'#888') }};">
+          {{ etapa_cultivo_label.get(c.etapa_actual, c.etapa_actual) }}
+        </span>
+        {% if c.estado == 'finalizado' %}
+        <div class="text-xs text-muted" style="margin-top:0.3rem;">Finalizado</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card-body">
+    <p class="text-muted text-sm">No hay cultivos con estos filtros.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

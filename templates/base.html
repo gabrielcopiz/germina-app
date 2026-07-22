@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Cannawaka — Dispositivo de Salud{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green-deep:    #1A3520;
+  --green-mid:     #2D5C38;
+  --green-light:   #4A7C5E;
+  --green-pale:    #D4EAD9;
+  --gold:          #C8A44A;
+  --gold-light:    #F0E0A0;
+  --cream:         #F5F2EC;
+  --cream-dark:    #EDE8DF;
+  --border:        #D8D3C8;
+  --text:          #1E1E1E;
+  --muted:         #6B6560;
+  --white:         #FFFFFF;
+}
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ── NAV ── */
+.nav {
+  background: var(--green-deep);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: var(--cream);
+  letter-spacing: 0.02em;
+}
+.nav-logo span { color: var(--gold); }
+.nav-tagline {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.1rem;
+}
+.nav-links { display: flex; gap: 1.5rem; align-items: center; }
+.nav-links a {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--gold); }
+.nav-cta {
+  background: var(--gold);
+  color: var(--green-deep) !important;
+  padding: 0.5rem 1.2rem;
+  border-radius: 100px;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  transition: opacity 0.2s !important;
+}
+.nav-cta:hover { opacity: 0.9; color: var(--green-deep) !important; }
+
+/* ── FOOTER ── */
+.footer {
+  background: var(--green-deep);
+  color: rgba(255,255,255,0.5);
+  padding: 2.5rem 2rem;
+  text-align: center;
+  margin-top: 4rem;
+}
+.footer-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: var(--cream);
+  margin-bottom: 0.5rem;
+}
+.footer-legal { font-size: 0.72rem; line-height: 1.8; }
+
+/* ── UTILS ── */
+.container { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+.container-wide { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+
+{% block extra_styles %}{% endblock %}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div>
+    <div class="nav-logo">Canna<span>waka</span></div>
+    <div class="nav-tagline">Dispositivo de Salud</div>
+  </div>
+  <div class="nav-links">
+    <a href="{{ url_for('landing') }}">Inicio</a>
+    <a href="{{ url_for('landing') }}#quienes">Nosotros</a>
+    <a href="{{ url_for('landing') }}#proceso">Proceso</a>
+    <a href="{{ url_for('solicitud') }}" class="nav-cta">Unirme al club</a>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div style="background:#FEF3CD;border-bottom:2px solid var(--gold);padding:0.8rem 2rem;font-size:0.88rem;color:#7A5C00;text-align:center;">
+  {{ messages[0] }}
+</div>
+{% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<footer class="footer">
+  <div class="footer-logo">Cannawaka</div>
+  <div class="footer-legal">
+    Dispositivo de Salud · ONG Vida Mejor SISA 1377<br>
+    Miembro del Consejo Consultivo Ley N° 27.350 (REPROCANN)<br>
+    Buenos Aires, Argentina
+  </div>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

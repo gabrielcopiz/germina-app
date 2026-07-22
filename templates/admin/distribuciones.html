@@ -1,0 +1,113 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Distribuciones — Cannawaka Admin{% endblock %}
+{% block topbar_title %}Distribuciones a socios{% endblock %}
+
+{% block extra_head %}
+<style>
+.filters-bar {
+  background: var(--white); border-radius: 12px; border: 1px solid var(--border);
+  padding: 1rem 1.4rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap;
+}
+.search-input {
+  padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px;
+  font-family: 'Inter', sans-serif; font-size: 0.82rem; background: var(--cream);
+  color: var(--text); min-width: 220px;
+}
+.search-input:focus { outline: none; border-color: var(--green-mid); background: var(--white); }
+.filter-pill {
+  padding: 0.3rem 0.75rem; border-radius: 100px; font-size: 0.73rem; font-weight: 600;
+  border: 1.5px solid var(--border); cursor: pointer; background: var(--white);
+  color: var(--muted); transition: all 0.15s; text-decoration: none; display: inline-block;
+}
+.filter-pill.active { background: var(--gold); border-color: var(--gold); color: var(--green-deep); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPIs -->
+<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card" style="border-top-color:#C8A44A;">
+    <div class="kpi-value" style="color:#C8A44A;">{{ total_count }}</div>
+    <div class="kpi-label">Total distribuciones</div>
+    <div class="kpi-sub">Histórico completo</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#2D5C38;">
+    <div class="kpi-value" style="color:#2D5C38;">{{ total_gramos }}g</div>
+    <div class="kpi-label">Gramos distribuidos</div>
+    <div class="kpi-sub">Peso seco total entregado</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#1A3520;">
+    <div class="kpi-value" style="color:#1A3520;">{{ gramos_mes }}g</div>
+    <div class="kpi-label">Este mes</div>
+    <div class="kpi-sub">Distribuciones del mes en curso</div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-bar">
+  <form style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;" method="GET">
+    <input type="text" class="search-input" name="q" value="{{ q }}" placeholder="Buscar socio o variedad...">
+    {% if variedad_f %}<input type="hidden" name="variedad" value="{{ variedad_f }}">{% endif %}
+    <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+    {% if q or variedad_f %}<a href="{{ url_for('admin_distribuciones') }}" class="btn btn-outline btn-sm">Limpiar</a>{% endif %}
+  </form>
+  {% if variedades %}
+  <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-left:0.5rem;">
+    <span class="text-xs text-muted" style="align-self:center;">Variedad:</span>
+    {% for v in variedades %}
+    <a href="{{ url_for('admin_distribuciones') }}?variedad={{ v.variedad }}"
+       class="filter-pill {% if variedad_f == v.variedad %}active{% endif %}">
+      {{ v.variedad }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Tabla -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">{{ distribuciones|length }} distribución{% if distribuciones|length != 1 %}es{% endif %}</span>
+    <a href="{{ url_for('admin_stock') }}" class="btn btn-outline btn-sm">Ver stock →</a>
+  </div>
+  {% if distribuciones %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Socio</th>
+          <th>DNI</th>
+          <th>Variedad</th>
+          <th>Gramos</th>
+          <th>Registrado por</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in distribuciones %}
+        <tr onclick="location.href='{{ url_for('admin_socio', sid=d.socio_id) }}'">
+          <td class="text-sm">{{ d.fecha[:10] }}</td>
+          <td>
+            <div class="fw-600 text-sm">{{ d.nombre }} {{ d.apellido }}</div>
+          </td>
+          <td class="text-xs text-muted">{{ d.dni or '—' }}</td>
+          <td class="fw-600 text-sm" style="color:var(--green-mid);">{{ d.variedad }}</td>
+          <td><span style="font-size:0.95rem;font-weight:700;color:var(--gold);">{{ d.gramos }}g</span></td>
+          <td class="text-xs text-muted">{{ d.registrado_por or 'Admin' }}</td>
+          <td class="text-xs text-muted">{{ d.notas or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <p class="text-muted text-sm">No hay distribuciones con estos filtros.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

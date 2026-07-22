@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% block title %}Cannawaka — Dispositivo de Salud | Cannabis Medicinal CABA{% endblock %}
+
+{% block extra_styles %}
+.hero {
+  background: var(--green-deep);
+  min-height: 92vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(45,92,56,0.6) 0%, transparent 70%);
+}
+.hero-content {
+  position: relative; z-index: 1;
+  max-width: 680px;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(200,164,74,0.15);
+  border: 1px solid rgba(200,164,74,0.35);
+  color: var(--gold);
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.4rem 0.9rem; border-radius: 100px;
+  margin-bottom: 1.8rem;
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  color: var(--cream);
+  line-height: 1.15;
+  font-weight: 500;
+  margin-bottom: 1.4rem;
+}
+.hero-title em { color: var(--gold); font-style: normal; }
+.hero-sub {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.75;
+  margin-bottom: 2.5rem;
+  max-width: 520px;
+}
+.hero-cta {
+  display: inline-block;
+  background: var(--gold);
+  color: var(--green-deep);
+  font-weight: 700; font-size: 0.95rem;
+  padding: 0.95rem 2.2rem; border-radius: 100px;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.hero-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+.hero-note {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.35);
+}
+.hero-stats {
+  display: flex; gap: 3rem; margin-top: 3.5rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 2rem;
+}
+.hero-stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; color: var(--gold); font-weight: 500;
+}
+.hero-stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 0.2rem; }
+
+/* ornament */
+.hero-ornament {
+  position: absolute; right: 6%; top: 50%; transform: translateY(-50%);
+  width: 320px; height: 320px;
+  border: 1px solid rgba(200,164,74,0.12);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.hero-ornament::before {
+  content: '';
+  width: 220px; height: 220px;
+  border: 1px solid rgba(200,164,74,0.08);
+  border-radius: 50%;
+  position: absolute;
+}
+.hero-leaf {
+  font-size: 5rem; opacity: 0.18;
+  user-select: none;
+}
+
+/* ── sections ── */
+.section { padding: 5rem 0; }
+.section-alt { background: var(--cream-dark); }
+.section-dark { background: var(--green-deep); color: var(--cream); }
+
+.section-label {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 0.8rem;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1.2; font-weight: 500;
+  margin-bottom: 1.2rem;
+}
+.section-sub { font-size: 1rem; color: var(--muted); line-height: 1.75; max-width: 580px; }
+
+/* ── credencial ── */
+.credencial-card {
+  background: var(--green-mid);
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.credencial-row {
+  display: flex; align-items: flex-start; gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.credencial-row:last-child { border-bottom: none; }
+.cred-icon { font-size: 1.2rem; margin-top: 0.1rem; }
+.cred-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.4); }
+.cred-value { font-size: 0.92rem; color: rgba(255,255,255,0.88); margin-top: 0.1rem; }
+
+/* ── proceso ── */
+.steps { display: flex; flex-direction: column; gap: 1.5rem; }
+.step {
+  display: flex; gap: 1.5rem; align-items: flex-start;
+  background: var(--white);
+  border-radius: 14px; padding: 1.6rem;
+  border: 1px solid var(--border);
+}
+.step-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; color: var(--gold); font-weight: 500;
+  min-width: 2.5rem; line-height: 1;
+}
+.step-title { font-weight: 600; color: var(--green-deep); margin-bottom: 0.3rem; }
+.step-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.65; }
+
+/* ── proyecto vincular ── */
+.vincular-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem; }
+.vincular-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(200,164,74,0.2);
+  border-radius: 14px; padding: 1.8rem;
+}
+.vincular-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+.vincular-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--cream); margin-bottom: 0.5rem; }
+.vincular-desc { font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.7; }
+
+/* ── ley ── */
+.ley-card {
+  background: var(--white); border-radius: 14px;
+  border-left: 4px solid var(--gold);
+  padding: 1.5rem 1.8rem;
+  margin-top: 2rem;
+}
+.ley-num { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; }
+.ley-titulo { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--green-deep); margin: 0.3rem 0; }
+.ley-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+/* ── CTA final ── */
+.cta-final {
+  background: linear-gradient(135deg, var(--green-deep) 0%, var(--green-mid) 100%);
+  border-radius: 20px; padding: 4rem 3rem;
+  text-align: center; position: relative; overflow: hidden;
+}
+.cta-final::before {
+  content: '🌿';
+  position: absolute; right: 2rem; bottom: 1rem;
+  font-size: 8rem; opacity: 0.05;
+}
+.cta-final-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  color: var(--cream); margin-bottom: 1rem; font-weight: 500;
+}
+.cta-final-sub { color: rgba(255,255,255,0.55); font-size: 0.95rem; margin-bottom: 2.5rem; line-height: 1.7; }
+
+@media (max-width: 768px) {
+  .hero-stats { flex-wrap: wrap; gap: 1.5rem; }
+  .hero-ornament { display: none; }
+  .vincular-grid { grid-template-columns: 1fr; }
+  .cta-final { padding: 3rem 1.5rem; }
+}
+{% endblock %}
+
+{% block content %}
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="container" style="padding-top:2rem;padding-bottom:2rem;">
+    <div class="hero-content">
+      <div class="hero-badge">
+        🌿 Ley 27.350 · REPROCANN oficial
+      </div>
+      <h1 class="hero-title">
+        Tu salud, respaldada<br>por <em>cannabis medicinal</em><br>y ciencia.
+      </h1>
+      <p class="hero-sub">
+        Somos un dispositivo de salud cannábico en Buenos Aires. Acompañamos a pacientes, cuidadores y profesionales dentro del marco legal argentino.
+      </p>
+      <a href="{{ url_for('solicitud') }}" class="hero-cta">Quiero unirme al club →</a>
+      <p class="hero-note">Proceso 100% gratuito · Completamente legal · REPROCANN</p>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-num">Ley</div>
+          <div class="hero-stat-label">27.350 · Marco legal</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">ONG</div>
+          <div class="hero-stat-label">Vida Mejor SISA 1377</div>
+        </div>
+        <div>
+          <div class="hero-stat-num">BA</div>
+          <div class="hero-stat-label">Buenos Aires, Argentina</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-ornament">
+    <span class="hero-leaf">🌿</span>
+  </div>
+</section>
+
+<!-- ── QUIÉNES SOMOS ── -->
+<section class="section" id="quienes">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;">
+      <div>
+        <div class="section-label">Sobre Cannawaka</div>
+        <h2 class="section-title">Un espacio de salud, no solo un club</h2>
+        <p class="section-sub">
+          Cannawaka nació con la convicción de que el cannabis medicinal es un derecho. Somos un dispositivo de salud que conecta a pacientes con el sistema legal, los acompaña en su proceso y construye comunidad de cuidado.
+        </p>
+        <p class="section-sub" style="margin-top:1rem;">
+          Formamos parte del <strong>Consejo Consultivo de la Ley 27.350</strong>, la ley que regula el uso medicinal del cannabis en Argentina.
+        </p>
+      </div>
+      <div class="credencial-card">
+        <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--gold);margin-bottom:0.5rem;">Credenciales institucionales</div>
+        <div class="credencial-row">
+          <span class="cred-icon">🏛️</span>
+          <div>
+            <div class="cred-label">Marco legal</div>
+            <div class="cred-value">Ley Nacional N° 27.350 — Cannabis medicinal y científico</div>
+          </div>
+        </div>
+        <div class="credencial-row">
+          <span class="cred-icon">📋</span>
+          <div>
+            <div class="cred-label">Registro oficial</div>
+            <div class="cred-value">REPROCANN — Registro del Programa de Cannabis</div>
+          </div>
+        </div>
+        <div class="credencial-row">
+          <span class="cred-icon">🤝</span>
+          <div>
+            <div class="cred-label">Participación</div>
+            <div class="cred-value">Miembro del Consejo Consultivo Ley 27.350</div>
+          </div>
+        </div>
+        <div class="credencial-row">
+          <span class="cred-icon">🌱</span>
+          <div>
+            <div class="cred-label">Organización</div>
+            <div class="cred-value">ONG Vida Mejor · SISA N° 1377</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROYECTO VINCULAR ── -->
+<section class="section section-dark" id="vincular">
+  <div class="container">
+    <div class="section-label" style="color:var(--gold);">Proyecto Vincular</div>
+    <h2 class="section-title" style="color:var(--cream);">Conectamos el ecosistema cannábico</h2>
+    <p style="color:rgba(255,255,255,0.55);font-size:1rem;line-height:1.75;max-width:560px;">
+      Vincular es nuestra iniciativa para conectar a pacientes y profesionales de salud dentro del marco legal, creando una red de acceso y acompañamiento.
+    </p>
+    <div class="vincular-grid">
+      <div class="vincular-card">
+        <div class="vincular-icon">🧑‍⚕️</div>
+        <div class="vincular-title">Para profesionales</div>
+        <div class="vincular-desc">
+          Médicos, psicólogos, kinesiólogos y otros profesionales de salud que quieran sumarse a la red de derivaciones y acompañamiento cannábico.
+        </div>
+        <div style="margin-top:1.5rem;">
+          <a href="{{ url_for('solicitud') }}?tipo=profesional" style="font-size:0.8rem;color:var(--gold);font-weight:600;">Registrarse como profesional →</a>
+        </div>
+      </div>
+      <div class="vincular-card">
+        <div class="vincular-icon">🫀</div>
+        <div class="vincular-title">Para pacientes</div>
+        <div class="vincular-desc">
+          Personas con patologías que pueden beneficiarse del cannabis medicinal. Te acompañamos desde el diagnóstico hasta el REPROCANN y más allá.
+        </div>
+        <div style="margin-top:1.5rem;">
+          <a href="{{ url_for('solicitud') }}" style="font-size:0.8rem;color:var(--gold);font-weight:600;">Iniciar mi proceso →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROCESO ── -->
+<section class="section" id="proceso">
+  <div class="container">
+    <div class="section-label">¿Cómo funciona?</div>
+    <h2 class="section-title">Tu camino al cannabis medicinal, paso a paso</h2>
+    <p class="section-sub" style="margin-bottom:3rem;">
+      Te acompañamos durante todo el proceso, desde la primera consulta hasta tu inscripción en REPROCANN.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-title">Completás tu solicitud</div>
+          <div class="step-desc">Llenás el formulario con tus datos y tu situación de salud. Proceso 100% digital, gratuito y confidencial.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-title">Revisamos tu caso</div>
+          <div class="step-desc">Nuestro equipo evalúa tu solicitud y te contacta para orientarte sobre qué documentación necesitás y los pasos a seguir.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-title">Te vinculamos con profesionales</div>
+          <div class="step-desc">Si necesitás prescripción médica, te conectamos con profesionales de nuestra red que trabajan con cannabis medicinal.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div>
+          <div class="step-title">Ingresás al REPROCANN</div>
+          <div class="step-desc">Con tu documentación completa, te registrás en el Registro del Programa de Cannabis del Estado argentino. Somos parte de ese proceso.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">05</div>
+        <div>
+          <div class="step-title">Accedés a la comunidad</div>
+          <div class="step-desc">Como socio activo de Cannawaka tenés acceso a nuestra red de profesionales, información actualizada y acompañamiento continuo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── LEY ── -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-label">Marco legal</div>
+    <h2 class="section-title">100% legal en Argentina</h2>
+    <p class="section-sub">
+      El cannabis medicinal está regulado por ley nacional desde 2017. Cannawaka opera dentro del marco legal vigente.
+    </p>
+    <div class="ley-card">
+      <div class="ley-num">Ley Nacional N° 27.350</div>
+      <div class="ley-titulo">Investigación Médica y Científica del Uso Medicinal de la Planta de Cannabis</div>
+      <div class="ley-desc">
+        Promulgada en 2017, establece el marco para el uso medicinal e investigación del cannabis en Argentina. REPROCANN (Registro del Programa de Cannabis) es el registro oficial dependiente del Ministerio de Salud que habilita a pacientes, autocultivadores y cuidadores a cultivar cannabis para uso medicinal.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA FINAL ── -->
+<section class="section">
+  <div class="container">
+    <div class="cta-final">
+      <h2 class="cta-final-title">¿Listo para dar el primer paso?</h2>
+      <p class="cta-final-sub">
+        Completar la solicitud no te compromete a nada.<br>
+        Es el primer paso para conocer tu situación y qué opciones tenés.
+      </p>
+      <a href="{{ url_for('solicitud') }}" class="hero-cta">Quiero unirme a Cannawaka →</a>
+      <p style="margin-top:1rem;font-size:0.72rem;color:rgba(255,255,255,0.3);">Gratuito · Confidencial · Sin compromiso</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

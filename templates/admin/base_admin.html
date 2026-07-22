@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Admin — Cannawaka{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --green-deep:    #1A3520;
+  --green-mid:     #2D5C38;
+  --green-light:   #4A7C5E;
+  --green-pale:    #D4EAD9;
+  --gold:          #C8A44A;
+  --gold-light:    #F6ECC4;
+  --cream:         #F5F2EC;
+  --cream-dark:    #EDE8DF;
+  --bg:            #F8F5F0;
+  --border:        #E0DBD3;
+  --text:          #1E1E1E;
+  --muted:         #6B6560;
+  --white:         #FFFFFF;
+  --sidebar-w:     220px;
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+a { color: inherit; text-decoration: none; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--green-deep);
+  display: flex; flex-direction: column;
+  z-index: 100;
+  padding-bottom: 1.5rem;
+}
+.sidebar-brand {
+  padding: 1.5rem 1.4rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sidebar-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem; color: var(--cream);
+  letter-spacing: 0.02em;
+}
+.sidebar-logo span { color: var(--gold); }
+.sidebar-sub {
+  font-size: 0.6rem; color: rgba(255,255,255,0.3);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.2rem;
+}
+
+.sidebar-nav { flex: 1; padding: 1rem 0.8rem; overflow-y: auto; }
+.nav-section-label {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(255,255,255,0.25); padding: 0.8rem 0.6rem 0.4rem;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.55rem 0.8rem; border-radius: 8px;
+  font-size: 0.82rem; color: rgba(255,255,255,0.65);
+  transition: all 0.15s; margin-bottom: 0.1rem;
+  cursor: pointer;
+}
+.nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+.nav-item.active { background: rgba(200,164,74,0.15); color: var(--gold); }
+.nav-icon { font-size: 1rem; width: 18px; text-align: center; }
+
+.sidebar-footer {
+  padding: 0.8rem 1rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── MAIN ── */
+.main { margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-title {
+  font-size: 0.92rem; font-weight: 600; color: var(--green-deep);
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.topbar-right {
+  display: flex; align-items: center; gap: 1rem;
+}
+.topbar-club {
+  font-size: 0.7rem; color: var(--muted); background: var(--cream);
+  padding: 0.3rem 0.8rem; border-radius: 100px;
+  border: 1px solid var(--border);
+}
+
+/* ── CONTENT ── */
+.content { padding: 2rem; flex: 1; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--white); border-radius: 14px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.card-header {
+  padding: 1rem 1.4rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title {
+  font-size: 0.82rem; font-weight: 600; color: var(--green-deep); letter-spacing: 0.01em;
+}
+.card-body { padding: 1.2rem 1.4rem; }
+
+/* ── KPI GRID ── */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem;
+}
+.kpi-card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  padding: 1.2rem 1.4rem;
+}
+.kpi-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 500; line-height: 1;
+  margin-bottom: 0.3rem;
+}
+.kpi-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+.kpi-sub { font-size: 0.65rem; color: var(--muted); margin-top: 0.15rem; }
+
+/* ── GRIDS ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+thead th {
+  text-align: left; font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--cream);
+}
+tbody td { padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cream); cursor: pointer; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 100px;
+  font-size: 0.67rem; font-weight: 600; letter-spacing: 0.02em;
+}
+.badge-solicitud    { background: #F0EDEA; color: var(--muted); }
+.badge-documentacion{ background: var(--gold-light); color: #7A5C00; }
+.badge-en_revision  { background: var(--green-pale); color: var(--green-mid); }
+.badge-aprobado     { background: #C8F0D0; color: #1A5C30; }
+.badge-activo       { background: var(--green-deep); color: var(--cream); }
+.badge-inactivo     { background: #F0EDEA; color: #999; }
+
+/* ── BOTONES ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem 1.1rem; border-radius: 8px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  border: none; transition: all 0.15s; font-family: 'Inter', sans-serif;
+}
+.btn-primary { background: var(--green-deep); color: var(--cream); }
+.btn-primary:hover { opacity: 0.88; }
+.btn-outline {
+  background: transparent; color: var(--green-deep);
+  border: 1.5px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--green-mid); background: var(--cream); }
+.btn-gold { background: var(--gold); color: var(--green-deep); }
+.btn-sm { padding: 0.35rem 0.8rem; font-size: 0.75rem; border-radius: 6px; }
+
+/* ── FORM ── */
+.form-group-a { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.8rem; }
+.form-group-a label { font-size: 0.75rem; font-weight: 600; color: var(--green-deep); }
+.form-control-a {
+  padding: 0.55rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px;
+  font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text);
+  background: var(--cream); width: 100%; transition: border-color 0.2s;
+}
+.form-control-a:focus { outline: none; border-color: var(--green-mid); background: var(--white); }
+
+/* ── UTILS ── */
+.text-sm    { font-size: 0.82rem; }
+.text-xs    { font-size: 0.72rem; }
+.text-muted { color: var(--muted); }
+.fw-600     { font-weight: 600; }
+.mt-2       { margin-top: 0.5rem; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.mini-bar { height: 5px; background: var(--cream-dark); border-radius: 3px; overflow: hidden; margin-top: 0.2rem; }
+.mini-bar-fill { height: 100%; border-radius: 3px; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.stat-row:last-child { border-bottom: none; }
+.stat-key { font-size: 0.8rem; color: var(--muted); }
+.stat-val { font-size: 0.88rem; font-weight: 600; color: var(--green-deep); }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">Canna<span>waka</span></div>
+    <div class="sidebar-sub">Panel de gestión</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="nav-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+    <a href="{{ url_for('admin_socios') }}" class="nav-item {% if request.endpoint in ['admin_socios','admin_socio'] %}active{% endif %}">
+      <span class="nav-icon">🌿</span> Socios
+    </a>
+    <a href="{{ url_for('admin_cultivos') }}" class="nav-item {% if request.endpoint in ['admin_cultivos','admin_cultivo'] %}active{% endif %}">
+      <span class="nav-icon">🪴</span> Cultivos
+    </a>
+    <a href="{{ url_for('admin_pedidos') }}" class="nav-item {% if request.endpoint in ['admin_pedidos','admin_pedido'] %}active{% endif %}">
+      <span class="nav-icon">📋</span> Pedidos
+    </a>
+    <a href="{{ url_for('admin_stock') }}" class="nav-item {% if request.endpoint == 'admin_stock' %}active{% endif %}">
+      <span class="nav-icon">📦</span> Stock
+    </a>
+    <div class="nav-section-label" style="margin-top:0.5rem;">Exportar</div>
+    <a href="{{ url_for('admin_exportar') }}" class="nav-item">
+      <span class="nav-icon">⬇️</span> Socios CSV
+    </a>
+    <a href="{{ url_for('admin_exportar_cultivos') }}" class="nav-item">
+      <span class="nav-icon">⬇️</span> Cultivos CSV
+    </a>
+    <a href="{{ url_for('admin_exportar_pedidos') }}" class="nav-item">
+      <span class="nav-icon">⬇️</span> Pedidos CSV
+    </a>
+    <div class="nav-section-label" style="margin-top:0.5rem;">Público</div>
+    <a href="{{ url_for('landing') }}" target="_blank" class="nav-item">
+      <span class="nav-icon">🌐</span> Ver web
+    </a>
+    <a href="{{ url_for('solicitud') }}" target="_blank" class="nav-item">
+      <span class="nav-icon">📋</span> Formulario
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="{{ url_for('admin_logout') }}" class="nav-item" style="color:rgba(255,255,255,0.4);">
+      <span class="nav-icon">←</span> Salir
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">{% block topbar_title %}Admin{% endblock %}</div>
+    <div class="topbar-right">
+      <span class="topbar-club">🌿 Cannawaka</span>
+    </div>
+  </div>
+  <div class="content">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div style="background:#FEF3CD;border:1px solid var(--gold);border-radius:8px;padding:0.7rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#7A5C00;">
+      {{ messages[0] }}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,151 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Pedidos — Cannawaka Admin{% endblock %}
+{% block topbar_title %}Pedidos y entregas{% endblock %}
+
+{% block extra_head %}
+<style>
+.kanban-wrap { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+.kanban-col { background:var(--cream); border-radius:12px; padding:0.8rem; min-height:120px; }
+.kanban-col-header { font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.6rem; display:flex; align-items:center; justify-content:space-between; }
+.kanban-count { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:500; }
+.filters-bar { background:var(--white); border-radius:12px; border:1px solid var(--border); padding:1rem 1.4rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap; }
+.search-input { padding:0.4rem 0.8rem; border:1.5px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:0.82rem; background:var(--cream); color:var(--text); min-width:220px; }
+.search-input:focus { outline:none; border-color:var(--green-mid); background:var(--white); }
+.filter-pill { padding:0.3rem 0.75rem; border-radius:100px; font-size:0.73rem; font-weight:600; border:1.5px solid transparent; cursor:pointer; background:var(--white); color:var(--muted); transition:all 0.15s; text-decoration:none; display:inline-block; }
+.filter-pill.active, .filter-pill:hover { background:var(--cream-dark); border-color:var(--border); color:var(--text); }
+.estado-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:0.4rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPI kanban -->
+<div class="kanban-wrap">
+  {% set estados_activos = [('pendiente','#C8A44A'),('preparando','#2D5C38'),('en_camino','#E07B30'),('entregado','#1A3520')] %}
+  {% for est, color in estados_activos %}
+  <div class="kanban-col" style="border-top:3px solid {{ color }};">
+    <div class="kanban-col-header">
+      <span style="color:{{ color }};">{{ estado_pedido_label[est] }}</span>
+    </div>
+    <div class="kanban-count" style="color:{{ color }};">{{ contadores.get(est, 0) }}</div>
+    <div class="text-xs text-muted">pedido{% if contadores.get(est,0) != 1 %}s{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Barra de filtros -->
+<div class="filters-bar">
+  <form style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;" method="GET">
+    <input type="text" class="search-input" name="q" value="{{ q }}" placeholder="Buscar socio, código, variedad...">
+    {% if estado_f %}<input type="hidden" name="estado" value="{{ estado_f }}">{% endif %}
+    {% if variedad_f %}<input type="hidden" name="variedad" value="{{ variedad_f }}">{% endif %}
+    <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+    {% if q %}<a href="{{ url_for('admin_pedidos') }}" class="btn btn-outline btn-sm">Limpiar</a>{% endif %}
+  </form>
+  <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+    <a href="{{ url_for('admin_pedidos') }}" class="filter-pill {% if not estado_f %}active{% endif %}">Todos</a>
+    {% for est, color in estados_activos %}
+    <a href="{{ url_for('admin_pedidos') }}?estado={{ est }}"
+       class="filter-pill {% if estado_f == est %}active{% endif %}"
+       style="{% if estado_f == est %}background:{{ color }}22;border-color:{{ color }};color:{{ color }};{% else %}border-color:{{ color }}44;color:{{ color }};{% endif %}">
+      <span class="estado-dot" style="background:{{ color }};"></span>{{ estado_pedido_label[est] }}
+    </a>
+    {% endfor %}
+    <a href="{{ url_for('admin_pedidos') }}?estado=cancelado"
+       class="filter-pill {% if estado_f == 'cancelado' %}active{% endif %}" style="color:var(--muted);">Cancelados</a>
+  </div>
+  {% if variedades %}
+  <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-left:0.3rem;padding-left:0.7rem;border-left:1px solid var(--border);">
+    {% for v in variedades %}
+    <a href="{{ url_for('admin_pedidos') }}?variedad={{ v.variedad }}{% if estado_f %}&estado={{ estado_f }}{% endif %}"
+       class="filter-pill {% if variedad_f == v.variedad %}active{% endif %}">{{ v.variedad }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Tabla -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">{{ pedidos|length }} pedido{% if pedidos|length != 1 %}s{% endif %}
+      {% if estado_f %} · {{ estado_pedido_label.get(estado_f,'') }}{% endif %}
+    </span>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <span class="text-xs text-muted">Ingresos este mes:</span>
+      <span class="fw-600" style="color:var(--green-mid);">${{ ingresos_mes }}</span>
+    </div>
+  </div>
+  {% if pedidos %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th><th>Socio</th><th>Variedad</th><th>Gramos</th>
+          <th>Precio</th><th>Pago</th><th>Entrega</th><th>Dirección</th><th>Fecha</th><th>Estado</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pedidos %}
+        <tr>
+          <td style="color:var(--gold);font-weight:700;font-size:0.8rem;cursor:pointer;" onclick="location.href='{{ url_for('admin_pedido', pid=p.id) }}'">{{ p.codigo }}</td>
+          <td onclick="location.href='{{ url_for('admin_socio', sid=p.socio_id) }}'" style="cursor:pointer;">
+            <div class="fw-600 text-sm">{{ p.nombre }} {{ p.apellido }}</div>
+            <div class="text-xs text-muted">{{ p.barrio or '' }}</div>
+          </td>
+          <td class="fw-600 text-sm">{{ p.variedad }}</td>
+          <td style="color:var(--green-mid);font-weight:700;font-size:0.9rem;">{{ p.gramos }}g</td>
+          <td class="text-sm">${{ p.precio }}</td>
+          <td class="text-xs text-muted">{{ forma_pago_label.get(p.forma_pago, p.forma_pago) }}</td>
+          <td class="text-xs text-muted">{{ tipo_entrega_label.get(p.tipo_entrega, p.tipo_entrega) }}</td>
+          <td class="text-xs text-muted" style="max-width:160px;">{{ (p.direccion_entrega or '—')[:30] }}</td>
+          <td class="text-xs text-muted">{{ p.fecha_pedido[:10] }}</td>
+          <td>
+            <span id="badge-{{ p.id }}" class="badge" style="background:{{ estado_pedido_color.get(p.estado,'#999') }}22;color:{{ estado_pedido_color.get(p.estado,'#999') }};">
+              {{ estado_pedido_label.get(p.estado, p.estado) }}
+            </span>
+          </td>
+          <td style="white-space:nowrap;">
+            {% if p.estado in ['pendiente','preparando','en_camino'] %}
+            {% set next_e = estado_pedido_next.get(p.estado,'') %}
+            {% if next_e %}
+            <button class="btn btn-outline btn-sm" onclick="avanzarEstado({{ p.id }}, '{{ next_e }}', this)" style="font-size:0.7rem;">
+              → {{ estado_pedido_label.get(next_e,'') }}
+            </button>
+            {% endif %}
+            {% endif %}
+            <a href="{{ url_for('admin_pedido', pid=p.id) }}" class="btn btn-outline btn-sm" style="font-size:0.7rem;">Ver</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <p class="text-muted text-sm">No hay pedidos con estos filtros. Los pedidos se crean desde la ficha del socio.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function avanzarEstado(pid, nuevoEstado, btn) {
+  const fd = new FormData(); fd.append('estado', nuevoEstado);
+  fetch('/admin/pedido/' + pid + '/estado', {
+    method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}, body: fd
+  }).then(r => r.json()).then(d => {
+    if (!d.ok) return;
+    const badge = document.getElementById('badge-' + pid);
+    if (badge) { badge.textContent = d.label; badge.style.color = d.color; badge.style.background = d.color + '22'; }
+    btn.closest('td').innerHTML = d.estado === 'entregado'
+      ? '<span style="color:var(--green-mid);font-size:0.75rem;">✓ Entregado</span>'
+      : '<button class="btn btn-outline btn-sm" onclick="avanzarEstado(' + pid + ', \'' + getNext(d.estado) + '\', this)" style="font-size:0.7rem;">→ ' + getNextLabel(d.estado) + '</button><a href="/admin/pedido/' + pid + '" class="btn btn-outline btn-sm" style="font-size:0.7rem;">Ver</a>';
+  });
+}
+const nextMap = {pendiente:'preparando', preparando:'en_camino', en_camino:'entregado'};
+const labelMap = {pendiente:'Pendiente', preparando:'Preparando', en_camino:'En camino', entregado:'Entregado'};
+function getNext(e){ return nextMap[e] || ''; }
+function getNextLabel(e){ return labelMap[nextMap[e]] || ''; }
+</script>
+{% endblock %}

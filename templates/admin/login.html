@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso — Cannawaka Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #1A3520;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+}
+.login-card {
+  background: #F5F2EC; border-radius: 20px;
+  padding: 2.5rem; width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.login-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; color: #1A3520; text-align: center;
+  margin-bottom: 0.3rem;
+}
+.login-logo span { color: #C8A44A; }
+.login-sub {
+  font-size: 0.72rem; color: #6B6560; text-align: center;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 2rem;
+}
+.form-group { margin-bottom: 1rem; }
+label { font-size: 0.75rem; font-weight: 600; color: #1A3520; display: block; margin-bottom: 0.4rem; }
+input {
+  width: 100%; padding: 0.7rem 0.9rem;
+  border: 1.5px solid #E0DBD3; border-radius: 8px;
+  font-family: 'Inter', sans-serif; font-size: 0.88rem;
+  background: #fff;
+}
+input:focus { outline: none; border-color: #2D5C38; }
+.btn-login {
+  width: 100%; padding: 0.8rem;
+  background: #1A3520; color: #F5F2EC;
+  border: none; border-radius: 8px;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  margin-top: 0.5rem; font-family: 'Inter', sans-serif;
+  transition: opacity 0.2s;
+}
+.btn-login:hover { opacity: 0.85; }
+.error {
+  background: #FDE8E8; border: 1px solid #FBCACA;
+  color: #9B2222; border-radius: 8px;
+  padding: 0.6rem 0.9rem; font-size: 0.82rem;
+  margin-bottom: 1rem;
+}
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="login-logo">Canna<span>waka</span></div>
+  <div class="login-sub">Panel de gestión</div>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  <div class="error">{{ messages[0] }}</div>
+  {% endif %}
+  {% endwith %}
+  <form method="POST">
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" name="user" autofocus>
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" name="password">
+    </div>
+    <button type="submit" class="btn-login">Ingresar →</button>
+  </form>
+</div>
+</body>
+</html>

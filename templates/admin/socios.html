@@ -1,0 +1,118 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Socios — Cannawaka Admin{% endblock %}
+{% block topbar_title %}Socios{% endblock %}
+
+{% block extra_head %}
+<style>
+.filters-bar {
+  background: var(--white); border-radius: 12px; border: 1px solid var(--border);
+  padding: 1rem 1.4rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 0.35rem 0.85rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600;
+  border: 1.5px solid var(--border); cursor: pointer; background: var(--white);
+  color: var(--muted); transition: all 0.15s; text-decoration: none; display: inline-block;
+}
+.filter-btn:hover { border-color: var(--green-mid); color: var(--green-mid); }
+.filter-btn.active { background: var(--green-deep); border-color: var(--green-deep); color: var(--cream); }
+.filter-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(255,255,255,0.2); font-size: 0.65rem;
+  margin-left: 0.3rem;
+}
+.filter-btn:not(.active) .filter-num { background: var(--cream-dark); color: var(--muted); }
+
+.search-input {
+  padding: 0.4rem 0.8rem; border: 1.5px solid var(--border); border-radius: 8px;
+  font-family: 'Inter', sans-serif; font-size: 0.82rem; background: var(--cream);
+  color: var(--text); min-width: 200px; flex: 1; max-width: 280px;
+}
+.search-input:focus { outline: none; border-color: var(--green-mid); background: var(--white); }
+.search-form { display: flex; gap: 0.5rem; align-items: center; flex: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="filters-bar">
+  <form class="search-form" method="GET">
+    <input type="text" class="search-input" name="q" value="{{ q }}" placeholder="Buscar nombre, DNI, email...">
+    {% if etapa_f %}<input type="hidden" name="etapa" value="{{ etapa_f }}">{% endif %}
+    {% if origen_f %}<input type="hidden" name="origen" value="{{ origen_f }}">{% endif %}
+    <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+    {% if q or etapa_f or origen_f %}
+    <a href="{{ url_for('admin_socios') }}" class="btn btn-outline btn-sm">Limpiar</a>
+    {% endif %}
+  </form>
+  <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+    <a href="{{ url_for('admin_socios') }}{% if q %}?q={{ q }}{% endif %}"
+       class="filter-btn {% if not etapa_f %}active{% endif %}">
+      Todos <span class="filter-num">{{ totales.values()|sum }}</span>
+    </a>
+    {% for e in etapas %}
+    <a href="{{ url_for('admin_socios') }}?etapa={{ e }}{% if q %}&q={{ q }}{% endif %}"
+       class="filter-btn {% if etapa_f == e %}active{% endif %}">
+      {{ etapa_label[e] }} <span class="filter-num">{{ totales[e] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">
+      {{ socios|length }} socio{% if socios|length != 1 %}s{% endif %}
+      {% if etapa_f %} · {{ etapa_label[etapa_f] }}{% endif %}
+      {% if q %} · "{{ q }}"{% endif %}
+    </span>
+    <a href="{{ url_for('admin_exportar') }}" class="btn btn-outline btn-sm">⬇ CSV</a>
+  </div>
+  {% if socios %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Diagnóstico</th>
+          <th>WhatsApp</th>
+          <th>Canal</th>
+          <th>Zona</th>
+          <th>Receta</th>
+          <th>Etapa</th>
+          <th>Alta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in socios %}
+        {% set bm = {'solicitud':'badge-solicitud','documentacion':'badge-documentacion','en_revision':'badge-en_revision','aprobado':'badge-aprobado','activo':'badge-activo','inactivo':'badge-inactivo'} %}
+        <tr onclick="location.href='{{ url_for('admin_socio', sid=s.id) }}'">
+          <td>
+            <div class="fw-600">{{ s.nombre }} {{ s.apellido }}</div>
+            <div class="text-xs text-muted">DNI {{ s.dni }}</div>
+          </td>
+          <td class="text-xs text-muted">{{ tipo_socio_label.get(s.tipo_socio, s.tipo_socio or '—') }}</td>
+          <td class="text-sm text-muted">{{ (s.diagnostico or '—')[:28] }}</td>
+          <td class="text-sm text-muted">{{ s.telefono or '—' }}</td>
+          <td class="text-xs text-muted">{{ (s.como_nos_conocio or '—')|replace('_',' ')|title }}</td>
+          <td class="text-xs text-muted">{{ s.barrio or '—' }}</td>
+          <td class="text-xs">
+            {% if s.tiene_receta == 'si' %}<span style="color:#2D5C38;font-weight:600;">✓ Tiene</span>
+            {% elif s.tiene_receta == 'en_proceso' %}<span style="color:#C8A44A;font-weight:600;">En proceso</span>
+            {% else %}<span class="text-muted">Sin receta</span>{% endif %}
+          </td>
+          <td><span class="badge {{ bm.get(s.etapa,'badge-solicitud') }}">{{ etapa_label.get(s.etapa, s.etapa) }}</span></td>
+          <td class="text-xs text-muted">{{ fmt_fecha(s.created_at) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <p class="text-muted text-sm">No hay socios con estos filtros.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

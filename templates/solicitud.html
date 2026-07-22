@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% block title %}Solicitud de ingreso — Cannawaka{% endblock %}
+
+{% block extra_styles %}
+.solicitud-wrap {
+  max-width: 720px; margin: 0 auto; padding: 3rem 1.5rem 5rem;
+}
+.form-head {
+  text-align: center; margin-bottom: 3rem;
+}
+.form-head-label {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 0.5rem;
+}
+.form-head-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; color: var(--green-deep); font-weight: 500;
+}
+.form-head-sub {
+  font-size: 0.9rem; color: var(--muted); margin-top: 0.7rem; line-height: 1.65;
+}
+
+.form-card {
+  background: var(--white); border-radius: 16px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.form-section {
+  padding: 1.6rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.form-section:last-child { border-bottom: none; }
+.form-section-title {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 1.2rem;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-full { grid-column: 1/-1; }
+
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+label {
+  font-size: 0.78rem; font-weight: 600; color: var(--green-deep); letter-spacing: 0.02em;
+}
+.label-opt { font-weight: 400; color: var(--muted); font-size: 0.72rem; margin-left: 0.3rem; }
+input[type="text"], input[type="email"], input[type="tel"], input[type="date"],
+select, textarea {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text);
+  background: var(--cream);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--green-mid);
+  box-shadow: 0 0 0 3px rgba(45,92,56,0.1);
+  background: var(--white);
+}
+textarea { resize: vertical; min-height: 80px; }
+
+.radio-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.radio-label {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.8rem; border-radius: 8px;
+  border: 1.5px solid var(--border);
+  cursor: pointer; transition: all 0.15s;
+  font-size: 0.85rem; color: var(--text);
+}
+.radio-label:hover { border-color: var(--green-mid); background: var(--cream); }
+.radio-label input[type="radio"] { accent-color: var(--green-mid); width: 16px; height: 16px; }
+.radio-label.checked { border-color: var(--green-mid); background: #D4EAD9; }
+
+.tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.tipo-card {
+  padding: 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 10px; cursor: pointer;
+  transition: all 0.15s; text-align: center;
+}
+.tipo-card:hover { border-color: var(--green-mid); }
+.tipo-card input[type="radio"] { display: none; }
+.tipo-card.selected { border-color: var(--green-mid); background: #D4EAD9; }
+.tipo-icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
+.tipo-name { font-size: 0.82rem; font-weight: 600; color: var(--green-deep); }
+.tipo-desc { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.4; }
+
+.form-submit {
+  padding: 1.5rem 2rem; text-align: center;
+  border-top: 1px solid var(--border);
+}
+.btn-submit {
+  background: var(--green-deep); color: var(--cream);
+  border: none; padding: 0.9rem 2.5rem; border-radius: 100px;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+.form-disclaimer {
+  font-size: 0.72rem; color: var(--muted); margin-top: 0.8rem; line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .form-grid, .form-grid-3, .tipo-grid { grid-template-columns: 1fr; }
+  .form-section { padding: 1.2rem 1.2rem; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="solicitud-wrap">
+  <div class="form-head">
+    <div class="form-head-label">Proyecto Vincular — Cannawaka</div>
+    <h1 class="form-head-title">Solicitud de ingreso al club</h1>
+    <p class="form-head-sub">
+      Completá el formulario con tus datos. Es gratuito, confidencial y el equipo de Cannawaka<br>
+      te contactará para acompañarte en el proceso.
+    </p>
+  </div>
+
+  <form method="POST" action="{{ url_for('solicitud') }}" id="form-solicitud">
+    <div class="form-card">
+
+      <!-- 1. Tipo de socio -->
+      <div class="form-section">
+        <div class="form-section-title">¿Cómo querés participar?</div>
+        <div class="tipo-grid" id="tipo-grid">
+          <label class="tipo-card selected" onclick="selectTipo(this,'paciente')">
+            <input type="radio" name="tipo_socio" value="paciente" checked>
+            <div class="tipo-icon">🫀</div>
+            <div class="tipo-name">Paciente</div>
+            <div class="tipo-desc">Quiero acceder al cannabis medicinal para mi salud</div>
+          </label>
+          <label class="tipo-card" onclick="selectTipo(this,'cuidador')">
+            <input type="radio" name="tipo_socio" value="cuidador">
+            <div class="tipo-icon">🤝</div>
+            <div class="tipo-name">Cuidador</div>
+            <div class="tipo-desc">Cuido a alguien que necesita cannabis medicinal</div>
+          </label>
+          <label class="tipo-card" onclick="selectTipo(this,'productor')">
+            <input type="radio" name="tipo_socio" value="productor">
+            <div class="tipo-icon">🌱</div>
+            <div class="tipo-name">Autocultivador</div>
+            <div class="tipo-desc">Quiero cultivar para uso medicinal propio o de un familiar</div>
+          </label>
+          <label class="tipo-card" onclick="selectTipo(this,'investigador')">
+            <input type="radio" name="tipo_socio" value="investigador">
+            <div class="tipo-icon">🔬</div>
+            <div class="tipo-name">Profesional / Investigador</div>
+            <div class="tipo-desc">Soy profesional de salud o investigador del área</div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2. Datos personales -->
+      <div class="form-section">
+        <div class="form-section-title">Datos personales</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombre">Nombre <span class="label-opt">*</span></label>
+            <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre">
+          </div>
+          <div class="form-group">
+            <label for="apellido">Apellido <span class="label-opt">*</span></label>
+            <input type="text" id="apellido" name="apellido" required placeholder="Tu apellido">
+          </div>
+          <div class="form-group">
+            <label for="dni">DNI <span class="label-opt">*</span></label>
+            <input type="text" id="dni" name="dni" required placeholder="Sin puntos">
+          </div>
+          <div class="form-group">
+            <label for="fecha_nac">Fecha de nacimiento</label>
+            <input type="date" id="fecha_nac" name="fecha_nac">
+          </div>
+          <div class="form-group">
+            <label for="email">Email <span class="label-opt">*</span></label>
+            <input type="email" id="email" name="email" required placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label for="telefono">WhatsApp / Teléfono <span class="label-opt">*</span></label>
+            <input type="tel" id="telefono" name="telefono" required placeholder="+54 11 ...">
+          </div>
+          <div class="form-group">
+            <label for="genero">Género <span class="label-opt">opcional</span></label>
+            <select id="genero" name="genero">
+              <option value="">Prefiero no decir</option>
+              <option value="femenino">Femenino</option>
+              <option value="masculino">Masculino</option>
+              <option value="no_binario">No binario</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="barrio">Barrio / Ciudad</label>
+            <input type="text" id="barrio" name="barrio" placeholder="Ej: Palermo, CABA">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Condición de salud -->
+      <div class="form-section" id="seccion-salud">
+        <div class="form-section-title">Situación de salud</div>
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label for="diagnostico">Diagnóstico o condición de salud <span class="label-opt">*</span></label>
+            <input type="text" id="diagnostico" name="diagnostico" required placeholder="Ej: epilepsia, dolor crónico, ansiedad, oncológico...">
+          </div>
+          <div class="form-group">
+            <label for="patologia_especifica">Detalle adicional <span class="label-opt">opcional</span></label>
+            <input type="text" id="patologia_especifica" name="patologia_especifica" placeholder="Más precisión si querés">
+          </div>
+          <div class="form-group">
+            <label for="tiempo_condicion">¿Hace cuánto tenés esta condición?</label>
+            <select id="tiempo_condicion" name="tiempo_condicion">
+              <option value="">Seleccioná</option>
+              <option value="menos_1">Menos de 1 año</option>
+              <option value="1_3">Entre 1 y 3 años</option>
+              <option value="3_5">Entre 3 y 5 años</option>
+              <option value="mas_5">Más de 5 años</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Médico -->
+      <div class="form-section">
+        <div class="form-section-title">Información médica</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="medico_prescriptor">Médico que te atiende <span class="label-opt">si tenés</span></label>
+            <input type="text" id="medico_prescriptor" name="medico_prescriptor" placeholder="Nombre del médico">
+          </div>
+          <div class="form-group">
+            <label for="especialidad_medico">Especialidad</label>
+            <input type="text" id="especialidad_medico" name="especialidad_medico" placeholder="Ej: neurologo, oncólogo">
+          </div>
+          <div class="form-group form-full">
+            <label>¿Ya tenés receta / prescripción médica de cannabis?</label>
+            <div class="radio-group" style="flex-direction:row;gap:0.6rem;flex-wrap:wrap;">
+              <label class="radio-label" style="flex:1;min-width:150px;">
+                <input type="radio" name="tiene_receta" value="si"> Sí, ya tengo
+              </label>
+              <label class="radio-label" style="flex:1;min-width:150px;">
+                <input type="radio" name="tiene_receta" value="en_proceso"> Estoy en proceso
+              </label>
+              <label class="radio-label" style="flex:1;min-width:150px;">
+                <input type="radio" name="tiene_receta" value="no"> No, necesito orientación
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Experiencia cannábica -->
+      <div class="form-section">
+        <div class="form-section-title">Experiencia con cannabis <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;color:var(--muted);">— confidencial</span></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="experiencia_cannabis">¿Ya usaste cannabis medicinal?</label>
+            <select id="experiencia_cannabis" name="experiencia_cannabis">
+              <option value="">Seleccioná</option>
+              <option value="nunca">Nunca lo usé</option>
+              <option value="algo">Lo probé alguna vez</option>
+              <option value="uso_actual">Lo uso actualmente</option>
+              <option value="experiencia">Tengo bastante experiencia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="metodo_consumo">Método de consumo preferido <span class="label-opt">opcional</span></label>
+            <select id="metodo_consumo" name="metodo_consumo">
+              <option value="">No sé / No aplica</option>
+              <option value="aceite">Aceite / tintura</option>
+              <option value="flores">Flores (vapeo/pipa)</option>
+              <option value="comestible">Comestibles</option>
+              <option value="topico">Tópico</option>
+              <option value="multiple">Múltiples métodos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Cómo llegaste -->
+      <div class="form-section">
+        <div class="form-section-title">¿Cómo conociste Cannawaka?</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="como_nos_conocio">Canal</label>
+            <select id="como_nos_conocio" name="como_nos_conocio">
+              <option value="">Seleccioná</option>
+              <option value="instagram">Instagram</option>
+              <option value="recomendacion">Recomendación de amigo/familiar</option>
+              <option value="medico">Mi médico me derivó</option>
+              <option value="google">Búsqueda en Google</option>
+              <option value="fecca">FECCA / federación</option>
+              <option value="evento">Evento o charla</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="referido_por">¿Quién te recomendó? <span class="label-opt">si aplica</span></label>
+            <input type="text" id="referido_por" name="referido_por" placeholder="Nombre de la persona">
+          </div>
+          <div class="form-group form-full">
+            <label for="notas_solicitud">¿Querés contarnos algo más? <span class="label-opt">opcional</span></label>
+            <textarea id="notas_solicitud" name="notas_solicitud" placeholder="Cualquier información adicional que creas relevante..."></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="form-submit">
+      <button type="submit" class="btn-submit">Enviar mi solicitud →</button>
+      <p class="form-disclaimer">
+        Tu información es confidencial y solo será utilizada por el equipo de Cannawaka.<br>
+        Al enviar aceptás ser contactado para continuar el proceso.
+      </p>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function selectTipo(el, val) {
+  document.querySelectorAll('.tipo-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('input[type="radio"]').checked = true;
+  // mostrar/ocultar sección salud
+  const secSalud = document.getElementById('seccion-salud');
+  if (val === 'investigador') {
+    secSalud.style.display = 'none';
+  } else {
+    secSalud.style.display = '';
+    const diagLabel = document.getElementById('diagnostico');
+    diagLabel.required = (val === 'paciente' || val === 'cuidador');
+  }
+}
+
+// preselect tipo from URL param
+const params = new URLSearchParams(location.search);
+if (params.get('tipo') === 'profesional') {
+  const card = document.querySelector('.tipo-card:nth-child(4)');
+  if (card) { card.click(); selectTipo(card, 'investigador'); }
+}
+</script>
+{% endblock %}

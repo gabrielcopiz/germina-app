@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}Mi estado — Cannawaka{% endblock %}
+
+{% block extra_styles %}
+.portal-wrap { max-width: 620px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+.portal-head {
+  background: var(--green-deep); border-radius: 16px;
+  padding: 2rem; margin-bottom: 1.5rem; color: var(--cream);
+}
+.portal-head-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem; font-weight: 500; margin-bottom: 0.3rem;
+}
+.portal-head-tipo {
+  font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* estado badge */
+.estado-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.45rem 1rem; border-radius: 100px;
+  font-size: 0.78rem; font-weight: 600;
+  margin-top: 1rem;
+}
+
+/* timeline */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-step { display: flex; gap: 1rem; }
+.tl-left { display: flex; flex-direction: column; align-items: center; }
+.tl-dot {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
+  background: var(--white); display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; flex-shrink: 0; z-index: 1;
+}
+.tl-dot.done { background: var(--green-mid); border-color: var(--green-mid); color: white; }
+.tl-dot.current { background: var(--gold); border-color: var(--gold); color: var(--green-deep); }
+.tl-line { flex: 1; width: 2px; background: var(--border); margin: 2px 0; min-height: 32px; }
+.tl-line.done { background: var(--green-mid); }
+.tl-step:last-child .tl-line { display: none; }
+.tl-content { padding: 0.2rem 0 1.5rem; flex: 1; }
+.tl-title { font-weight: 600; font-size: 0.9rem; color: var(--green-deep); }
+.tl-title.current { color: var(--gold); }
+.tl-title.pending { color: var(--muted); font-weight: 400; }
+.tl-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
+
+.info-card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border); padding: 1.2rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.info-card-title {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--gold); font-weight: 700; margin-bottom: 0.8rem;
+}
+.info-row { display: flex; justify-content: space-between; padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.info-row:last-child { border-bottom: none; }
+.info-key { color: var(--muted); font-size: 0.78rem; }
+.info-val { font-weight: 500; color: var(--text); }
+
+.doc-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem;
+}
+.doc-row:last-child { border-bottom: none; }
+.doc-estado {
+  padding: 0.25rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600;
+}
+.doc-estado.pendiente { background: #FEF3CD; color: #7A5C00; }
+.doc-estado.entregado { background: #D4EAD9; color: #1A3520; }
+.doc-estado.rechazado { background: #FDE8E8; color: #9B2222; }
+{% endblock %}
+
+{% block content %}
+<div class="portal-wrap">
+  <div class="portal-head">
+    <div class="portal-head-tipo">
+      {% set tipos = {'paciente':'Paciente','cuidador':'Cuidador','productor':'Autocultivador','investigador':'Profesional'} %}
+      {{ tipos.get(s.tipo_socio, s.tipo_socio) }} · Cannawaka
+    </div>
+    <div class="portal-head-name">{{ s.nombre }} {{ s.apellido }}</div>
+    <div>
+      {% set bc = etapa_color.get(s.etapa, '#888') %}
+      {% set bl = etapa_label.get(s.etapa, s.etapa) %}
+      <span class="estado-badge" style="background:{{ bc }}22;color:{{ bc }};border:1px solid {{ bc }}44;">
+        {{ bl }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Timeline de etapas -->
+  <div class="info-card">
+    <div class="info-card-title">Tu proceso en Cannawaka</div>
+    {% set etapas_list = [
+      ('solicitud',     'Solicitud recibida',    'Tu solicitud llegó al equipo de Cannawaka.'),
+      ('documentacion', 'Pendiente de documentos','Necesitamos que aportes documentación.'),
+      ('en_revision',   'En revisión',            'El equipo está evaluando tu caso.'),
+      ('aprobado',      'Aprobado',               'Tu solicitud fue aprobada. Próximos pasos en camino.'),
+      ('activo',        'Socio activo',           'Sos parte de la comunidad Cannawaka.'),
+    ] %}
+    <div class="timeline">
+      {% set etapas_ids = ['solicitud','documentacion','en_revision','aprobado','activo'] %}
+      {% set current_idx = etapas_ids.index(s.etapa) if s.etapa in etapas_ids else 0 %}
+      {% for etapa_id, etapa_name, etapa_desc in etapas_list %}
+        {% set idx = loop.index0 %}
+        <div class="tl-step">
+          <div class="tl-left">
+            <div class="tl-dot {% if idx < current_idx %}done{% elif idx == current_idx %}current{% endif %}">
+              {% if idx < current_idx %}✓{% else %}{{ loop.index }}{% endif %}
+            </div>
+            <div class="tl-line {% if idx < current_idx %}done{% endif %}"></div>
+          </div>
+          <div class="tl-content">
+            <div class="tl-title {% if idx == current_idx %}current{% elif idx > current_idx %}pending{% endif %}">
+              {{ etapa_name }}
+            </div>
+            {% if idx == current_idx %}
+            <div class="tl-desc">{{ etapa_desc }}</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Datos registrados -->
+  <div class="info-card">
+    <div class="info-card-title">Tus datos registrados</div>
+    <div class="info-row">
+      <span class="info-key">DNI</span>
+      <span class="info-val">{{ s.dni }}</span>
+    </div>
+    {% if s.email %}
+    <div class="info-row">
+      <span class="info-key">Email</span>
+      <span class="info-val">{{ s.email }}</span>
+    </div>
+    {% endif %}
+    {% if s.telefono %}
+    <div class="info-row">
+      <span class="info-key">WhatsApp</span>
+      <span class="info-val">{{ s.telefono }}</span>
+    </div>
+    {% endif %}
+    {% if s.diagnostico %}
+    <div class="info-row">
+      <span class="info-key">Condición</span>
+      <span class="info-val">{{ s.diagnostico }}</span>
+    </div>
+    {% endif %}
+    <div class="info-row">
+      <span class="info-key">Solicitud</span>
+      <span class="info-val">{{ s.created_at[:10] if s.created_at else '—' }}</span>
+    </div>
+  </div>
+
+  <!-- Documentación -->
+  {% if docs %}
+  <div class="info-card">
+    <div class="info-card-title">Documentación</div>
+    {% for doc in docs %}
+    <div class="doc-row">
+      <span>{{ doc.tipo }}</span>
+      <span class="doc-estado {{ doc.estado }}">{{ doc.estado|title }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="text-align:center;margin-top:2rem;">
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">
+      ¿Tenés dudas? Escribinos a Instagram
+    </p>
+    <a href="https://instagram.com/cannawaka" target="_blank"
+       style="display:inline-flex;align-items:center;gap:0.5rem;background:var(--green-deep);color:var(--cream);padding:0.7rem 1.5rem;border-radius:100px;font-size:0.85rem;font-weight:600;">
+      @cannawaka en Instagram ↗
+    </a>
+  </div>
+</div>
+{% endblock %}

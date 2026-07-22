@@ -1,0 +1,412 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Dashboard — Cannawaka Admin{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block extra_head %}
+<style>
+.section-title-dash {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; color: var(--green-deep);
+  margin: 2rem 0 1rem; display: flex; align-items: center; gap: 0.6rem;
+}
+.section-title-dash span {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gold); background: var(--gold-light); padding: 0.2rem 0.6rem; border-radius: 100px;
+  font-family: 'Inter', sans-serif;
+}
+</style>
+{% endblock %}
+
+{% block extra_head %}
+{{ super() }}
+<style>
+.alert-panel {
+  border-radius: 12px; padding: 1rem 1.4rem; margin-bottom: 1.5rem;
+  display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
+}
+.alert-panel.warning { background: #FEF9EC; border: 1px solid #E8C97A; }
+.alert-panel.danger  { background: #FEF0F0; border: 1px solid #F5C6C6; }
+.alert-panel.info    { background: #EEF6F0; border: 1px solid #8BAF8B; }
+.alert-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 0.1rem; }
+.alert-title { font-size: 0.82rem; font-weight: 700; color: var(--green-deep); }
+.alert-body  { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
+.alert-tag {
+  display: inline-block; background: rgba(26,53,32,0.08); border-radius: 100px;
+  padding: 0.15rem 0.55rem; font-size: 0.72rem; font-weight: 600;
+  color: var(--green-deep); margin: 0.15rem 0.2rem 0 0;
+}
+.alert-tag.red { background: #FDEAEA; color: #9B2222; }
+.alert-tag.gold { background: var(--gold-light); color: #7A5C00; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ PANEL DE ALERTAS ══ -->
+{% set total_alertas = alertas_stock_bajo|length + cosechas_urgentes|length + (1 if en_revision > 0 else 0) + (1 if pedidos_pendientes > 0 else 0) %}
+{% if total_alertas > 0 %}
+<div style="margin-bottom:1.5rem;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem;">
+    🔔 Alertas activas
+  </div>
+
+  {% if alertas_stock_bajo %}
+  <div class="alert-panel danger" style="margin-bottom:0.6rem;">
+    <div class="alert-icon">📦</div>
+    <div style="flex:1;">
+      <div class="alert-title">Stock bajo — {{ alertas_stock_bajo|length }} variedad{% if alertas_stock_bajo|length != 1 %}es{% endif %} con menos de 50g disponibles</div>
+      <div class="alert-body">
+        {% for a in alertas_stock_bajo %}
+        <span class="alert-tag {% if a.disponible_g <= 0 %}red{% else %}gold{% endif %}">
+          {{ a.variedad }}: {{ a.disponible_g }}g
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    <a href="{{ url_for('admin_stock') }}" class="btn btn-outline btn-sm" style="align-self:center;">Ver stock →</a>
+  </div>
+  {% endif %}
+
+  {% if cosechas_urgentes %}
+  <div class="alert-panel warning" style="margin-bottom:0.6rem;">
+    <div class="alert-icon">🌾</div>
+    <div style="flex:1;">
+      <div class="alert-title">Cosechas próximas — {{ cosechas_urgentes|length }} cultivo{% if cosechas_urgentes|length != 1 %}s{% endif %} listo{% if cosechas_urgentes|length != 1 %}s{% endif %} en los próximos 14 días</div>
+      <div class="alert-body">
+        {% for c in cosechas_urgentes %}
+        <span class="alert-tag gold">{{ c.codigo }} · {{ c.variedad }} · {{ fmt_fecha(c.cosecha_estimada) }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <a href="{{ url_for('admin_cultivos') }}" class="btn btn-outline btn-sm" style="align-self:center;">Ver cultivos →</a>
+  </div>
+  {% endif %}
+
+  <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
+    {% if en_revision > 0 %}
+    <div class="alert-panel info" style="flex:1;min-width:220px;margin-bottom:0;">
+      <div class="alert-icon">🔍</div>
+      <div style="flex:1;">
+        <div class="alert-title">{{ en_revision }} socio{% if en_revision != 1 %}s{% endif %} en revisión</div>
+        <div class="alert-body">Requieren aprobación o seguimiento.</div>
+      </div>
+      <a href="{{ url_for('admin_socios', etapa='en_revision') }}" class="btn btn-outline btn-sm" style="align-self:center;">Ver →</a>
+    </div>
+    {% endif %}
+    {% if pedidos_pendientes > 0 %}
+    <div class="alert-panel warning" style="flex:1;min-width:220px;margin-bottom:0;">
+      <div class="alert-icon">📋</div>
+      <div style="flex:1;">
+        <div class="alert-title">{{ pedidos_pendientes }} pedido{% if pedidos_pendientes != 1 %}s{% endif %} sin despachar</div>
+        <div class="alert-body">Pendientes o en preparación.</div>
+      </div>
+      <a href="{{ url_for('admin_pedidos', estado='pendiente') }}" class="btn btn-outline btn-sm" style="align-self:center;">Ver →</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi-card" style="border-top-color:#1A3520;">
+    <div class="kpi-value" style="color:#1A3520;">{{ total }}</div>
+    <div class="kpi-label">Socios totales</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#C8A44A;">
+    <div class="kpi-value" style="color:#C8A44A;">{{ nuevos_mes }}</div>
+    <div class="kpi-label">Nuevos este mes</div>
+    <div class="kpi-sub">{{ nuevos_hoy }} hoy</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#2D5C38;">
+    <div class="kpi-value" style="color:#2D5C38;">{{ activos }}</div>
+    <div class="kpi-label">Socios activos</div>
+    <div class="kpi-sub">{{ aprobados }} aprobados esperando</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#4A7C5E;">
+    <div class="kpi-value" style="color:#4A7C5E;">{{ en_revision }}</div>
+    <div class="kpi-label">En revisión</div>
+    <div class="kpi-sub">Requieren atención</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#C8A44A;">
+    <div class="kpi-value" style="color:#C8A44A;">{{ tasa_activacion }}%</div>
+    <div class="kpi-label">Tasa de activación</div>
+    <div class="kpi-sub">Solicitud → Activo</div>
+  </div>
+</div>
+
+<!-- Funnel + Origen -->
+<div class="grid-2" style="gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Funnel de socios</span></div>
+    <div class="card-body">
+      {% set max_val = funnel.values()|max if funnel.values()|max > 0 else 1 %}
+      {% for etapa, cnt in funnel.items() %}
+      <div style="margin-bottom:0.75rem;">
+        <div class="flex-between" style="margin-bottom:0.2rem;">
+          <span style="font-size:0.82rem;color:var(--muted);">{{ etapa_label[etapa] }}</span>
+          <span style="font-size:0.9rem;font-weight:700;color:{{ etapa_color[etapa] }};">{{ cnt }}</span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-bar-fill" style="background:{{ etapa_color[etapa] }};width:{{ ((cnt/max_val)*100)|round }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">¿Cómo nos encontraron?</span></div>
+    <div class="card-body">
+      {% if origenes %}
+        {% set max_o = origenes[0]['cnt'] %}
+        {% for row in origenes %}
+        <div style="margin-bottom:0.6rem;">
+          <div class="flex-between" style="margin-bottom:0.2rem;">
+            <span style="font-size:0.82rem;color:var(--muted);">{{ row['origen']|replace('_',' ')|title }}</span>
+            <span style="font-size:0.88rem;font-weight:600;color:var(--green-deep);">{{ row['cnt'] }}</span>
+          </div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="background:var(--green-light);width:{{ ((row['cnt']/max_o)*100)|round }}%;"></div></div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin datos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Tipo de socio + Diagnósticos -->
+<div class="section-title-dash">Perfil de socios <span>Trazabilidad</span></div>
+
+<div class="grid-3" style="gap:1.5rem;margin-bottom:1.5rem;">
+  <!-- Tipo -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">🌿 Tipo de socio</span></div>
+    <div class="card-body">
+      {% if tipos %}
+        {% for t in tipos %}
+        <div class="stat-row">
+          <span class="stat-key">{{ tipo_socio_label.get(t['tipo_socio'], t['tipo_socio'])|title }}</span>
+          <span class="stat-val">{{ t['cnt'] }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin datos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Top referidores -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">🤝 Top referidores</span></div>
+    <div class="card-body">
+      {% if top_referidores %}
+        {% for r in top_referidores %}
+        <div class="stat-row">
+          <span class="stat-key">{{ r['referido_por']|title }}</span>
+          <span class="stat-val">{{ r['cnt'] }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin referidos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Médicos -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">🩺 Médicos prescriptores</span></div>
+    <div class="card-body">
+      {% if medicos %}
+        {% for m in medicos %}
+        <div class="stat-row">
+          <div>
+            <span class="stat-key fw-600" style="color:var(--text);">{{ m['medico_prescriptor']|title }}</span>
+            {% if m['especialidad_medico'] %}
+            <div class="text-xs text-muted">{{ m['especialidad_medico']|title }}</div>
+            {% endif %}
+          </div>
+          <span class="stat-val">{{ m['cnt'] }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin datos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="grid-3" style="gap:1.5rem;margin-bottom:1.5rem;">
+  <!-- Diagnósticos top -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">🏥 Top diagnósticos</span></div>
+    <div class="card-body">
+      {% if diagnosticos %}
+        {% set max_d = diagnosticos[0]['cnt'] %}
+        {% for d in diagnosticos %}
+        <div style="margin-bottom:0.6rem;">
+          <div class="flex-between" style="margin-bottom:0.2rem;">
+            <span class="text-sm text-muted">{{ d['diagnostico']|title }}</span>
+            <span class="fw-600 text-sm" style="color:var(--green-deep);">{{ d['cnt'] }}</span>
+          </div>
+          <div class="mini-bar"><div class="mini-bar-fill" style="background:#C8A44A;width:{{ ((d['cnt']/max_d)*100)|round }}%;"></div></div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin datos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Género -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">👥 Género</span></div>
+    <div class="card-body">
+      {% if generos %}
+        {% set total_g = generos|sum(attribute='cnt') %}
+        {% for g in generos %}
+        <div class="stat-row">
+          <span class="stat-key">{{ g['genero']|replace('_',' ')|title }}</span>
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <span class="text-xs text-muted">{{ ((g['cnt']/total_g)*100)|round }}%</span>
+            <span class="stat-val">{{ g['cnt'] }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin datos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Barrios -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">📍 Zonas de origen</span></div>
+    <div class="card-body">
+      {% if barrios %}
+        {% for b in barrios %}
+        <div class="stat-row">
+          <span class="stat-key">{{ b['barrio']|title }}</span>
+          <span class="stat-val">{{ b['cnt'] }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted text-sm">Sin datos todavía.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ══ CULTIVOS ══ -->
+<div class="section-title-dash">Producción — Trazabilidad de cultivos <span>REPROCANN</span></div>
+
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card" style="border-top-color:#2D5C38;">
+    <div class="kpi-value" style="color:#2D5C38;">{{ total_plantas_activas }}</div>
+    <div class="kpi-label">Plantas activas</div>
+    <div class="kpi-sub">{{ cultivos_activos }} cultivos en curso</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#E07B30;">
+    <div class="kpi-value" style="color:#E07B30;">{{ plantas_por_etapa.get('floracion',0) }}</div>
+    <div class="kpi-label">En floración</div>
+    <div class="kpi-sub">{{ plantas_por_etapa.get('prefloracion',0) }} en pre-floración</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#C8A44A;">
+    <div class="kpi-value" style="color:#C8A44A;">{{ cosecha_mes_g }}g</div>
+    <div class="kpi-label">Cosechado este mes</div>
+    <div class="kpi-sub">{{ cosecha_total_g }}g total histórico</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#5C3D8F;">
+    <div class="kpi-value" style="color:#5C3D8F;">{{ plantas_por_etapa.get('cosecha',0) + plantas_por_etapa.get('curado',0) }}</div>
+    <div class="kpi-label">Listas / en curado</div>
+    <div class="kpi-sub">Plantas cosechadas</div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:1.5rem;margin-bottom:1.5rem;">
+  <!-- Plantas por etapa -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🌱 Plantas por etapa del ciclo</span>
+      <a href="{{ url_for('admin_cultivos') }}" class="btn btn-outline btn-sm">Ver cultivos</a>
+    </div>
+    <div class="card-body">
+      {% set max_p = plantas_por_etapa.values()|max if plantas_por_etapa.values()|max > 0 else 1 %}
+      {% for e in etapas_cultivo %}
+      <div style="margin-bottom:0.6rem;">
+        <div class="flex-between" style="margin-bottom:0.2rem;">
+          <span style="font-size:0.82rem;color:var(--muted);">{{ etapa_cultivo_label[e] }}</span>
+          <span style="font-size:0.88rem;font-weight:700;color:{{ etapa_cultivo_color[e] }};">{{ plantas_por_etapa.get(e,0) }}</span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-bar-fill" style="background:{{ etapa_cultivo_color[e] }};width:{{ ((plantas_por_etapa.get(e,0)/max_p)*100)|round }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Próximas cosechas -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">🌾 Próximas cosechas estimadas</span></div>
+    {% if proximas_cosechas %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Código</th><th>Variedad</th><th>Socio</th><th>Plantas</th><th>Fecha est.</th></tr></thead>
+        <tbody>
+          {% for c in proximas_cosechas %}
+          <tr onclick="location.href='{{ url_for('admin_cultivo', cid=c.id) }}'">
+            <td style="color:var(--gold);font-weight:600;font-size:0.82rem;">{{ c.codigo }}</td>
+            <td class="fw-600 text-sm">{{ c.variedad }}</td>
+            <td class="text-xs text-muted">{{ c.nombre }} {{ c.apellido }}</td>
+            <td class="text-sm">{{ c.num_plantas }}</td>
+            <td><span class="badge badge-aprobado">{{ fmt_fecha(c.cosecha_estimada) }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-body"><p class="text-muted text-sm">Sin cosechas programadas.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Últimos socios -->
+<div class="section-title-dash">Operativo</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Últimas solicitudes</span>
+    <a href="{{ url_for('admin_socios') }}" class="btn btn-outline btn-sm">Ver todos</a>
+  </div>
+  {% if ultimos %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nombre</th><th>Tipo</th><th>Diagnóstico</th><th>Canal</th><th>Zona</th><th>Etapa</th></tr></thead>
+      <tbody>
+        {% for s in ultimos %}
+        <tr onclick="location.href='{{ url_for('admin_socio', sid=s.id) }}'">
+          <td>
+            <div class="fw-600">{{ s.nombre }} {{ s.apellido }}</div>
+            <div class="text-xs text-muted">{{ s.email or s.telefono }}</div>
+          </td>
+          <td class="text-xs text-muted">{{ tipo_socio_label.get(s.tipo_socio, s.tipo_socio or '—') }}</td>
+          <td class="text-sm text-muted">{{ (s.diagnostico or '—')[:30] }}</td>
+          <td class="text-xs text-muted">{{ (s.como_nos_conocio or '—')|replace('_',' ')|title }}</td>
+          <td class="text-xs text-muted">{{ s.barrio or '—' }}</td>
+          <td>
+            {% set bm = {'solicitud':'badge-solicitud','documentacion':'badge-documentacion','en_revision':'badge-en_revision','aprobado':'badge-aprobado','activo':'badge-activo','inactivo':'badge-inactivo'} %}
+            <span class="badge {{ bm.get(s.etapa,'badge-solicitud') }}">{{ etapa_label.get(s.etapa, s.etapa) }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body"><p class="text-muted text-sm">Sin solicitudes todavía.</p></div>
+  {% endif %}
+</div>
+{% endblock %}
