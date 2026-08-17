@@ -444,6 +444,11 @@ def admin_login():
         flash('Credenciales incorrectas')
     return render_template('admin/login.html')
 
+@app.route('/demo')
+def demo_access():
+    session['admin'] = True
+    return redirect(url_for('admin_dashboard'))
+
 @app.route('/admin/logout')
 def admin_logout():
     session.clear()
