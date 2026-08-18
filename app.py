@@ -53,6 +53,15 @@ def fmt_fecha_larga(d):
 
 app.jinja_env.globals.update(fmt_fecha=fmt_fecha, fmt_fecha_larga=fmt_fecha_larga, club_nombre=CLUB_NOMBRE)
 
+@app.context_processor
+def inject_demo_club():
+    try:
+        db = get_db()
+        row = db.execute("SELECT value FROM config WHERE key='demo_club_nombre'").fetchone()
+        return {'demo_club_nombre': row[0] if row else CLUB_NOMBRE}
+    except Exception:
+        return {'demo_club_nombre': CLUB_NOMBRE}
+
 ETAPAS = ['solicitud','documentacion','en_revision','aprobado','activo','inactivo']
 ETAPA_LABEL = {
     'solicitud':     'Solicitud recibida',
@@ -328,6 +337,10 @@ def init_db():
         UNIQUE(variedad_id, socio_id),
         FOREIGN KEY (variedad_id) REFERENCES variedades(id),
         FOREIGN KEY (socio_id) REFERENCES socios(id)
+    );
+    CREATE TABLE IF NOT EXISTS config (
+        key TEXT PRIMARY KEY,
+        value TEXT
     );
     ''')
     db.commit()
@@ -638,6 +651,9 @@ def contacto_club():
         else:
             ok = _enviar_propuesta(club_nombre, contacto_nombre, email_dest)
             if ok:
+                db = get_db()
+                db.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('demo_club_nombre', ?)", (club_nombre,))
+                db.commit()
                 return redirect(url_for('club_landing', nombre=club_nombre))
             else:
                 if not MAIL_USER:
