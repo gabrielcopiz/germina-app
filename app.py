@@ -635,6 +635,16 @@ def _enviar_propuesta(club_nombre, contacto_nombre, email_dest):
         print(f'[EMAIL ERROR] {e}')
         return False
 
+@app.route('/api/set-demo-club', methods=['POST'])
+def api_set_demo_club():
+    data = request.get_json(silent=True) or {}
+    club = (data.get('club') or '').strip()[:120]
+    if club:
+        db = get_db()
+        db.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('demo_club_nombre', ?)", (club,))
+        db.commit()
+    return jsonify({'ok': True})
+
 @app.route('/contacto-club', methods=['GET', 'POST'])
 def contacto_club():
     enviado = False
