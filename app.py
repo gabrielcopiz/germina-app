@@ -628,7 +628,6 @@ def contacto_club():
             ok = _enviar_propuesta(club_nombre, contacto_nombre, email_dest)
             if ok:
                 return redirect(url_for('club_landing', nombre=club_nombre))
-            email_enviado = email_dest
             else:
                 if not MAIL_USER:
                     error = 'El sistema de envío de emails no está configurado aún. Escribinos directamente a besparkcreativa@gmail.com'
