@@ -91,6 +91,23 @@
 
 {% block content %}
 
+<!-- ══ BOTÓN EXPERIENCIA SOCIO ══ -->
+<a href="{{ url_for('admin_ver_socio') }}" target="_blank" style="
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,var(--green-deep) 0%,var(--green-mid) 100%);
+  border-radius:14px;padding:1.2rem 1.8rem;margin-bottom:1.5rem;
+  text-decoration:none;border:1px solid rgba(200,164,74,0.25);
+  box-shadow:0 4px 18px rgba(26,53,32,0.18);">
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <div style="width:44px;height:44px;border-radius:12px;background:rgba(200,164,74,0.18);display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🌿</div>
+    <div>
+      <div style="font-size:0.65rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,164,74,0.75);margin-bottom:0.2rem;">Vista del paciente</div>
+      <div style="font-size:1rem;font-weight:700;color:#fff;font-family:'Playfair Display',serif;">Ver experiencia de socio</div>
+    </div>
+  </div>
+  <div style="color:rgba(200,164,74,0.9);font-size:1.3rem;">→</div>
+</a>
+
 <!-- ══ BARRA DE HOY ══ -->
 <div class="hoy-grid" style="grid-template-columns:repeat(5,1fr);">
   <div class="hoy-card">

@@ -796,6 +796,17 @@ def admin_logout():
     session.clear()
     return redirect(url_for('admin_login'))
 
+@app.route('/admin/ver-socio')
+@login_required
+def admin_ver_socio():
+    db = get_db()
+    s = db.execute("SELECT token FROM socios WHERE etapa='activo' ORDER BY id LIMIT 1").fetchone()
+    if not s:
+        s = db.execute("SELECT token FROM socios ORDER BY id LIMIT 1").fetchone()
+    if s:
+        return redirect(url_for('portal', token=s['token']))
+    return redirect(url_for('admin_socios'))
+
 @app.route('/admin')
 @app.route('/admin/dashboard')
 @login_required
