@@ -635,15 +635,23 @@ def _enviar_propuesta(club_nombre, contacto_nombre, email_dest):
         print(f'[EMAIL ERROR] {e}')
         return False
 
-@app.route('/api/set-demo-club', methods=['POST'])
+@app.route('/api/set-demo-club', methods=['POST', 'OPTIONS'])
 def api_set_demo_club():
+    if request.method == 'OPTIONS':
+        r = make_response()
+        r.headers['Access-Control-Allow-Origin'] = '*'
+        r.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        r.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return r
     data = request.get_json(silent=True) or {}
     club = (data.get('club') or '').strip()[:120]
     if club:
         db = get_db()
         db.execute("INSERT OR REPLACE INTO config (key, value) VALUES ('demo_club_nombre', ?)", (club,))
         db.commit()
-    return jsonify({'ok': True})
+    r = jsonify({'ok': True})
+    r.headers['Access-Control-Allow-Origin'] = '*'
+    return r
 
 @app.route('/contacto-club', methods=['GET', 'POST'])
 def contacto_club():
