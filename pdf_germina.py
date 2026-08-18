@@ -114,7 +114,7 @@ def generar_propuesta(club_nombre, contacto_nombre):
     s.append(Paragraph(
         '<font color="#1A3520"><b>Germi</b></font><font color="#C8A44A"><b>na</b></font>',
         _st('logo', fontName='Helvetica-Bold', fontSize=42, spaceAfter=4)))
-    s.append(Paragraph('Plataforma de Gestión para Cannabis Social Clubs',
+    s.append(Paragraph('La infraestructura digital completa de tu Cannabis Social Club',
                         _st('lsub', fontSize=12, textColor=G_GRIS, spaceAfter=28)))
     s.append(HRFlowable(width='100%', thickness=2, color=G_MID, spaceAfter=28))
     s.append(Paragraph('Propuesta Comercial Personalizada', H0))
@@ -126,11 +126,11 @@ def generar_propuesta(club_nombre, contacto_nombre):
                         _st('fe', fontSize=10, textColor=G_GRIS, spaceAfter=36)))
 
     intro = [[Paragraph(
-        f'<b>Germina</b> es la primera plataforma SaaS especializada en la gestión integral de '
-        f'Cannabis Social Clubs (CSC) en Argentina. Diseñada para cumplir con la Ley 27.350, '
-        f'digitaliza y profesionaliza todas las operaciones del club: admisión de socios, '
-        f'trazabilidad completa del ciclo productivo, dispensario, cuotas, portal del socio '
-        f'y reportería. Todo en un solo lugar, sin servidores propios, sin inversión en IT.',
+        f'<b>Germina</b> no es un programa más. Es todo lo que tu club necesita para dejar de '
+        f'improvisar y empezar a operar con la seriedad que su trabajo merece: '
+        f'su propio sistema de gestión, su propia presencia digital, trazabilidad completa, '
+        f'una aplicación exclusiva para sus socios y un panel donde ves todo en tiempo real. '
+        f'Todo junto. Sin depender de cinco proveedores distintos. Sin WhatsApp como sistema operativo.',
         BOD)]]
     ti = Table(intro, colWidths=[15*cm])
     ti.setStyle(TableStyle([
@@ -145,69 +145,110 @@ def generar_propuesta(club_nombre, contacto_nombre):
     s.append(PageBreak())
 
     # ══════════════════════════════════════════════
-    # DIAGNÓSTICO
+    # DIAGNÓSTICO — 8 DOLORES
     # ══════════════════════════════════════════════
-    s.append(Paragraph('Los clubes que más crecen son los primeros en perder el control', H0))
+    s.append(Paragraph('Si tu club creció, pero tu operación sigue igual — esto es para vos', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph(
-        'A medida que un CSC crece, la operación manual deja de ser sostenible. '
-        'Lo que antes se manejaba con una planilla y buena voluntad, hoy genera errores, '
-        'riesgos legales y socios insatisfechos. Estos son los cuatro problemas que vemos '
-        'repetirse en casi todos los clubes:', BOD))
+        'No hace falta que tu club tenga problemas graves para necesitar Germina. '
+        'Alcanza con que alguno de estos ocho puntos te resulte familiar:', BOD))
 
     dolores = [
-        ['Problema', 'Consecuencia real'],
-        ['Trazabilidad manual o inexistente',
-         'No podés demostrar de dónde viene cada gramo ni a quién fue. '
-         'Ante una inspección o demanda legal, eso es indefendible.'],
-        ['Stock sin control: mermas invisibles',
-         'Sin registro digital, los errores y mermas se acumulan en silencio. '
-         'Los clubes pierden entre 8 y 15 % de su producción sin saberlo.'],
-        ['Gestión de socios en planillas o papel',
-         'Cuotas vencidas que nadie cobra, documentación incompleta, socios activos '
-         'que no deberían estarlo. Cada error es una responsabilidad del club.'],
-        ['Imagen institucional desactualizada',
-         'Los socios comparan tu club con cualquier servicio digital que usan. '
-         'Un WhatsApp y una planilla no generan confianza ni fidelización.'],
+        ['El problema', 'Por qué importa'],
+        ['No sabés exactamente cuánto stock tenés',
+         'Si el stock teórico no coincide con el real, estás perdiendo producto y dinero '
+         'sin poder demostrar dónde ni cuándo. Cada gramo que no se puede explicar es una pérdida invisible.'],
+        ['Tenés trazabilidad, pero no podés demostrarla',
+         'La información está en planillas, WhatsApp y la cabeza del equipo. '
+         'Cuando te la piden, tenés que reconstruirla. Eso no es trazabilidad: es suerte.'],
+        ['Las mermas no tienen origen ni destino',
+         'Toda diferencia de peso, descarte o pérdida que no queda registrada se convierte '
+         'en un agujero invisible. Germina te permite saber exactamente dónde se está yendo el producto.'],
+        ['Los socios viven en planillas y WhatsApp',
+         'Altas pendientes, documentación incompleta, cuotas vencidas que nadie cobra, '
+         'socios activos que no deberían estarlo. Cada error es una responsabilidad del club.'],
+        ['WhatsApp no puede ser el sistema operativo del club',
+         'WhatsApp sirve para comunicarse, no para gestionar. Cuando la información importante '
+         'vive en conversaciones, se pierde, se duplica y depende de quién tenga el teléfono con esa charla.'],
+        ['El dueño del club no sabe qué está pasando en tiempo real',
+         'Tener que revisar cinco planillas, preguntar a tres personas y reconstruir información '
+         'para saber cuánto stock tenés, cuánto produciste, cuánto entregaste y cuánto perdiste '
+         'no es gestión: es improvisación. Germina te da esa información en una pantalla.'],
+        ['El club tiene operación seria pero presencia digital improvisada',
+         'Instagram y WhatsApp no alcanzan para transmitir imagen institucional. '
+         'Tu club merece su propia presencia digital: sitio propio, identidad propia, '
+         'proceso de membresía propio. No una página genérica: la tuya.'],
+        ['Los socios no tienen ninguna experiencia digital con el club',
+         'Cada socio sigue dependiendo de un mensaje de WhatsApp para saber su cupo, '
+         'su estado de cuota o qué variedades hay disponibles. '
+         'Tu club puede darles algo mejor: su propio portal, en su celular, con toda su información.'],
     ]
-    td = _header_table(dolores, [4.5*cm, 10.5*cm])
+    td = _header_table(dolores, [4.8*cm, 10.2*cm])
     s.append(td)
     s.append(Spacer(1, 0.4*cm))
-    s.append(_tip('Ninguno de estos problemas requiere más personal. Requieren el sistema correcto.'))
+    s.append(_tip('Ninguno de estos problemas se resuelve con más personal. Se resuelven con el sistema correcto.'))
     s.append(PageBreak())
 
     # ══════════════════════════════════════════════
-    # LA SOLUCIÓN
+    # LA SOLUCIÓN — 7 PILARES
     # ══════════════════════════════════════════════
-    s.append(Paragraph('La plataforma Germina: todo lo que tu club necesita', H1))
-    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph('Germina. Todo lo que hoy está disperso, en un solo lugar.', H1))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=8))
+    s.append(Paragraph(
+        'No necesitás contratar distintos proveedores para resolver cada problema. '
+        'Germina concentra en un solo lugar todo lo que tu club necesita para operar con seriedad:', BOD))
 
     modulos = [
-        ['Módulo', 'Qué resuelve'],
-        ['Panel de administración',   'Dashboard con KPIs en tiempo real: socios, dispensaciones, cuotas, alertas de aforo. Vista completa del club en una pantalla.'],
-        ['Gestión de socios',         'Alta, etapas del proceso (solicitud → activo), documentación, notas internas y control de cupos. Sin planillas.'],
-        ['Dispensario digital',        'Cada dispensación queda registrada con variedad, gramos, socio y fecha. Trazabilidad completa en tiempo real.'],
-        ['Ciclo productivo',           'Registro del flujo Semilla → Germinación → Vegetativa → Floración → Cosecha → Curado → Stock → Entrega.'],
-        ['Catálogo de variedades',     'Fichas con genética, THC/CBD, efectos, indicaciones y fotos. Visible para administradores y socios.'],
-        ['Control de cuotas',          'Registro de pagos, vencimientos automáticos y alertas. El socio ve su estado en tiempo real desde su portal.'],
-        ['Control de aforo',           'Entradas y salidas en tiempo real. Lista de socios presentes con hora exacta. Registro histórico diario.'],
-        ['Portal del socio (mobile)',  'App web desde el celular: carnet digital con QR, cupo disponible, catálogo con calificaciones e historial personal.'],
-        ['Pedidos y delivery',         'Gestión de pedidos con código único, estado y seguimiento. El socio recibe su orden sin pasar por el club.'],
-        ['Reportes y exportación',     'Informe del día automático. Exportación CSV de socios y dispensaciones. Todo listo para tu contador o auditoría.'],
+        ['Qué resuelve', 'Cómo lo resuelve Germina'],
+        ['Dejá de buscar información de socios en WhatsApp y planillas',
+         'Expediente digital por socio: etapa, documentación, cuota, notas internas y cupo. '
+         'Alta, seguimiento y baja en un solo lugar.'],
+        ['Sabé exactamente cuánto tenés, dónde está y qué salió',
+         'Control de stock con trazabilidad por lote. Cada gramo registrado con origen, destino y fecha. '
+         'Las mermas quedan documentadas, no desaparecen.'],
+        ['Registrá cada entrega con trazabilidad completa',
+         'Dispensario digital: variedad, gramos, socio y fecha. Sin anotaciones. '
+         'El sistema verifica cupos y registra automáticamente.'],
+        ['Conocé el ciclo completo de tu producción',
+         'Módulo de ciclo productivo: Semilla → Cultivo → Cosecha → Curado → Stock → Entrega. '
+         'Cada etapa documentada. Podés reconstruir el historial completo de cualquier lote.'],
+        ['Tu club necesita presencia digital a la altura de la seriedad con la que trabajás',
+         'Landing personalizada con identidad propia del club, formulario de membresía, '
+         'catálogo de variedades y acceso al portal del socio. No una plantilla: la de tu club.'],
+        ['Tu club también vive en el celular de cada socio',
+         'App exclusiva para socios: carnet digital con QR, cupo mensual, catálogo de flores '
+         'con calificaciones e historial de retiros. Sin descargar nada. Desde el celular.'],
+        ['Todo el club bajo control desde un solo lugar',
+         'Panel central con todos los indicadores en tiempo real: socios activos, stock, '
+         'dispensaciones del día, cuotas vencidas, aforo y alertas. Dejás de preguntar qué pasa. Lo ves.'],
     ]
-    s.append(_header_table(modulos, [4.5*cm, 10.5*cm]))
-    s.append(Spacer(1, 0.5*cm))
+    s.append(_header_table(modulos, [5.5*cm, 9.5*cm]))
+    s.append(PageBreak())
 
-    # Antes / Después
-    s.append(Paragraph('Antes y después de implementar Germina', H2))
+    # ══════════════════════════════════════════════
+    # ANTES Y DESPUÉS
+    # ══════════════════════════════════════════════
+    s.append(Paragraph('Antes y después: la diferencia en concreto', H1))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+
     comp = [
         ['Sin Germina', 'Con Germina'],
-        ['12 horas semanales en administración manual', '< 1 hora semanal. El sistema hace el registro solo.'],
-        ['Mermas invisibles: 8–15% del stock sin explicación', 'Trazabilidad total. Cada gramo tiene origen, destino y fecha.'],
-        ['Socios gestionados en WhatsApp y papel', 'Portal digital con carnet QR, historial y cuota en tiempo real.'],
-        ['Cuotas que se cobran cuando alguien se acuerda', 'Alertas automáticas. El socio ve su vencimiento desde el celular.'],
-        ['Imagen informal que genera desconfianza', 'Club profesional que fideliza socios y atrae nuevos por reputación.'],
-        ['Imposible escalar más de 30–40 socios sin caos', 'Sistema diseñado para crecer: funciona igual con 20 o 300 socios.'],
+        ['WhatsApp + Excel + papel + memoria del equipo',
+         'Un solo sistema. Todo registrado. Todo accesible desde cualquier lugar.'],
+        ['Stock teórico que no coincide con el real',
+         'Sabés cuánto tenés, cuánto salió y dónde está la diferencia.'],
+        ['Mermas que nadie puede explicar',
+         'Cada gramo tiene origen, destino y responsable. Las pérdidas quedan documentadas.'],
+        ['Socios gestionados en conversaciones y planillas',
+         'Expediente digital: documentación, cuota, cupo e historial en un solo lugar.'],
+        ['El dueño reconstruye información para tomar decisiones',
+         'El dashboard muestra todo en tiempo real. Dejás de preguntar. Lo ves.'],
+        ['Instagram y WhatsApp como única presencia digital',
+         'Landing personalizada del club con identidad propia y proceso de membresía.'],
+        ['Socios que dependen de un mensaje para saber su estado',
+         'Cada socio tiene su portal: cupo, carnet, catálogo e historial desde el celular.'],
+        ['Imposible escalar más de 30–40 socios sin caos',
+         'Diseñado para crecer: funciona igual con 20 o con 300 socios.'],
     ]
     tc2 = Table(comp, colWidths=[7.5*cm, 7.5*cm])
     tc2.setStyle(TableStyle([
@@ -230,16 +271,123 @@ def generar_propuesta(club_nombre, contacto_nombre):
     s.append(PageBreak())
 
     # ══════════════════════════════════════════════
+    # LANDING PERSONALIZADA
+    # ══════════════════════════════════════════════
+    s.append(Paragraph('Tu club necesita su propia presencia digital', H1))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph(
+        'Germina no te da una página genérica. Crea la presencia digital propia de tu club: '
+        'con tu nombre, tu identidad, tu información y tu proceso de membresía.', BOD))
+
+    landing_items = [
+        ['Qué incluye', 'Para qué sirve'],
+        ['Identidad visual propia del club',
+         'Tu nombre, tu imagen, tu color. No una plantilla: la presencia digital de tu club específicamente.'],
+        ['Información institucional del club',
+         'Quiénes son, cómo funciona el club, qué variedades tienen, cómo asociarse.'],
+        ['Formulario de membresía integrado',
+         'Los interesados completan sus datos directamente. El club los recibe en el sistema, listos para procesar.'],
+        ['Catálogo de variedades visible',
+         'Las flores disponibles, con genética, efectos e indicaciones. Tu club se muestra profesional desde el primer contacto.'],
+        ['Acceso al portal del socio',
+         'Quienes ya son socios acceden directamente a su portal desde la landing. Todo conectado.'],
+        ['Conexión directa con el sistema de gestión',
+         'Cada formulario enviado llega al panel de administración. Sin copiar datos. Sin perder información.'],
+    ]
+    s.append(_header_table(landing_items, [5*cm, 10*cm]))
+    s.append(Spacer(1, 0.4*cm))
+    s.append(_alert(
+        '⚠️  <b>Importante:</b> No recibís una plantilla que comparte la estética de otro club. '
+        'Germina desarrolla la presencia digital específica de tu club. '
+        'Con tu identidad. Con tu nombre en grande. Con tu proceso de contacto y membresía.'))
+    s.append(PageBreak())
+
+    # ══════════════════════════════════════════════
+    # APP EXCLUSIVA PARA SOCIOS
+    # ══════════════════════════════════════════════
+    s.append(Paragraph('Tu club en el bolsillo de cada socio', H1))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph(
+        'Cada socio tiene acceso a su propio portal digital, conectado directamente con el sistema del club. '
+        'Sin descargar nada. Ingresa con su DNI desde cualquier celular y tiene todo en un lugar.', BOD))
+
+    app_items = [
+        ['Función', 'Qué ve y puede hacer el socio'],
+        ['Carnet digital con QR',
+         'Su credencial de socio siempre disponible. Se escanea en el club para identificarlo en segundos.'],
+        ['Estado de cupo mensual',
+         'Sabe cuántos gramos consumió y cuántos le quedan. Sin preguntar al club por WhatsApp.'],
+        ['Estado de cuota',
+         'Ve si su membresía está al día, cuándo vence y cuál es su estado. Sin llamadas.'],
+        ['Catálogo de variedades',
+         'Accede a las flores disponibles con genética, THC/CBD, efectos e indicaciones. '
+         'Puede calificar las variedades que ya probó.'],
+        ['Historial de retiros',
+         'Todos sus retiros agrupados por mes. Su tratamiento documentado y accesible.'],
+        ['Perfil e información personal',
+         'Sus datos, su médico prescriptor y su documentación disponibles desde el celular.'],
+    ]
+    s.append(_header_table(app_items, [4.5*cm, 10.5*cm]))
+    s.append(Spacer(1, 0.4*cm))
+    s.append(_tip(
+        'El resultado: el socio deja de depender de un mensaje de WhatsApp para saber su estado. '
+        'Y el club deja de responder mensajes repetitivos que el sistema puede responder solo.'))
+    s.append(PageBreak())
+
+    # ══════════════════════════════════════════════
+    # DASHBOARD Y TRAZABILIDAD
+    # ══════════════════════════════════════════════
+    s.append(Paragraph('El centro de control de tu club', H1))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=8))
+    s.append(Paragraph(
+        'Dejás de preguntar qué está pasando. Lo ves. '
+        'El panel central muestra todo el club en tiempo real desde una sola pantalla:', BOD))
+
+    dash_items = [
+        ['Indicador', 'Qué te dice'],
+        ['Socios activos y en proceso',        'Cuántos socios operativos tenés y cuántos están pendientes de completar el proceso.'],
+        ['Dispensaciones del día',             'Cuántos retiros hubo hoy, qué variedad y cuántos gramos.'],
+        ['Stock disponible por variedad',      'Cuánto tenés de cada cepa. En tiempo real, no cuando alguien lo anota.'],
+        ['Cuotas vencidas y por vencer',       'Quiénes tienen la membresía vencida. Quiénes vencen en los próximos días.'],
+        ['Documentación pendiente',            'Qué socio tiene documentación incompleta. Para que nada se pierda.'],
+        ['Aforo en tiempo real',               'Cuántos socios hay en el club ahora mismo. Registro de entradas y salidas.'],
+        ['Alertas de stock bajo',              'Cuando una variedad está por agotarse, el sistema te avisa. Sin sorpresas.'],
+    ]
+    s.append(_header_table(dash_items, [5*cm, 10*cm]))
+    s.append(Spacer(1, 0.5*cm))
+
+    s.append(Paragraph('Trazabilidad completa: de la semilla a la entrega', H2))
+    s.append(Paragraph(
+        'Podés reconstruir el recorrido completo de cualquier lote. Cada etapa tiene su registro, '
+        'su responsable y su fecha:', BOD))
+
+    traza = [
+        ['Etapa', 'Qué se registra'],
+        ['Semilla / Genética',   'Origen, banco, cepa y fecha de inicio del ciclo.'],
+        ['Cultivo',              'Técnica, responsable, insumos y fechas por etapa (germinación, vegetativa, floración).'],
+        ['Cosecha',              'Fecha, gramos húmedos, responsable y lote asignado.'],
+        ['Secado y curado',      'Peso inicial y final, mermas documentadas, tiempo del proceso.'],
+        ['Stock',                'Ingreso al inventario con código único de lote, cantidad y estado.'],
+        ['Entrega al socio',     'Socio, variedad, gramos, fecha y número de lote. Cupo descontado automáticamente.'],
+    ]
+    s.append(_header_table(traza, [4*cm, 11*cm]))
+    s.append(Spacer(1, 0.3*cm))
+    s.append(_tip(
+        'Germina organiza y documenta tu operación. No garantiza cumplimiento legal automático, '
+        'pero te da las herramientas para poder demostrar lo que hacés cuando lo necesitás.'))
+    s.append(PageBreak())
+
+    # ══════════════════════════════════════════════
     # PROPUESTA A
     # ══════════════════════════════════════════════
     s.append(Paragraph('Propuesta A — Implementación Estándar', H1))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph(
-        'Acceso completo a la plataforma con implementación guiada, '
-        'configuración a medida del club y soporte dedicado durante los primeros 3 meses.', BOD))
+        'Acceso completo a toda la infraestructura Germina: sistema de gestión, landing personalizada del club, '
+        'portal del socio, trazabilidad, dashboard y capacitación del equipo. '
+        'Implementación guiada en 4 semanas con soporte dedicado los primeros 3 meses.', BOD))
 
-    # Desglose
-    s.append(Paragraph('Desglose de la implementación (USD 7.500)', H2))
+    s.append(Paragraph('Qué incluye la implementación (USD 7.500)', H2))
     desglose = [
         ['Concepto', 'Detalle', 'Valor'],
         ['Configuración del entorno',
@@ -248,24 +396,24 @@ def generar_propuesta(club_nombre, contacto_nombre):
         ['Migración de socios',
          'Carga e importación de socios existentes (hasta 200). Validación de datos.',
          'USD 600'],
-        ['Configuración del portal del socio',
-         'Identidad visual del club, variedades iniciales y QR de socios.',
+        ['Landing personalizada del club',
+         'Presencia digital propia: identidad, catálogo, formulario de membresía y acceso al portal del socio.',
+         'USD 700'],
+        ['Portal del socio + app mobile',
+         'Configuración del portal con variedades, carnet QR y cupos por socio.',
          'USD 700'],
         ['Integración del ciclo productivo',
-         'Configuración del flujo completo Semilla → Entrega según tu operación.',
+         'Configuración del flujo completo Semilla → Entrega según la operación del club.',
          'USD 900'],
         ['Capacitación del equipo',
-         'Hasta 3 sesiones de 90 minutos con el equipo. Manual incluido.',
+         'Hasta 3 sesiones de 90 minutos con el equipo. Manual de usuario incluido.',
          'USD 500'],
         ['Desarrollo a medida + ajustes',
          'Adaptaciones específicas del club durante la implementación.',
          'USD 1.500'],
         ['Soporte técnico 3 meses',
-         'Respuesta en menos de 24 horas. Canal directo con el equipo.',
-         'USD 900'],
-        ['Licencia primer año',
-         'Acceso completo a la plataforma y actualizaciones incluidas.',
-         'USD 1.600'],
+         'Respuesta en menos de 24 horas. Canal directo con el equipo de Germina.',
+         'USD 800'],
         ['TOTAL', '', 'USD 7.500'],
     ]
     td2 = Table(desglose, colWidths=[4.5*cm, 7.5*cm, 3*cm])
@@ -290,18 +438,17 @@ def generar_propuesta(club_nombre, contacto_nombre):
     s.append(td2)
     s.append(Spacer(1, 0.4*cm))
 
-    # ROI
-    s.append(Paragraph('Retorno sobre la inversión (ROI estimado)', H2))
+    s.append(Paragraph('Retorno sobre la inversión (estimado referencial)', H2))
     s.append(Paragraph(
-        'El siguiente cálculo es conservador y se basa en un club con 40 socios y cuota mensual '
-        'de $8.000 ARS (≈ USD 8). Ajustá los números a tu realidad:', BOD))
+        'Cálculo conservador para un club con 40 socios y cuota mensual de $8.000 ARS (≈ USD 8). '
+        'Ajustá los números a la realidad de tu club:', BOD))
     roi = [
         ['Concepto', 'Mensual', 'Anual'],
-        ['Ingresos por cuotas (40 socios × USD 8)', 'USD 320', 'USD 3.840'],
-        ['Ahorro en tiempo admin (10h/semana × USD 5/h)', 'USD 200', 'USD 2.400'],
-        ['Reducción de mermas (10% de USD 500 en stock)', 'USD 50', 'USD 600'],
-        ['Total beneficio estimado', 'USD 570', 'USD 6.840'],
-        ['Mantenimiento mensual (desde mes 4)', '–USD 300', '–USD 2.700'],
+        ['Cuotas cobradas (40 socios × USD 8)',       'USD 320', 'USD 3.840'],
+        ['Ahorro en administración (10h/sem × USD 5)', 'USD 200', 'USD 2.400'],
+        ['Reducción de mermas (10% de USD 500 stock)', 'USD 50',  'USD 600'],
+        ['Total beneficio estimado',                   'USD 570', 'USD 6.840'],
+        ['Mantenimiento mensual (desde mes 4)',        '–USD 299','–USD 2.691'],
         ['Recupero de implementación', 'En 13–15 meses con estos números', ''],
     ]
     troi = Table(roi, colWidths=[8*cm, 3.5*cm, 3.5*cm])
@@ -326,13 +473,11 @@ def generar_propuesta(club_nombre, contacto_nombre):
         ('SPAN',          (1,-1),(2,-1)),
     ]))
     s.append(troi)
-    s.append(NOT)
     s.append(Paragraph(
-        '* Cálculo estimativo. Los valores reales variarán según el tamaño del club, '
-        'cuota, stock y eficiencia del equipo.', NOT))
+        '* Cálculo estimativo. Los resultados reales varían según el tamaño, cuota, '
+        'stock y eficiencia de cada club. No prometemos resultados económicos específicos.', NOT))
     s.append(Spacer(1, 0.4*cm))
 
-    # Pago
     s.append(Paragraph('Modalidades de pago', H2))
     pago_a = [
         ['Opción', 'Monto', 'Detalle'],
@@ -350,10 +495,10 @@ def generar_propuesta(club_nombre, contacto_nombre):
     s.append(Paragraph('Propuesta B — Modelo de Sociedad', H1))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph(
-        'Diseñada para CSC en crecimiento que prefieren reducir la inversión inicial. '
-        'Germina absorbe gran parte del costo de implementación y a cambio participa '
-        'mensualmente en los ingresos que el club genera a través de la plataforma. '
-        'Es un modelo de <b>piel en el juego</b>: nos va bien cuando a vos te va bien.', BOD))
+        'Para clubes que quieren toda la infraestructura Germina con menor inversión inicial. '
+        'Germina absorbe gran parte del costo de implementación y participa mensualmente '
+        'en los ingresos del club. Es un modelo de <b>piel en el juego</b>: '
+        'nos va bien cuando a vos te va bien.', BOD))
 
     pb = [
         ['Concepto', 'Condición'],
@@ -362,7 +507,7 @@ def generar_propuesta(club_nombre, contacto_nombre):
         ['Mantenimiento mensual',         'Incluido en la participación (sin costo adicional)'],
         ['Duración mínima del acuerdo',   '12 meses calendario desde la firma'],
         ['Renovación',                    'Automática mes a mes a partir del mes 13'],
-        ['Cláusula de salida',            'Preaviso de 30 días a partir del mes 13'],
+        ['Cláusula de salida',            'Preaviso de 30 días a partir del mes 13. Sin penalidades.'],
         ['Exclusividad territorial',      'A definir por zona geográfica en el contrato'],
     ]
     s.append(_header_table(pb, [6.5*cm, 8.5*cm]))
@@ -378,15 +523,14 @@ def generar_propuesta(club_nombre, contacto_nombre):
         'La liquidación es mensual, dentro de los primeros 5 días hábiles del mes siguiente. '
         'El club recibe un reporte detallado con el cálculo antes de cada pago. '
         'El método de auditoría se define y firma antes del inicio.', BOD))
-
     s.append(Spacer(1, 0.3*cm))
 
     garants_b = [[Paragraph(
         '🔒  <b>Tu operación, tus datos.</b> El club mantiene el 100% de la propiedad de todos '
-        'los datos de sus socios y operaciones. Germina no tiene acceso a la información '
-        'individual de socios ni puede utilizarla con ningún fin comercial. '
+        'los datos de sus socios y su operación. Germina no accede a la información individual '
+        'de los socios ni puede utilizarla con ningún fin. '
         'Si el acuerdo termina, el club recibe una exportación completa de toda su base de datos '
-        'en formato abierto (CSV/JSON) dentro de las 48 horas.',
+        'en formato CSV/JSON dentro de las 48 horas. Sin condiciones.',
         _st('gb', fontSize=9.5, textColor=G_INK, leading=14))]]
     tgb = Table(garants_b, colWidths=[15*cm])
     tgb.setStyle(TableStyle([
@@ -403,29 +547,29 @@ def generar_propuesta(club_nombre, contacto_nombre):
     # ══════════════════════════════════════════════
     # PRUEBA SOCIAL
     # ══════════════════════════════════════════════
-    s.append(Paragraph('Resultados del club piloto', H1))
+    s.append(Paragraph('Lo que pasó en el club donde ya está funcionando', H1))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph(
-        'Germina está operativo en producción real. A continuación compartimos '
-        'los resultados del club piloto con el que desarrollamos y validamos la plataforma '
+        'Germina está operativo en producción real. Estos son los resultados del club piloto '
+        'con el que desarrollamos y validamos la plataforma '
         '(datos anonimizados por acuerdo de confidencialidad):', BOD))
 
     piloto = [
         ['Dato del club piloto', 'Detalle'],
-        ['Localización',          'Gran Buenos Aires (zona norte)'],
-        ['Socios al inicio',      '38 socios activos gestionados manualmente'],
-        ['Tiempo de implementación', '4 semanas (dentro del plazo garantizado)'],
+        ['Localización',            'Gran Buenos Aires (zona norte)'],
+        ['Socios al inicio',        '38 socios activos gestionados manualmente'],
+        ['Tiempo de implementación','4 semanas (dentro del plazo garantizado)'],
     ]
     s.append(_header_table(piloto, [6*cm, 9*cm]))
     s.append(Spacer(1, 0.4*cm))
 
     resultados = [
-        ['Métrica', 'Antes', 'Después (90 días)', 'Variación'],
-        ['Tiempo admin semanal',    '14 horas',   '1.5 horas',  '–89%'],
-        ['Socios con cuota al día', '61%',        '94%',        '+33 pp'],
-        ['Mermas no explicadas',    '12% del stock', '< 1%',    '–91%'],
-        ['Satisfacción del socio',  'Sin medir',  '4.7/5 ★',   'Nuevo KPI'],
-        ['Tiempo de alta de socio', '3–5 días',   '< 2 horas', '–90%'],
+        ['Métrica', 'Antes', 'Después (90 días)', 'Cambio'],
+        ['Tiempo admin semanal',    '14 horas',      '1.5 horas',  '–89%'],
+        ['Socios con cuota al día', '61%',           '94%',        '+33 pp'],
+        ['Mermas sin explicación',  '12% del stock', '< 1%',       '–91%'],
+        ['Satisfacción del socio',  'Sin medir',     '4.7/5 ★',    'Nuevo KPI'],
+        ['Alta de nuevo socio',     '3–5 días',      '< 2 horas',  '–90%'],
     ]
     tr = Table(resultados, colWidths=[5*cm, 3*cm, 4*cm, 3*cm])
     tr.setStyle(TableStyle([
@@ -447,7 +591,6 @@ def generar_propuesta(club_nombre, contacto_nombre):
     ]))
     s.append(tr)
     s.append(Spacer(1, 0.3*cm))
-    s.append(NOT)
     s.append(Paragraph(
         '* Datos del club piloto anonimizados. Los resultados son específicos de ese contexto '
         'y pueden variar según el tamaño, estructura y operación de cada club.', NOT))
@@ -481,14 +624,13 @@ def generar_propuesta(club_nombre, contacto_nombre):
         ('¿El sistema funciona si no tenemos buena conexión a internet?',
          'La plataforma requiere conexión a internet. Es una aplicación web alojada en la nube. '
          'Para el control de aforo presencial recomendamos tener WiFi en el club. '
-         'El portal del socio funciona desde el celular del socio con cualquier conexión.'),
+         'El portal del socio funciona desde el celular con cualquier conexión.'),
         ('¿Puedo seguir usando el sistema si no renuevo el mantenimiento?',
-         'El acceso al sistema está vinculado al pago del mantenimiento mensual. '
-         'Si elegís no renovar, acordamos un período de 30 días para exportar todos tus datos '
-         'antes del cierre de acceso. Nunca perdés información.'),
+         'El acceso está vinculado al pago mensual. Si elegís no renovar, acordamos 30 días '
+         'para exportar todos tus datos antes del cierre. Nunca perdés información.'),
         ('¿Germina tiene acceso a los datos de salud de mis socios?',
          'No. Los datos de diagnóstico, médico prescriptor y documentación de los socios '
-         'están alojados en el servidor del club. Germina no tiene acceso a esa información '
+         'están alojados en el servidor del club. Germina no accede a esa información '
          'y no puede utilizarla con ningún fin. El club es el único responsable de su custodia.'),
     ]
 
@@ -501,20 +643,16 @@ def generar_propuesta(club_nombre, contacto_nombre):
     # ══════════════════════════════════════════════
     # CRONOGRAMA + GARANTÍAS
     # ══════════════════════════════════════════════
-    s.append(Paragraph('Implementación en 4 semanas', H1))
+    s.append(Paragraph('De la firma al club operando: 4 semanas', H1))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     crono = [
-        ['Semana', 'Actividades'],
-        ['Semana 1', 'Configuración del entorno · Carga inicial de datos · Definición de variedades y cupos'],
+        ['Semana', 'Qué pasa'],
+        ['Semana 1', 'Configuración del entorno · Carga inicial de datos · Definición de variedades y cupos · Landing del club'],
         ['Semana 2', 'Migración de socios · Configuración del portal del socio · Pruebas internas'],
         ['Semana 3', 'Capacitación del equipo · Ajustes específicos · Prueba piloto con socios seleccionados'],
-        ['Semana 4', 'Lanzamiento oficial · Soporte intensivo · Entrega de documentación y manual'],
+        ['Semana 4', 'Lanzamiento oficial · Soporte intensivo · Entrega del manual del usuario'],
     ]
     tc = _header_table(crono, [3.5*cm, 11.5*cm])
-    tc.setStyle(TableStyle([
-        ('FONTNAME',  (0,1), (0,-1), 'Helvetica-Bold'),
-        ('TEXTCOLOR', (0,1), (0,-1), G_MID),
-    ]), overrideFlowable=False)
     s.append(tc)
     s.append(Spacer(1, 0.5*cm))
 
@@ -533,22 +671,25 @@ def generar_propuesta(club_nombre, contacto_nombre):
     # ══════════════════════════════════════════════
     # CTA FINAL
     # ══════════════════════════════════════════════
-    s.append(Paragraph('El siguiente paso es simple', H1))
+    s.append(Paragraph('Si seguís trabajando como hasta ahora, seguís con los mismos problemas', H1))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph(
-        f'Esta propuesta tiene validez hasta el <b>{validez}</b>. '
-        f'Después de esa fecha los valores pueden ajustarse.', BOD))
+        'Tu club ya creció. Ahora necesita infraestructura para acompañar ese crecimiento. '
+        'Germina no viene a cambiar la forma en que tu club trabaja. '
+        'Viene a quitarte de encima el trabajo que nunca deberías haber tenido que hacer manualmente.',
+        BOD))
     s.append(Paragraph(
-        'Te proponemos una demo de 30 minutos por videollamada. '
-        'Sin presentaciones de PowerPoint: te mostramos la plataforma funcionando en vivo, '
-        'con datos reales, respondemos todas tus dudas y si decidís avanzar '
-        'arrancamos en la semana siguiente.', BOD))
+        f'Esta propuesta tiene validez hasta el <b>{validez}</b>. '
+        f'Te proponemos una demo de 30 minutos por videollamada: '
+        f'te mostramos la plataforma funcionando en vivo, con datos reales, '
+        f'respondemos todas tus dudas y si decidís avanzar arrancamos en la semana siguiente.',
+        BOD))
 
     pasos = [
-        ['1', f'Respondé este mail o escribinos al WhatsApp confirmando que querés la demo. Te enviamos link de videollamada en el día.'],
-        ['2', f'Demo de 30 minutos. Te mostramos todo en vivo. Sin compromiso.'],
-        ['3', f'Si querés avanzar, elegís Propuesta A o B, firmamos el acuerdo y arrancamos la implementación.'],
-        ['4', f'En 4 semanas tu club está operando con Germina.'],
+        ['1', 'Respondé este mail o escribinos al WhatsApp. Te enviamos el link de la videollamada en el día.'],
+        ['2', 'Demo de 30 minutos en vivo. Sin PowerPoint: el sistema funcionando con datos reales.'],
+        ['3', 'Elegís Propuesta A o B, firmamos el acuerdo y arrancamos en la semana siguiente.'],
+        ['4', 'En 4 semanas tu club está operando con Germina.'],
     ]
     tpp = Table(pasos, colWidths=[0.8*cm, 14.2*cm])
     tpp.setStyle(TableStyle([
@@ -567,7 +708,7 @@ def generar_propuesta(club_nombre, contacto_nombre):
     contacto_box = [[Paragraph(
         '📧  <b>besparkcreativa@gmail.com</b><br/>'
         '📱  Respondé este mail y te pasamos el WhatsApp directo<br/>'
-        '🌐  germina-app.onrender.com/contacto-club',
+        '🌐  germina-clubs.netlify.app',
         _st('ct', fontSize=10, textColor=G_INK, leading=17))]]
     tct = Table(contacto_box, colWidths=[15*cm])
     tct.setStyle(TableStyle([
@@ -585,7 +726,7 @@ def generar_propuesta(club_nombre, contacto_nombre):
     footer = [[
         Paragraph('<b>Spark Creativa</b><br/>besparkcreativa@gmail.com',
                   _st('fl', fontSize=8, textColor=G_GRIS, leading=12)),
-        Paragraph(f'<b>Germina</b> · germina-app.onrender.com<br/>'
+        Paragraph(f'<b>Germina</b> · germina-clubs.netlify.app<br/>'
                   f'Propuesta válida hasta {validez}',
                   _st('fr', fontSize=8, textColor=G_GRIS, leading=12, alignment=TA_RIGHT)),
     ]]
