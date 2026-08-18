@@ -1,0 +1,264 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Catálogo de Variedades — Germina Admin{% endblock %}
+{% block topbar_title %}🌿 Catálogo de Variedades{% endblock %}
+
+{% block extra_head %}
+<style>
+.var-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+}
+.var-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.var-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: var(--green-light); }
+.var-card.inactiva { opacity: 0.55; }
+.var-card-top {
+  padding: 1.2rem 1.4rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.var-nombre {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; font-weight: 500; color: var(--green-deep);
+  margin-bottom: 0.3rem;
+}
+.var-gen-badge {
+  display: inline-block; padding: 0.18rem 0.6rem; border-radius: 100px;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.gen-indica      { background: #E8D5F5; color: #5C2D8A; }
+.gen-sativa      { background: #FEF3C7; color: #7A5C00; }
+.gen-hibrido     { background: var(--green-pale); color: var(--green-deep); }
+.gen-cbd_dominante { background: #D5EEF5; color: #1A4A5C; }
+.gen-auto        { background: #F5E8D5; color: #5C3D1A; }
+.var-body { padding: 1rem 1.4rem; }
+.var-pct-row {
+  display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;
+}
+.var-pct-label { font-size: 0.68rem; font-weight: 700; color: var(--muted); min-width: 32px; text-transform: uppercase; }
+.var-pct-bar { flex: 1; height: 6px; background: var(--cream-dark); border-radius: 3px; overflow: hidden; }
+.var-pct-fill { height: 100%; border-radius: 3px; }
+.thc-fill { background: #E07B30; }
+.cbd-fill { background: var(--green-mid); }
+.var-pct-num { font-size: 0.72rem; font-weight: 700; min-width: 34px; text-align: right; }
+.var-desc {
+  font-size: 0.8rem; color: var(--muted); line-height: 1.55;
+  margin: 0.6rem 0; display: -webkit-box; -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.var-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
+.var-tag {
+  background: var(--cream); border: 1px solid var(--border); border-radius: 100px;
+  font-size: 0.65rem; padding: 0.15rem 0.5rem; color: var(--green-deep);
+}
+.var-card-footer {
+  padding: 0.7rem 1.4rem;
+  border-top: 1px solid var(--border);
+  background: var(--cream);
+  display: flex; gap: 0.4rem; justify-content: flex-end;
+}
+.btn-danger-sm {
+  background: transparent; color: #C0392B; border: 1px solid #F5C6C6;
+  border-radius: 6px; font-size: 0.72rem; padding: 0.3rem 0.6rem; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 600; transition: all 0.15s;
+}
+.btn-danger-sm:hover { background: #FDEAEA; }
+.edit-panel {
+  display: none; padding: 1rem 1.4rem;
+  border-top: 1.5px solid var(--gold); background: #FFFDF5;
+}
+.edit-panel.open { display: block; }
+.add-form {
+  background: var(--white); border: 1.5px solid var(--green-mid);
+  border-radius: 14px; padding: 1.5rem; margin-bottom: 2rem;
+  display: none;
+}
+.add-form.open { display: block; }
+.pct-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+  <div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--green-deep);font-weight:500;">Catálogo de Variedades</h1>
+    <p style="font-size:0.8rem;color:var(--muted);margin-top:0.2rem;">
+      {{ variedades|length }} variedad{% if variedades|length != 1 %}es{% endif %} registrada{% if variedades|length != 1 %}s{% endif %} · Fichas con información medicinal para cada una
+    </p>
+  </div>
+  <button onclick="document.getElementById('form-add').classList.toggle('open')" class="btn btn-primary">
+    + Agregar variedad
+  </button>
+</div>
+
+<!-- Formulario agregar -->
+<div id="form-add" class="add-form">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <span style="font-weight:700;font-size:0.9rem;color:var(--green-deep);">Nueva variedad</span>
+    <button type="button" onclick="document.getElementById('form-add').classList.remove('open')" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);">×</button>
+  </div>
+  <form method="POST" action="{{ url_for('admin_variedades') }}">
+    <input type="hidden" name="accion" value="crear">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.8rem;margin-bottom:0.8rem;">
+      <div class="form-group-a" style="margin:0">
+        <label>Nombre *</label>
+        <input type="text" name="nombre" class="form-control-a" placeholder="Ej: OG Kush, Blue Dream..." required>
+      </div>
+      <div class="form-group-a" style="margin:0">
+        <label>Genética</label>
+        <select name="genetica" class="form-control-a">
+          <option value="hibrido">Híbrido</option>
+          <option value="indica">Índica</option>
+          <option value="sativa">Sativa</option>
+          <option value="cbd_dominante">CBD dominante</option>
+          <option value="auto">Autofloreciente</option>
+        </select>
+      </div>
+    </div>
+    <div class="pct-grid" style="margin-bottom:0.8rem;">
+      <div class="form-group-a" style="margin:0">
+        <label>THC % (aproximado)</label>
+        <input type="number" name="thc_pct" class="form-control-a" value="0" min="0" max="35" step="0.5">
+      </div>
+      <div class="form-group-a" style="margin:0">
+        <label>CBD % (aproximado)</label>
+        <input type="number" name="cbd_pct" class="form-control-a" value="0" min="0" max="25" step="0.5">
+      </div>
+    </div>
+    <div class="form-group-a" style="margin-bottom:0.8rem;">
+      <label>Descripción</label>
+      <textarea name="descripcion" class="form-control-a" rows="2"
+        placeholder="Descripción general, origen, características..."></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;margin-bottom:1rem;">
+      <div class="form-group-a" style="margin:0">
+        <label>Efectos</label>
+        <input type="text" name="efectos" class="form-control-a"
+          placeholder="Ej: Relajante, eufórico, creativo...">
+      </div>
+      <div class="form-group-a" style="margin:0">
+        <label>Indicaciones medicinales</label>
+        <input type="text" name="indicaciones" class="form-control-a"
+          placeholder="Ej: Dolor crónico, insomnio, ansiedad...">
+      </div>
+      <div class="form-group-a" style="margin:0">
+        <label>Sabor / Aroma</label>
+        <input type="text" name="sabor" class="form-control-a"
+          placeholder="Ej: Cítrico, piñón, terroso...">
+      </div>
+    </div>
+    <div style="display:flex;gap:0.6rem;justify-content:flex-end;">
+      <button type="button" onclick="document.getElementById('form-add').classList.remove('open')" class="btn btn-outline btn-sm">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Guardar variedad</button>
+    </div>
+  </form>
+</div>
+
+{% if not variedades %}
+<!-- Estado vacío -->
+<div style="text-align:center;padding:4rem 2rem;background:var(--white);border-radius:14px;border:1.5px dashed var(--border);">
+  <div style="font-size:3rem;margin-bottom:1rem;">🌿</div>
+  <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--green-deep);margin-bottom:0.5rem;">Catálogo vacío</div>
+  <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;">
+    Agregá las variedades disponibles en el club.<br>
+    Cada variedad tendrá su ficha con información medicinal para los socios.
+  </p>
+  <button onclick="document.getElementById('form-add').classList.add('open');window.scrollTo(0,0)" class="btn btn-primary">
+    + Agregar primera variedad
+  </button>
+</div>
+
+{% else %}
+<!-- Grid de variedades -->
+<div class="var-grid">
+  {% for v in variedades %}
+  <div class="var-card {% if not v.activa %}inactiva{% endif %}" id="card-{{ v.id }}">
+    <div class="var-card-top">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;">
+        <div class="var-nombre">{{ v.nombre }}</div>
+        {% if not v.activa %}<span style="font-size:0.65rem;background:#F0EDEA;color:#999;padding:0.15rem 0.5rem;border-radius:100px;font-weight:700;white-space:nowrap;">Inactiva</span>{% endif %}
+      </div>
+      <span class="var-gen-badge gen-{{ v.genetica or 'hibrido' }}">{{ genetica_label.get(v.genetica or 'hibrido', v.genetica or 'Híbrido') }}</span>
+    </div>
+
+    <div class="var-body">
+      <!-- THC / CBD -->
+      <div class="var-pct-row">
+        <span class="var-pct-label">THC</span>
+        <div class="var-pct-bar"><div class="var-pct-fill thc-fill" style="width:{{ [(v.thc_pct or 0) / 35 * 100, 100]|min|round }}%;"></div></div>
+        <span class="var-pct-num" style="color:#E07B30;">{{ v.thc_pct or 0 }}%</span>
+      </div>
+      <div class="var-pct-row">
+        <span class="var-pct-label">CBD</span>
+        <div class="var-pct-bar"><div class="var-pct-fill cbd-fill" style="width:{{ [(v.cbd_pct or 0) / 25 * 100, 100]|min|round }}%;"></div></div>
+        <span class="var-pct-num" style="color:var(--green-mid);">{{ v.cbd_pct or 0 }}%</span>
+      </div>
+
+      {% if v.descripcion %}
+      <p class="var-desc">{{ v.descripcion }}</p>
+      {% endif %}
+
+      {% if v.efectos or v.indicaciones or v.sabor %}
+      <div class="var-tags">
+        {% if v.sabor %}{% for t in v.sabor.split(',') %}<span class="var-tag">🍃 {{ t.strip() }}</span>{% endfor %}{% endif %}
+        {% if v.efectos %}{% for t in v.efectos.split(',') %}<span class="var-tag">✦ {{ t.strip() }}</span>{% endfor %}{% endif %}
+        {% if v.indicaciones %}{% for t in v.indicaciones.split(',') %}<span class="var-tag">💊 {{ t.strip() }}</span>{% endfor %}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Panel de edición -->
+    <div class="edit-panel" id="edit-{{ v.id }}">
+      <form method="POST" action="{{ url_for('admin_variedad_edit', vid=v.id) }}">
+        <input type="hidden" name="accion" value="editar">
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+          <div class="form-group-a" style="margin:0"><label>Nombre</label><input type="text" name="nombre" class="form-control-a" value="{{ v.nombre }}" required></div>
+          <div class="form-group-a" style="margin:0"><label>Genética</label>
+            <select name="genetica" class="form-control-a">
+              {% for k,lbl in genetica_label.items() %}<option value="{{ k }}" {% if v.genetica==k %}selected{% endif %}>{{ lbl }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="pct-grid" style="margin-bottom:0.5rem;">
+          <div class="form-group-a" style="margin:0"><label>THC %</label><input type="number" name="thc_pct" class="form-control-a" value="{{ v.thc_pct or 0 }}" min="0" max="35" step="0.5"></div>
+          <div class="form-group-a" style="margin:0"><label>CBD %</label><input type="number" name="cbd_pct" class="form-control-a" value="{{ v.cbd_pct or 0 }}" min="0" max="25" step="0.5"></div>
+        </div>
+        <div class="form-group-a" style="margin-bottom:0.5rem;"><label>Descripción</label><textarea name="descripcion" class="form-control-a" rows="2">{{ v.descripcion or '' }}</textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.7rem;">
+          <div class="form-group-a" style="margin:0"><label>Efectos</label><input type="text" name="efectos" class="form-control-a" value="{{ v.efectos or '' }}"></div>
+          <div class="form-group-a" style="margin:0"><label>Indicaciones</label><input type="text" name="indicaciones" class="form-control-a" value="{{ v.indicaciones or '' }}"></div>
+          <div class="form-group-a" style="margin:0"><label>Sabor</label><input type="text" name="sabor" class="form-control-a" value="{{ v.sabor or '' }}"></div>
+        </div>
+        <div style="display:flex;gap:0.4rem;justify-content:flex-end;">
+          <button type="button" onclick="document.getElementById('edit-{{ v.id }}').classList.remove('open')" class="btn btn-outline btn-sm">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="var-card-footer">
+      <form method="POST" action="{{ url_for('admin_variedad_edit', vid=v.id) }}" style="display:inline;">
+        <input type="hidden" name="accion" value="toggle">
+        <button type="submit" class="btn btn-outline btn-sm">{{ '▶ Activar' if not v.activa else '⏸ Pausar' }}</button>
+      </form>
+      <button type="button" onclick="document.getElementById('edit-{{ v.id }}').classList.toggle('open')" class="btn btn-outline btn-sm">✏ Editar</button>
+      <form method="POST" action="{{ url_for('admin_variedad_edit', vid=v.id) }}" style="display:inline;"
+            onsubmit="return confirm('¿Eliminar {{ v.nombre }} del catálogo?')">
+        <input type="hidden" name="accion" value="eliminar">
+        <button type="submit" class="btn-danger-sm">✕</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

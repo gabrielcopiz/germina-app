@@ -77,6 +77,32 @@
 .disp-form { }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem; }
 
+/* Variety cards selector */
+.var-selector-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.6rem; margin-bottom: 1rem; max-height: 260px; overflow-y: auto;
+}
+.var-sel-card {
+  border: 2px solid var(--border); border-radius: 10px; padding: 0.7rem 0.8rem;
+  cursor: pointer; transition: all 0.15s; background: var(--white);
+  user-select: none;
+}
+.var-sel-card:hover { border-color: var(--green-light); background: #F5FBF7; }
+.var-sel-card.selected { border-color: var(--green-mid); background: #EEF6F0; box-shadow: 0 0 0 2px rgba(45,92,56,0.15); }
+.var-sel-nombre { font-size: 0.8rem; font-weight: 700; color: var(--green-deep); margin-bottom: 0.2rem; }
+.var-sel-gen { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 0.35rem; }
+.var-sel-pct { font-size: 0.65rem; color: var(--muted); }
+.var-sel-pct span { font-weight: 700; }
+.var-sel-pct .thc { color: #E07B30; }
+.var-sel-pct .cbd { color: var(--green-mid); }
+.var-selected-badge {
+  display:inline-flex; align-items:center; gap:0.4rem;
+  background:#EEF6F0; border:1.5px solid var(--green-light);
+  border-radius:8px; padding:0.4rem 0.8rem;
+  font-size:0.82rem; font-weight:600; color:var(--green-deep);
+  margin-bottom:0.8rem;
+}
+
 /* Hoy panel */
 .disp-hoy-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
 .disp-hoy-table thead th {
@@ -154,22 +180,54 @@ window.SOCIOS = {{ socios_activos | tojson }};
       <!-- Formulario -->
       <form method="POST" action="{{ url_for('admin_dispensario') }}" class="disp-form" id="disp-form">
         <input type="hidden" name="socio_id" id="socio_id_input">
+        <input type="hidden" name="variedad" id="variedad_hidden">
 
-        <div class="form-row">
-          <div class="form-group-a">
-            <label for="variedad">Variedad</label>
-            <select name="variedad" id="variedad" class="form-control-a" required>
-              <option value="">— Seleccionar —</option>
-              {% for v in variedades_stock %}
-              <option value="{{ v.variedad }}">{{ v.variedad }}</option>
-              {% endfor %}
-            </select>
+        <!-- Selector visual de variedad -->
+        <div class="form-group-a" style="margin-bottom:0.6rem;">
+          <label>Variedad</label>
+        </div>
+
+        {% if variedades_catalogo %}
+        <div id="var-selected-banner" style="display:none;" class="var-selected-banner">
+          <span>🌿</span> <span id="var-selected-txt">—</span>
+          <button type="button" onclick="clearVariedad()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;margin-left:0.2rem;">✕</button>
+        </div>
+        <div class="var-selector-grid" id="var-grid">
+          {% for v in variedades_catalogo %}
+          <div class="var-sel-card" data-nombre="{{ v.nombre }}" onclick="selectVariedad(this)">
+            <div class="var-sel-nombre">{{ v.nombre }}</div>
+            <div class="var-sel-gen">
+              {% if v.genetica == 'indica' %}🟣 Índica
+              {% elif v.genetica == 'sativa' %}🟡 Sativa
+              {% elif v.genetica == 'cbd_dominante' %}🔵 CBD
+              {% elif v.genetica == 'auto' %}⚡ Auto
+              {% else %}🟢 Híbrido{% endif %}
+            </div>
+            <div class="var-sel-pct">
+              <span class="thc">THC <span>{{ v.thc_pct or 0 }}%</span></span> ·
+              <span class="cbd">CBD <span>{{ v.cbd_pct or 0 }}%</span></span>
+            </div>
+            {% if v.efectos %}
+            <div style="font-size:0.6rem;color:var(--muted);margin-top:0.25rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{{ v.efectos }}</div>
+            {% endif %}
           </div>
-          <div class="form-group-a">
-            <label for="gramos">Gramos</label>
-            <input type="number" name="gramos" id="gramos" class="form-control-a"
-                   placeholder="0.0" step="0.1" min="0.1" max="100" required>
-          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="background:#FEF9EC;border:1px solid var(--gold);border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.8rem;font-size:0.82rem;">
+          No hay variedades en el catálogo.
+          <a href="{{ url_for('admin_variedades') }}" style="color:var(--green-mid);font-weight:600;">Agregar variedades →</a>
+        </div>
+        <div class="form-group-a">
+          <input type="text" name="variedad_manual" id="variedad_manual" class="form-control-a"
+                 placeholder="Escribí el nombre de la variedad">
+        </div>
+        {% endif %}
+
+        <div class="form-group-a" style="margin-bottom:0.8rem;">
+          <label for="gramos">Gramos</label>
+          <input type="number" name="gramos" id="gramos" class="form-control-a"
+                 placeholder="0.0" step="0.1" min="0.1" max="100" required>
         </div>
 
         <div class="form-group-a">
@@ -312,8 +370,40 @@ window.SOCIOS = {{ socios_activos | tojson }};
     if (!socioIdInput.value) {
       e.preventDefault();
       alert('Seleccioná un socio primero.');
+      return;
+    }
+    var varHidden = document.getElementById('variedad_hidden');
+    var varManual = document.getElementById('variedad_manual');
+    if (varHidden && !varHidden.value && varManual && !varManual.value) {
+      e.preventDefault();
+      alert('Seleccioná una variedad.');
+      return;
+    }
+    if (varHidden && !varHidden.value && varManual && varManual.value) {
+      varHidden.value = varManual.value;
     }
   });
 })();
+
+// Variety card selector
+function selectVariedad(el) {
+  document.querySelectorAll('.var-sel-card').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  var nombre = el.getAttribute('data-nombre');
+  document.getElementById('variedad_hidden').value = nombre;
+  var banner = document.getElementById('var-selected-banner');
+  var txt = document.getElementById('var-selected-txt');
+  if (banner && txt) { txt.textContent = nombre; banner.style.display = 'inline-flex'; }
+  var grid = document.getElementById('var-grid');
+  if (grid) grid.style.display = 'none';
+}
+function clearVariedad() {
+  document.getElementById('variedad_hidden').value = '';
+  document.querySelectorAll('.var-sel-card').forEach(function(c) { c.classList.remove('selected'); });
+  var banner = document.getElementById('var-selected-banner');
+  var grid = document.getElementById('var-grid');
+  if (banner) banner.style.display = 'none';
+  if (grid) grid.style.display = 'grid';
+}
 </script>
 {% endblock %}

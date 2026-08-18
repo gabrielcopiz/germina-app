@@ -277,6 +277,19 @@ def init_db():
         registrado_por TEXT DEFAULT 'Admin',
         FOREIGN KEY (socio_id) REFERENCES socios(id)
     );
+    CREATE TABLE IF NOT EXISTS variedades (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT UNIQUE NOT NULL,
+        genetica TEXT DEFAULT 'hibrido',
+        thc_pct REAL DEFAULT 0,
+        cbd_pct REAL DEFAULT 0,
+        descripcion TEXT,
+        efectos TEXT,
+        indicaciones TEXT,
+        sabor TEXT,
+        activa INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
     ''')
     db.commit()
     db.close()
@@ -359,6 +372,16 @@ def _migrate():
             fecha_pedido TEXT DEFAULT (datetime('now','localtime')),
             fecha_entrega TEXT, token_entrega TEXT UNIQUE,
             notas TEXT, registrado_por TEXT DEFAULT 'Admin')''')
+    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if 'variedades' not in tables:
+        db.execute('''CREATE TABLE variedades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT UNIQUE NOT NULL,
+            genetica TEXT DEFAULT 'hibrido',
+            thc_pct REAL DEFAULT 0, cbd_pct REAL DEFAULT 0,
+            descripcion TEXT, efectos TEXT, indicaciones TEXT, sabor TEXT,
+            activa INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now','localtime')))''')
     db.commit()
     db.close()
 
@@ -640,6 +663,58 @@ def admin_dashboard():
         disp_hoy_socios=disp_hoy_socios,
     )
 
+@app.route('/admin/variedades', methods=['GET','POST'])
+@login_required
+def admin_variedades():
+    db = get_db()
+    if request.method == 'POST':
+        accion = request.form.get('accion','crear')
+        if accion == 'crear':
+            nombre = request.form.get('nombre','').strip()
+            if nombre:
+                try:
+                    db.execute(
+                        'INSERT INTO variedades (nombre,genetica,thc_pct,cbd_pct,descripcion,efectos,indicaciones,sabor) VALUES (?,?,?,?,?,?,?,?)',
+                        (nombre,
+                         request.form.get('genetica','hibrido'),
+                         float(request.form.get('thc_pct',0) or 0),
+                         float(request.form.get('cbd_pct',0) or 0),
+                         request.form.get('descripcion','').strip(),
+                         request.form.get('efectos','').strip(),
+                         request.form.get('indicaciones','').strip(),
+                         request.form.get('sabor','').strip()))
+                    db.commit()
+                    flash(f'Variedad "{nombre}" agregada al catálogo ✓')
+                except Exception:
+                    flash('Ya existe una variedad con ese nombre')
+        return redirect(url_for('admin_variedades'))
+    variedades = db.execute('SELECT * FROM variedades ORDER BY nombre').fetchall()
+    return render_template('admin/variedades.html', variedades=variedades, genetica_label=GENETICA_LABEL)
+
+@app.route('/admin/variedad/<int:vid>', methods=['POST'])
+@login_required
+def admin_variedad_edit(vid):
+    db = get_db()
+    accion = request.form.get('accion','')
+    if accion == 'eliminar':
+        db.execute('DELETE FROM variedades WHERE id=?', (vid,))
+    elif accion == 'toggle':
+        db.execute('UPDATE variedades SET activa = 1 - activa WHERE id=?', (vid,))
+    elif accion == 'editar':
+        db.execute(
+            'UPDATE variedades SET nombre=?,genetica=?,thc_pct=?,cbd_pct=?,descripcion=?,efectos=?,indicaciones=?,sabor=? WHERE id=?',
+            (request.form.get('nombre','').strip(),
+             request.form.get('genetica','hibrido'),
+             float(request.form.get('thc_pct',0) or 0),
+             float(request.form.get('cbd_pct',0) or 0),
+             request.form.get('descripcion','').strip(),
+             request.form.get('efectos','').strip(),
+             request.form.get('indicaciones','').strip(),
+             request.form.get('sabor','').strip(),
+             vid))
+    db.commit()
+    return redirect(url_for('admin_variedades'))
+
 @app.route('/admin/dispensario', methods=['GET','POST'])
 @login_required
 def admin_dispensario():
@@ -648,7 +723,7 @@ def admin_dispensario():
 
     if request.method == 'POST':
         socio_id = request.form.get('socio_id')
-        variedad = request.form.get('variedad','').strip()
+        variedad = (request.form.get('variedad','') or request.form.get('variedad_manual','')).strip()
         gramos   = float(request.form.get('gramos', 0) or 0)
         notas    = request.form.get('notas','').strip()
         if socio_id and variedad and gramos > 0:
@@ -664,11 +739,9 @@ def admin_dispensario():
         "SELECT id, nombre, apellido, etapa, cupo_mensual_g FROM socios WHERE etapa IN ('activo','aprobado') ORDER BY nombre"
     ).fetchall()
 
-    variedades_stock = db.execute('''
-        SELECT DISTINCT cu.variedad
-        FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
-        ORDER BY cu.variedad
-    ''').fetchall()
+    variedades_catalogo = db.execute(
+        'SELECT * FROM variedades WHERE activa=1 ORDER BY nombre'
+    ).fetchall()
 
     dispensaciones_hoy = db.execute('''
         SELECT d.*, s.nombre, s.apellido
@@ -681,7 +754,7 @@ def admin_dispensario():
 
     return render_template('admin/dispensario.html',
         socios_activos=[dict(s) for s in socios_activos],
-        variedades_stock=variedades_stock,
+        variedades_catalogo=[dict(v) for v in variedades_catalogo],
         dispensaciones_hoy=dispensaciones_hoy,
         total_hoy_g=round(total_hoy_g, 1),
         hoy=hoy,
@@ -774,16 +847,29 @@ def admin_socio(sid):
         SELECT * FROM pedidos WHERE socio_id=? ORDER BY fecha_pedido DESC
     ''', (sid,)).fetchall()
     mes_inicio = date.today().replace(day=1).isoformat()
-    consumido_mes = db.execute(
+    consumido_mes_pedidos = db.execute(
         "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND fecha_pedido >= ? AND estado='entregado'",
         (sid, mes_inicio)
     ).fetchone()[0]
-    total_consumido = db.execute(
+    consumido_mes_disp = db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=? AND fecha >= ?",
+        (sid, mes_inicio)
+    ).fetchone()[0]
+    consumido_mes = consumido_mes_pedidos + consumido_mes_disp
+    total_consumido_pedidos = db.execute(
         "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND estado='entregado'", (sid,)
     ).fetchone()[0]
+    total_consumido_disp = db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=?", (sid,)
+    ).fetchone()[0]
+    total_consumido = total_consumido_pedidos + total_consumido_disp
     total_gastado = db.execute(
         "SELECT COALESCE(SUM(precio),0) FROM pedidos WHERE socio_id=? AND estado='entregado'", (sid,)
     ).fetchone()[0]
+    dispensaciones_socio = db.execute(
+        'SELECT * FROM dispensaciones WHERE socio_id=? ORDER BY fecha DESC, id DESC LIMIT 30',
+        (sid,)
+    ).fetchall()
     stock_variedades = db.execute('''
         SELECT cu.variedad,
                COALESCE(SUM(co.peso_seco_g),0)
@@ -799,6 +885,7 @@ def admin_socio(sid):
         pedidos=pedidos, consumido_mes=consumido_mes,
         total_consumido=total_consumido, total_gastado=total_gastado,
         stock_variedades=stock_variedades, member_url=member_url,
+        dispensaciones_socio=dispensaciones_socio,
         etapas=ETAPAS, etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR,
         tipo_socio_label=TIPO_SOCIO_LABEL,
         etapas_cultivo=ETAPAS_CULTIVO,

@@ -357,6 +357,41 @@
       </div>
     </div>
 
+    <!-- Dispensaciones del socio -->
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="card-header">
+        <span class="card-title">💊 Historial de dispensaciones</span>
+        <a href="{{ url_for('admin_dispensario') }}" class="btn btn-primary btn-sm">+ Registrar</a>
+      </div>
+      {% if dispensaciones_socio %}
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+          <thead>
+            <tr>
+              <th style="text-align:left;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0.6rem 1rem;border-bottom:1px solid var(--border);background:var(--cream);">Fecha</th>
+              <th style="text-align:left;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0.6rem 1rem;border-bottom:1px solid var(--border);background:var(--cream);">Variedad</th>
+              <th style="text-align:right;font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0.6rem 1rem;border-bottom:1px solid var(--border);background:var(--cream);">Gramos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in dispensaciones_socio %}
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:0.65rem 1rem;color:var(--muted);font-size:0.78rem;">{{ fmt_fecha(d.fecha) }}</td>
+              <td style="padding:0.65rem 1rem;font-weight:600;color:var(--green-deep);">{{ d.variedad }}</td>
+              <td style="padding:0.65rem 1rem;font-weight:700;color:var(--gold);text-align:right;">{{ d.gramos }}g</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body">
+        <p class="text-muted text-sm">Sin dispensaciones registradas todavía.</p>
+        <a href="{{ url_for('admin_dispensario') }}" class="btn btn-outline btn-sm" style="margin-top:0.5rem;">Ir al dispensario →</a>
+      </div>
+      {% endif %}
+    </div>
+
     <!-- Nuevo pedido -->
     <div class="card" style="margin-top:1.5rem;">
       <div class="card-header">
