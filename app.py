@@ -840,7 +840,6 @@ def admin_agregar_cuota(sid):
     monto = float(request.form.get('monto',0) or 0)
     fecha_pago = request.form.get('fecha_pago') or date.today().isoformat()
     dias = {'mensual':30,'trimestral':90,'semestral':180,'anual':365}.get(tipo,30)
-    from datetime import timedelta
     fecha_venc = (datetime.strptime(fecha_pago,'%Y-%m-%d') + timedelta(days=dias)).strftime('%Y-%m-%d')
     notas = request.form.get('notas','').strip()
     db.execute(

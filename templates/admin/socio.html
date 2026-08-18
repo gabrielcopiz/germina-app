@@ -365,8 +365,6 @@
       </div>
       <div class="card-body">
         {% if cuota_actual %}
-          {% set vencida = cuota_actual.fecha_vencimiento and cuota_actual.fecha_vencimiento < '' ~ namespace() %}
-          {% set hoy_str = namespace(v='') %}
           <div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.8rem;flex-wrap:wrap;">
             <div>
               <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);">Última cuota</span>
