@@ -1,321 +1,567 @@
-{% extends 'base.html' %}
-{% block title %}Mi estado — Germina{% endblock %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Germina — Mi Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:          #0B1A10;
+  --bg2:         #111F15;
+  --bg3:         #162B1C;
+  --card:        #1C3024;
+  --card2:       #233A2C;
+  --border:      rgba(255,255,255,0.08);
+  --green:       #3A7D4E;
+  --green-light: #5AAE74;
+  --gold:        #C8A44A;
+  --gold-light:  #F0D97A;
+  --cream:       #F5F2EC;
+  --text:        #E8F0EB;
+  --text2:       rgba(232,240,235,0.6);
+  --text3:       rgba(232,240,235,0.35);
+  --red:         #E05C5C;
+  --yellow:      #F0C040;
+  --tab-h:       72px;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+a { color: inherit; text-decoration: none; }
 
-{% block extra_styles %}
-.portal-wrap { max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+/* ── HEADER ── */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  height: 56px; display: flex; align-items: center; padding: 0 1.2rem;
+  justify-content: space-between;
+}
+.header-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--cream); }
+.header-logo span { color: var(--gold); }
+.header-name { font-size: 0.75rem; color: var(--text2); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Carnet digital */
+/* ── TABS ── */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  height: var(--tab-h); background: var(--bg2); border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-around;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer; padding: 8px 0;
+  color: var(--text3); transition: color 0.2s;
+  border: none; background: none; -webkit-tap-highlight-color: transparent;
+}
+.tab-btn.active { color: var(--green-light); }
+.tab-icon { font-size: 1.3rem; line-height: 1; }
+.tab-label { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+
+/* ── PAGES ── */
+.pages { position: fixed; top: 56px; bottom: var(--tab-h); left: 0; right: 0; overflow: hidden; }
+.page { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: none; padding: 1.25rem 1rem 1.5rem; }
+.page.active { display: block; }
+
+/* ── SHARED ── */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; }
+.label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); font-weight: 600; margin-bottom: 0.25rem; }
+
+/* ── CARNET ── */
 .carnet {
-  background: linear-gradient(135deg, #1A3520 0%, #2D5C38 60%, #1A3520 100%);
-  border-radius: 20px; padding: 1.8rem 1.8rem 1.4rem;
-  margin-bottom: 1.5rem; color: var(--cream);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  background: linear-gradient(135deg, #1A3A22 0%, #0B2010 60%, #162B1C 100%);
+  border: 1px solid rgba(200,164,74,0.25); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem;
   position: relative; overflow: hidden;
 }
 .carnet::before {
-  content: ''; position: absolute; right: -30px; top: -30px;
-  width: 120px; height: 120px; border-radius: 50%;
-  background: rgba(200,164,74,0.08);
+  content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,164,74,0.08) 0%, transparent 70%);
 }
-.carnet-logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem; color: var(--gold); margin-bottom: 1.2rem; letter-spacing: 0.04em;
+.carnet-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; }
+.carnet-logo { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--cream); }
+.carnet-logo span { color: var(--gold); }
+.carnet-badge {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 100px;
+  background: rgba(90,174,116,0.2); color: var(--green-light); border: 1px solid rgba(90,174,116,0.3);
 }
-.carnet-logo span { opacity: 0.7; }
-.carnet-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem; font-weight: 500; margin-bottom: 0.2rem;
-}
-.carnet-tipo {
-  font-size: 0.68rem; color: rgba(255,255,255,0.45);
-  text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 1.2rem;
-}
-.carnet-bottom {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 0.5rem;
-}
-.carnet-qr {
-  background: #fff; padding: 6px; border-radius: 8px; display: inline-block;
-}
-.carnet-data { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
-.carnet-data strong { color: rgba(255,255,255,0.85); display: block; font-size: 0.82rem; }
-.carnet-cupo {
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  background: rgba(200,164,74,0.2); border: 1px solid rgba(200,164,74,0.3);
-  border-radius: 100px; padding: 0.3rem 0.8rem;
-  font-size: 0.72rem; color: var(--gold); font-weight: 600; margin-top: 0.6rem;
-}
+.carnet-badge.vencida { background: rgba(224,92,92,0.2); color: #F08080; border-color: rgba(224,92,92,0.3); }
+.carnet-name { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 500; color: var(--cream); margin-bottom: 0.2rem; }
+.carnet-tipo { font-size: 0.72rem; color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; margin-bottom: 1.25rem; }
+.carnet-cupo { margin-bottom: 1rem; }
+.carnet-cupo-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text2); margin-bottom: 6px; }
+.cupo-bar { height: 5px; border-radius: 100px; background: rgba(255,255,255,0.1); overflow: hidden; }
+.cupo-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--green), var(--green-light)); }
+.carnet-footer { display: flex; justify-content: space-between; align-items: flex-end; }
+.carnet-cuota-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 2px; }
+.carnet-cuota-val { font-size: 0.82rem; font-weight: 600; }
+.carnet-cuota-val.ok { color: var(--green-light); }
+.carnet-cuota-val.vence { color: var(--yellow); }
+.carnet-cuota-val.vencida { color: var(--red); }
 
-/* Estado badge */
-.estado-badge {
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  padding: 0.35rem 0.9rem; border-radius: 100px;
-  font-size: 0.72rem; font-weight: 600; margin-top: 0.8rem;
-}
+/* ── STATS ── */
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1rem; text-align: center; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 500; color: var(--green-light); line-height: 1; }
+.stat-unit { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem; }
+.stat-label { font-size: 0.72rem; color: var(--text2); margin-top: 0.25rem; }
 
-/* Cards */
-.info-card {
-  background: var(--white); border-radius: 14px;
-  border: 1px solid var(--border); padding: 1.2rem 1.5rem; margin-bottom: 1rem;
+.section-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); font-weight: 600; margin-bottom: 0.75rem; margin-top: 1.25rem; }
+.disp-row { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 0; border-bottom: 1px solid var(--border); }
+.disp-row:last-child { border-bottom: none; }
+.disp-var { font-size: 0.88rem; font-weight: 500; }
+.disp-fecha { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+.disp-g { font-size: 0.88rem; color: var(--green-light); font-weight: 600; }
+
+/* ── FLORES ── */
+.flor-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 1rem; }
+.flor-img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.flor-img-placeholder { width: 100%; height: 110px; background: linear-gradient(135deg, var(--card2) 0%, var(--bg3) 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+.flor-body { padding: 1rem; }
+.flor-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+.flor-nombre { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 500; }
+.flor-genetica { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 100px; }
+.gen-sativa { background: rgba(240,192,64,0.15); color: var(--yellow); border: 1px solid rgba(240,192,64,0.25); }
+.gen-indica { background: rgba(90,90,200,0.15); color: #8A8AF0; border: 1px solid rgba(90,90,200,0.25); }
+.gen-hibrida { background: rgba(90,174,116,0.15); color: var(--green-light); border: 1px solid rgba(90,174,116,0.25); }
+.gen-cbd { background: rgba(200,164,74,0.15); color: var(--gold); border: 1px solid rgba(200,164,74,0.25); }
+.flor-desc { font-size: 0.82rem; color: var(--text2); line-height: 1.6; margin-bottom: 0.75rem; }
+.pct-bars { margin-bottom: 0.75rem; }
+.pct-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+.pct-label { font-size: 0.65rem; font-weight: 700; color: var(--text3); width: 28px; flex-shrink: 0; }
+.pct-track { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 100px; overflow: hidden; }
+.pct-fill-thc { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--green), var(--green-light)); }
+.pct-fill-cbd { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+.pct-val { font-size: 0.7rem; font-weight: 600; color: var(--text2); width: 36px; text-align: right; flex-shrink: 0; }
+.tags-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }
+.tag { font-size: 0.65rem; padding: 3px 8px; border-radius: 100px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text2); }
+.tag-gold { color: var(--gold); border-color: rgba(200,164,74,0.2); }
+.rating-section { border-top: 1px solid var(--border); padding-top: 0.85rem; margin-top: 0.75rem; }
+.rating-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
+.rating-avg { display: flex; align-items: center; gap: 0.35rem; }
+.rating-avg-num { font-size: 1rem; font-weight: 700; color: var(--gold); }
+.rating-avg-stars { font-size: 0.8rem; color: var(--gold); }
+.rating-count { font-size: 0.68rem; color: var(--text3); }
+.stars-input { display: flex; gap: 6px; margin-bottom: 0.6rem; }
+.star { font-size: 1.6rem; cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; color: rgba(255,255,255,0.15); }
+.star.lit { color: var(--gold); }
+.star:active { transform: scale(1.25); }
+.comment-input {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.6rem 0.8rem; font-size: 0.82rem; color: var(--text); font-family: inherit;
+  resize: none; outline: none; transition: border-color 0.2s;
 }
-.info-card-title {
-  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
-  color: var(--gold); font-weight: 700; margin-bottom: 0.8rem;
+.comment-input:focus { border-color: var(--green); }
+.btn-rate {
+  margin-top: 0.5rem; width: 100%; padding: 0.7rem; border-radius: 10px;
+  background: var(--green); color: var(--cream); font-size: 0.85rem; font-weight: 600;
+  border: none; cursor: pointer; font-family: inherit; transition: background 0.2s; -webkit-tap-highlight-color: transparent;
 }
-.info-row { display: flex; justify-content: space-between; padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.btn-rate:active { background: var(--green-light); }
+.btn-rate:disabled { opacity: 0.5; cursor: default; }
+.no-votar-msg { font-size: 0.75rem; color: var(--text3); font-style: italic; }
+.rate-success { font-size: 0.78rem; color: var(--green-light); margin-top: 0.4rem; display: none; }
+
+/* ── HISTORIAL ── */
+.mes-titulo { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green-light); margin: 1.25rem 0 0.5rem; }
+.hist-row {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 0.85rem 1rem; margin-bottom: 0.5rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.hist-var { font-size: 0.88rem; font-weight: 500; margin-bottom: 3px; }
+.hist-meta { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.hist-fecha { font-size: 0.7rem; color: var(--text3); }
+.hist-badge { font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; }
+.hist-badge.dispensario { background: rgba(90,174,116,0.15); color: var(--green-light); border: 1px solid rgba(90,174,116,0.25); }
+.hist-badge.pedido { background: rgba(200,164,74,0.15); color: var(--gold); border: 1px solid rgba(200,164,74,0.25); }
+.hist-g { font-size: 0.88rem; font-weight: 700; color: var(--green-light); text-align: right; white-space: nowrap; }
+.hist-empty { text-align: center; padding: 4rem 1rem; color: var(--text3); }
+.hist-empty .icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+
+/* ── PERFIL ── */
+.perfil-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green), var(--card2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--cream);
+  margin: 0 auto 1rem; border: 2px solid rgba(90,174,116,0.3);
+}
+.perfil-nombre { text-align: center; font-family: 'Playfair Display', serif; font-size: 1.25rem; margin-bottom: 0.25rem; }
+.perfil-tipo { text-align: center; font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1.5rem; }
+.info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
 .info-row:last-child { border-bottom: none; }
-.info-key { color: var(--muted); font-size: 0.78rem; }
-.info-val { font-weight: 500; color: var(--text); }
-
-/* Timeline */
-.timeline { display: flex; flex-direction: column; gap: 0; }
-.tl-step { display: flex; gap: 1rem; }
-.tl-left { display: flex; flex-direction: column; align-items: center; }
-.tl-dot {
-  width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
-  background: var(--white); display: flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; flex-shrink: 0; z-index: 1;
-}
-.tl-dot.done { background: var(--green-mid); border-color: var(--green-mid); color: white; }
-.tl-dot.current { background: var(--gold); border-color: var(--gold); color: var(--green-deep); }
-.tl-line { flex: 1; width: 2px; background: var(--border); margin: 2px 0; min-height: 32px; }
-.tl-line.done { background: var(--green-mid); }
-.tl-step:last-child .tl-line { display: none; }
-.tl-content { padding: 0.2rem 0 1.5rem; flex: 1; }
-.tl-title { font-weight: 600; font-size: 0.9rem; color: var(--green-deep); }
-.tl-title.current { color: var(--gold); }
-.tl-title.pending { color: var(--muted); font-weight: 400; }
-.tl-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
-
-/* Doc row */
-.doc-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem;
-}
+.info-label { font-size: 0.72rem; color: var(--text3); padding-top: 1px; }
+.info-val { font-size: 0.85rem; font-weight: 500; text-align: right; max-width: 60%; word-break: break-word; }
+.doc-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
 .doc-row:last-child { border-bottom: none; }
-.doc-estado { padding: 0.25rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
-.doc-estado.pendiente { background: #FEF3CD; color: #7A5C00; }
-.doc-estado.entregado { background: #D4EAD9; color: #1A3520; }
-.doc-estado.rechazado { background: #FDE8E8; color: #9B2222; }
+.doc-tipo { font-size: 0.82rem; font-weight: 500; }
+.doc-fecha { font-size: 0.7rem; color: var(--text3); margin-top: 2px; }
+.doc-estado { font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 100px; }
+.doc-estado.ok { background: rgba(90,174,116,0.15); color: var(--green-light); }
+.doc-estado.pendiente { background: rgba(240,192,64,0.15); color: var(--yellow); }
+#qr-container { display: flex; justify-content: center; padding: 0.75rem 0; }
+#qr-container canvas, #qr-container img { border-radius: 8px; }
 
-/* Variedades menu */
-.var-menu-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+/* ── EMPTY / TOAST ── */
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+.empty-state .icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+.toast {
+  position: fixed; bottom: calc(var(--tab-h) + 12px); left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--card2); border: 1px solid var(--border); border-radius: 100px;
+  padding: 0.6rem 1.2rem; font-size: 0.82rem; color: var(--text);
+  opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; white-space: nowrap;
 }
-@media (max-width: 500px) { .var-menu-grid { grid-template-columns: 1fr; } }
-.var-menu-card {
-  background: var(--white); border: 1.5px solid var(--border); border-radius: 12px;
-  padding: 1rem; transition: border-color 0.15s;
-}
-.var-menu-card:hover { border-color: var(--green-light); }
-.var-menu-nombre { font-family: 'Playfair Display',serif; font-size: 1rem; color: var(--green-deep); margin-bottom: 0.3rem; }
-.var-menu-gen {
-  display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.04em; padding: 0.12rem 0.45rem; border-radius: 100px; margin-bottom: 0.5rem;
-}
-.gen-indica { background:#E8D5F5;color:#5C2D8A; }
-.gen-sativa { background:#FEF3C7;color:#7A5C00; }
-.gen-hibrido { background:#D4EAD9;color:#1A3520; }
-.gen-cbd_dominante { background:#D5EEF5;color:#1A4A5C; }
-.gen-auto { background:#F5E8D5;color:#5C3D1A; }
-.var-pct-row { display:flex;gap:0.4rem;align-items:center;margin-bottom:0.3rem; }
-.var-pct-bar { flex:1;height:4px;background:var(--cream-dark);border-radius:2px;overflow:hidden; }
-.var-pct-fill { height:100%;border-radius:2px; }
-.var-tags-mini { display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.4rem; }
-.var-tag-mini { background:var(--cream);border:1px solid var(--border);border-radius:100px;font-size:0.6rem;padding:0.1rem 0.4rem;color:var(--text); }
-.var-desc-mini { font-size:0.75rem;color:var(--muted);margin-top:0.35rem;line-height:1.5; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
-{% endblock %}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
 
-{% block content %}
-<div class="portal-wrap">
+<header class="header">
+  <div class="header-logo">Germi<span>na</span></div>
+  <div class="header-name">{{ s.nombre }}</div>
+</header>
 
-  <!-- CARNET DIGITAL -->
-  <div class="carnet">
-    <div class="carnet-logo">Germi<span>na</span></div>
-    <div class="carnet-name">{{ s.nombre }} {{ s.apellido }}</div>
-    <div class="carnet-tipo">
-      {% set tipos = {'paciente':'Paciente','cuidador':'Cuidador','productor':'Autocultivador','investigador':'Profesional'} %}
-      {{ tipos.get(s.tipo_socio, s.tipo_socio or 'Socio') }} · Club Germina
-    </div>
-    {% set bc = etapa_color.get(s.etapa, '#888') %}
-    {% set bl = etapa_label.get(s.etapa, s.etapa) %}
-    <span class="estado-badge" style="background:{{ bc }}33;color:{{ bc }};border:1px solid {{ bc }}55;">
-      {{ bl }}
-    </span>
-    {% if s.etapa == 'activo' and s.cupo_mensual_g %}
-    <div class="carnet-cupo">
-      🌿 Cupo mensual: {{ consumido_mes }}g / {{ s.cupo_mensual_g or 30 }}g consumido este mes
-    </div>
-    {% endif %}
-    <div class="carnet-bottom">
-      <div class="carnet-data">
-        {% if s.dni %}<span>DNI</span><strong>{{ s.dni }}</strong>{% endif %}
-        <span style="margin-top:0.4rem;display:block;">Desde</span>
-        <strong>{{ s.created_at[:10] if s.created_at else '—' }}</strong>
+<div class="pages">
+
+  <!-- ─── INICIO ─── -->
+  <div class="page active" id="page-inicio">
+    {% set cupo = s.cupo_mensual or 30 %}
+    {% set pct_cupo = [((consumido_mes / cupo) * 100)|round(0)|int, 100]|min %}
+    <div class="carnet">
+      <div class="carnet-header">
+        <div class="carnet-logo">Germi<span>na</span></div>
         {% if cuota_actual %}
-        <span style="margin-top:0.4rem;display:block;">Cuota vence</span>
-        <strong id="carnet-vence" data-fecha="{{ cuota_actual.fecha_vencimiento }}" style="color:rgba(200,164,74,0.9);">
-          {{ cuota_actual.fecha_vencimiento or '—' }}
-        </strong>
+          <span class="carnet-badge" id="carnet-estado-badge">—</span>
+        {% else %}
+          <span class="carnet-badge vencida">Sin cuota</span>
         {% endif %}
       </div>
-      <div class="carnet-qr">
-        <div id="qr-portal" style="display:inline-block;"></div>
+      <div class="carnet-name">{{ s.nombre }}</div>
+      <div class="carnet-tipo">{{ s.tipo_socio or 'Socio' }} · {{ etapa_label.get(s.etapa, s.etapa) }}</div>
+      <div class="carnet-cupo">
+        <div class="carnet-cupo-label">
+          <span>Cupo mensual</span>
+          <span>{{ consumido_mes }}g / {{ cupo }}g</span>
+        </div>
+        <div class="cupo-bar"><div class="cupo-fill" style="width:{{ pct_cupo }}%"></div></div>
+      </div>
+      <div class="carnet-footer">
+        <div>
+          {% if cuota_actual %}
+          <div class="carnet-cuota-label">Cuota vence</div>
+          <div class="carnet-cuota-val" id="cuota-vence-val" data-fecha="{{ cuota_actual.fecha_vencimiento }}">{{ cuota_actual.fecha_vencimiento }}</div>
+          {% else %}
+          <div class="carnet-cuota-label">Sin cuota registrada</div>
+          {% endif %}
+        </div>
+        <div id="qr-carnet"></div>
       </div>
     </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-unit">este mes</div>
+        <div class="stat-num">{{ consumido_mes }}</div>
+        <div class="stat-label">gramos retirados</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-unit">total histórico</div>
+        <div class="stat-num">{{ total_consumido }}</div>
+        <div class="stat-label">gramos retirados</div>
+      </div>
+    </div>
+
+    {% set ultimas = historial[:5] %}
+    {% if ultimas %}
+    <div class="section-title">Últimas operaciones</div>
+    <div class="card" style="padding:0.25rem 1.25rem;">
+      {% for h in ultimas %}
+      <div class="disp-row">
+        <div>
+          <div class="disp-var">{{ h.variedad or '—' }}</div>
+          <div class="disp-fecha">{{ h.fecha or '—' }} · {{ h.tipo }}</div>
+        </div>
+        <div class="disp-g">{{ h.gramos }}g</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><span class="icon">🌿</span>Aún no tenés retiros registrados.</div>
+    {% endif %}
   </div>
 
-  <!-- Timeline de etapas -->
-  <div class="info-card">
-    <div class="info-card-title">Tu proceso en Germina</div>
-    {% set etapas_list = [
-      ('solicitud',     'Solicitud recibida',    'Tu solicitud llegó al equipo de Germina.'),
-      ('documentacion', 'Pendiente de documentos','Necesitamos que aportes documentación.'),
-      ('en_revision',   'En revisión',            'El equipo está evaluando tu caso.'),
-      ('aprobado',      'Aprobado',               'Tu solicitud fue aprobada. Próximos pasos en camino.'),
-      ('activo',        'Socio activo',           '¡Sos parte de la comunidad Germina!'),
-    ] %}
-    <div class="timeline">
-      {% set etapas_ids = ['solicitud','documentacion','en_revision','aprobado','activo'] %}
-      {% set current_idx = etapas_ids.index(s.etapa) if s.etapa in etapas_ids else 0 %}
-      {% for etapa_id, etapa_name, etapa_desc in etapas_list %}
-        {% set idx = loop.index0 %}
-        <div class="tl-step">
-          <div class="tl-left">
-            <div class="tl-dot {% if idx < current_idx %}done{% elif idx == current_idx %}current{% endif %}">
-              {% if idx < current_idx %}✓{% else %}{{ loop.index }}{% endif %}
-            </div>
-            <div class="tl-line {% if idx < current_idx %}done{% endif %}"></div>
+
+  <!-- ─── FLORES ─── -->
+  <div class="page" id="page-flores">
+    {% if variedades %}
+      {% for v in variedades %}
+      <div class="flor-card">
+        {% if v.imagen_url %}
+        <img class="flor-img" src="{{ v.imagen_url }}" alt="{{ v.nombre }}" loading="lazy">
+        {% else %}
+        <div class="flor-img-placeholder">🌿</div>
+        {% endif %}
+        <div class="flor-body">
+          <div class="flor-header">
+            <div class="flor-nombre">{{ v.nombre }}</div>
+            {% set g = (v.genetica or '')|lower %}
+            {% if 'sativa' in g %}<span class="flor-genetica gen-sativa">Sativa</span>
+            {% elif 'indica' in g %}<span class="flor-genetica gen-indica">Indica</span>
+            {% elif 'cbd' in g %}<span class="flor-genetica gen-cbd">CBD</span>
+            {% else %}<span class="flor-genetica gen-hibrida">{{ v.genetica or 'Híbrida' }}</span>
+            {% endif %}
           </div>
-          <div class="tl-content">
-            <div class="tl-title {% if idx == current_idx %}current{% elif idx > current_idx %}pending{% endif %}">
-              {{ etapa_name }}
+
+          {% if v.descripcion %}<div class="flor-desc">{{ v.descripcion }}</div>{% endif %}
+
+          <div class="pct-bars">
+            <div class="pct-row">
+              <span class="pct-label">THC</span>
+              <div class="pct-track"><div class="pct-fill-thc" style="width:{{ [((v.thc_pct or 0)/35*100)|round(0)|int,100]|min }}%"></div></div>
+              <span class="pct-val">{{ v.thc_pct or 0 }}%</span>
             </div>
-            {% if idx == current_idx %}
-            <div class="tl-desc">{{ etapa_desc }}</div>
+            <div class="pct-row">
+              <span class="pct-label">CBD</span>
+              <div class="pct-track"><div class="pct-fill-cbd" style="width:{{ [((v.cbd_pct or 0)/25*100)|round(0)|int,100]|min }}%"></div></div>
+              <span class="pct-val">{{ v.cbd_pct or 0 }}%</span>
+            </div>
+          </div>
+
+          {% if v.efectos %}
+          <div class="tags-row">{% for ef in v.efectos.split(',') %}{% if ef.strip() %}<span class="tag">{{ ef.strip() }}</span>{% endif %}{% endfor %}</div>
+          {% endif %}
+          {% if v.indicaciones %}
+          <div class="tags-row">{% for ind in v.indicaciones.split(',') %}{% if ind.strip() %}<span class="tag tag-gold">{{ ind.strip() }}</span>{% endif %}{% endfor %}</div>
+          {% endif %}
+
+          <div class="rating-section">
+            <div class="rating-header">
+              <div class="rating-avg">
+                <span class="rating-avg-num" id="avg-{{ v.id }}">{{ v.avg_rating }}</span>
+                <span class="rating-avg-stars">★</span>
+                <span class="rating-count">(<span id="cnt-{{ v.id }}">{{ v.rating_count }}</span>)</span>
+              </div>
+              {% if v.sabor %}<span style="font-size:0.7rem;color:var(--text3);">{{ v.sabor }}</span>{% endif %}
+            </div>
+            {% if v.puede_votar %}
+            <div class="stars-input" id="stars-{{ v.id }}">
+              {% for i in range(1,6) %}
+              <span class="star {% if i <= v.mi_rating %}lit{% endif %}" data-star="{{ i }}" onclick="setStar({{ v.id }},{{ i }})">★</span>
+              {% endfor %}
+            </div>
+            <textarea class="comment-input" id="comment-{{ v.id }}" rows="2" placeholder="Tu experiencia (opcional)...">{{ v.mi_comentario }}</textarea>
+            <button class="btn-rate" id="btn-{{ v.id }}" onclick="enviarRating({{ v.id }})">
+              {% if v.mi_rating > 0 %}Actualizar calificación{% else %}Calificar{% endif %}
+            </button>
+            <div class="rate-success" id="ok-{{ v.id }}">✓ ¡Gracias por tu calificación!</div>
+            {% else %}
+            <div class="no-votar-msg">Retirá esta variedad para poder calificarla.</div>
             {% endif %}
           </div>
         </div>
+      </div>
       {% endfor %}
+    {% else %}
+    <div class="empty-state" style="padding-top:4rem">
+      <span class="icon">🌱</span>
+      <p>El catálogo de flores está vacío.<br>Próximamente vas a poder ver las variedades disponibles.</p>
     </div>
+    {% endif %}
   </div>
 
-  <!-- Últimas dispensaciones (si hay) -->
-  {% if ultimas_dispensaciones %}
-  <div class="info-card">
-    <div class="info-card-title">Últimas dispensaciones</div>
-    {% for d in ultimas_dispensaciones %}
-    <div class="info-row">
-      <span class="info-key">{{ d.fecha }}</span>
-      <span class="info-val" style="font-weight:600;">{{ d.variedad }}</span>
-      <span style="color:var(--gold);font-weight:700;">{{ d.gramos }}g</span>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
 
-  <!-- Menú de variedades disponibles -->
-  {% if variedades %}
-  <div class="info-card">
-    <div class="info-card-title">Variedades disponibles en el club</div>
-    <div class="var-menu-grid">
-      {% for v in variedades %}
-      <div class="var-menu-card">
-        {% if v.imagen_url %}
-        <img src="{{ v.imagen_url }}" alt="{{ v.nombre }}"
-             style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:0.5rem;">
+  <!-- ─── HISTORIAL ─── -->
+  <div class="page" id="page-historial">
+    {% if historial %}
+      {% set ns = namespace(mes_actual='') %}
+      {% set meses_es = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'] %}
+      {% for h in historial %}
+        {% set mes = (h.fecha or '0000-00')[:7] %}
+        {% if mes != ns.mes_actual %}
+          {% set ns.mes_actual = mes %}
+          {% set partes = mes.split('-') %}
+          <div class="mes-titulo">{{ meses_es[partes[1]|int] }} {{ partes[0] }}</div>
         {% endif %}
-        <div class="var-menu-nombre">{{ v.nombre }}</div>
-        <span class="var-menu-gen gen-{{ v.genetica or 'hibrido' }}">
-          {% if v.genetica == 'indica' %}Índica{% elif v.genetica == 'sativa' %}Sativa
-          {% elif v.genetica == 'cbd_dominante' %}CBD{% elif v.genetica == 'auto' %}Auto
-          {% else %}Híbrido{% endif %}
-        </span>
-        {% if v.thc_pct or v.cbd_pct %}
-        <div class="var-pct-row">
-          <span style="font-size:0.62rem;font-weight:700;color:#E07B30;min-width:32px;">THC</span>
-          <div class="var-pct-bar"><div class="var-pct-fill" style="background:#E07B30;width:{{ [(v.thc_pct or 0)/35*100,100]|min|round }}%;"></div></div>
-          <span style="font-size:0.65rem;font-weight:700;color:#E07B30;min-width:32px;text-align:right;">{{ v.thc_pct or 0 }}%</span>
+        <div class="hist-row">
+          <div>
+            <div class="hist-var">{{ h.variedad or '—' }}</div>
+            <div class="hist-meta">
+              <span class="hist-fecha">{{ h.fecha or '—' }}</span>
+              <span class="hist-badge {{ h.tipo }}">{{ 'Dispensario' if h.tipo == 'dispensario' else 'Pedido' }}</span>
+            </div>
+          </div>
+          <div class="hist-g">{{ h.gramos }}g</div>
         </div>
-        <div class="var-pct-row">
-          <span style="font-size:0.62rem;font-weight:700;color:#2D5C38;min-width:32px;">CBD</span>
-          <div class="var-pct-bar"><div class="var-pct-fill" style="background:#2D5C38;width:{{ [(v.cbd_pct or 0)/25*100,100]|min|round }}%;"></div></div>
-          <span style="font-size:0.65rem;font-weight:700;color:#2D5C38;min-width:32px;text-align:right;">{{ v.cbd_pct or 0 }}%</span>
+      {% endfor %}
+    {% else %}
+    <div class="hist-empty">
+      <span class="icon">📋</span>No tenés retiros registrados todavía.
+    </div>
+    {% endif %}
+  </div>
+
+
+  <!-- ─── PERFIL ─── -->
+  <div class="page" id="page-perfil">
+    <div class="perfil-avatar">{{ s.nombre[0]|upper }}</div>
+    <div class="perfil-nombre">{{ s.nombre }}</div>
+    <div class="perfil-tipo">{{ s.tipo_socio or 'Socio' }}</div>
+
+    <div class="card">
+      <div class="label" style="margin-bottom:0.5rem">Datos personales</div>
+      <div class="info-row"><span class="info-label">DNI</span><span class="info-val">{{ s.dni or '—' }}</span></div>
+      <div class="info-row"><span class="info-label">Email</span><span class="info-val">{{ s.email or '—' }}</span></div>
+      <div class="info-row"><span class="info-label">Teléfono</span><span class="info-val">{{ s.telefono or '—' }}</span></div>
+      <div class="info-row"><span class="info-label">Estado</span><span class="info-val">{{ etapa_label.get(s.etapa, s.etapa) }}</span></div>
+      <div class="info-row"><span class="info-label">Cupo mensual</span><span class="info-val">{{ s.cupo_mensual or 30 }}g</span></div>
+      <div class="info-row"><span class="info-label">REPROCANN</span><span class="info-val">{{ s.reprocann or '—' }}</span></div>
+    </div>
+
+    {% if cuota_actual %}
+    <div class="card">
+      <div class="label" style="margin-bottom:0.5rem">Cuota / membresía</div>
+      <div class="info-row"><span class="info-label">Tipo</span><span class="info-val">{{ cuota_actual.tipo|capitalize }}</span></div>
+      <div class="info-row"><span class="info-label">Monto</span><span class="info-val">$ {{ "%.0f"|format(cuota_actual.monto) }}</span></div>
+      <div class="info-row"><span class="info-label">Pagada</span><span class="info-val">{{ cuota_actual.fecha_pago }}</span></div>
+      <div class="info-row"><span class="info-label">Vence</span><span class="info-val" id="cuota-vence-perfil" data-fecha="{{ cuota_actual.fecha_vencimiento }}">{{ cuota_actual.fecha_vencimiento }}</span></div>
+    </div>
+    {% endif %}
+
+    {% if docs %}
+    <div class="card">
+      <div class="label" style="margin-bottom:0.5rem">Documentación</div>
+      {% for d in docs %}
+      <div class="doc-row">
+        <div>
+          <div class="doc-tipo">{{ d.tipo }}</div>
+          <div class="doc-fecha">{{ d.fecha }}</div>
         </div>
-        {% endif %}
-        {% if v.descripcion %}
-        <div class="var-desc-mini">{{ v.descripcion }}</div>
-        {% endif %}
-        {% if v.efectos %}
-        <div class="var-tags-mini">
-          {% for ef in v.efectos.split(',')[:3] %}
-          <span class="var-tag-mini">{{ ef.strip() }}</span>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {% if v.indicaciones %}
-        <div class="var-tags-mini" style="margin-top:0.2rem;">
-          {% for ind in v.indicaciones.split(',')[:2] %}
-          <span class="var-tag-mini" style="background:var(--green-pale);border-color:var(--green-light);">💊 {{ ind.strip() }}</span>
-          {% endfor %}
-        </div>
-        {% endif %}
+        <span class="doc-estado {{ 'ok' if d.estado == 'aprobado' else 'pendiente' }}">{{ d.estado|capitalize }}</span>
       </div>
       {% endfor %}
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  <!-- Datos registrados -->
-  <div class="info-card">
-    <div class="info-card-title">Tus datos registrados</div>
-    {% if s.dni %}<div class="info-row"><span class="info-key">DNI</span><span class="info-val">{{ s.dni }}</span></div>{% endif %}
-    {% if s.email %}<div class="info-row"><span class="info-key">Email</span><span class="info-val">{{ s.email }}</span></div>{% endif %}
-    {% if s.telefono %}<div class="info-row"><span class="info-key">WhatsApp</span><span class="info-val">{{ s.telefono }}</span></div>{% endif %}
-    {% if s.diagnostico %}<div class="info-row"><span class="info-key">Condición</span><span class="info-val">{{ s.diagnostico }}</span></div>{% endif %}
-    <div class="info-row"><span class="info-key">Alta</span><span class="info-val">{{ s.created_at[:10] if s.created_at else '—' }}</span></div>
-  </div>
-
-  <!-- Documentación -->
-  {% if docs %}
-  <div class="info-card">
-    <div class="info-card-title">Documentación</div>
-    {% for doc in docs %}
-    <div class="doc-row">
-      <span>{{ doc.tipo }}</span>
-      <span class="doc-estado {{ doc.estado }}">{{ doc.estado|title }}</span>
+    <div class="card">
+      <div class="label" style="margin-bottom:0.75rem">Tu código QR</div>
+      <div id="qr-container"></div>
+      <p style="text-align:center;font-size:0.7rem;color:var(--text3);margin-top:0.75rem;">Mostralo en el club para identificarte</p>
     </div>
-    {% endfor %}
   </div>
-  {% endif %}
 
-  <div style="text-align:center;margin-top:2rem;padding-bottom:1rem;">
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">¿Tenés dudas? Escribinos por WhatsApp o Instagram</p>
-    <a href="https://instagram.com/germina.clubs" target="_blank"
-       style="display:inline-flex;align-items:center;gap:0.5rem;background:var(--green-deep);color:var(--cream);padding:0.7rem 1.5rem;border-radius:100px;font-size:0.85rem;font-weight:600;">
-      @germina.clubs ↗
-    </a>
-  </div>
-</div>
-{% endblock %}
+</div><!-- /pages -->
 
-{% block scripts %}
+<nav class="tab-bar">
+  <button class="tab-btn active" id="tab-inicio" onclick="goTab('inicio')">
+    <span class="tab-icon">🏠</span><span class="tab-label">Inicio</span>
+  </button>
+  <button class="tab-btn" id="tab-flores" onclick="goTab('flores')">
+    <span class="tab-icon">🌿</span><span class="tab-label">Flores</span>
+  </button>
+  <button class="tab-btn" id="tab-historial" onclick="goTab('historial')">
+    <span class="tab-icon">📋</span><span class="tab-label">Historial</span>
+  </button>
+  <button class="tab-btn" id="tab-perfil" onclick="goTab('perfil')">
+    <span class="tab-icon">👤</span><span class="tab-label">Perfil</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-new QRCode(document.getElementById('qr-portal'), {
-  text: window.location.href,
-  width: 80, height: 80,
-  colorDark: '#1A3520', colorLight: '#ffffff',
-});
-// Color fecha vencimiento cuota en carnet
-var v = document.getElementById('carnet-vence');
-if (v) {
+// ── Tabs ──
+function goTab(name) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('page-' + name).scrollTop = 0;
+}
+
+// ── QR ──
+(function() {
+  var url = window.location.href;
+  var el1 = document.getElementById('qr-carnet');
+  if (el1) new QRCode(el1, { text: url, width: 52, height: 52, colorDark:'#E8F0EB', colorLight:'#1A3A22', correctLevel: QRCode.CorrectLevel.M });
+  var el2 = document.getElementById('qr-container');
+  if (el2) new QRCode(el2, { text: url, width: 176, height: 176, colorDark:'#0B1A10', colorLight:'#F5F2EC', correctLevel: QRCode.CorrectLevel.M });
+})();
+
+// ── Cuota badge ──
+(function() {
   var hoy = new Date().toISOString().split('T')[0];
-  if (v.getAttribute('data-fecha') < hoy) {
-    v.style.color = '#FF8080';
-    v.textContent = v.getAttribute('data-fecha') + ' ⚠ Vencida';
+  var vEl  = document.getElementById('cuota-vence-val');
+  var badge = document.getElementById('carnet-estado-badge');
+  if (vEl && badge) {
+    var f = vEl.getAttribute('data-fecha');
+    var dias = Math.round((new Date(f) - new Date(hoy)) / 86400000);
+    if (f < hoy) {
+      badge.textContent = 'Vencida'; badge.classList.add('vencida');
+      vEl.className = 'carnet-cuota-val vencida';
+    } else if (dias <= 7) {
+      badge.textContent = 'Vence pronto'; badge.classList.add('vencida');
+      vEl.className = 'carnet-cuota-val vence';
+    } else {
+      badge.textContent = 'Al día';
+      vEl.className = 'carnet-cuota-val ok';
+    }
   }
+  var vPerfil = document.getElementById('cuota-vence-perfil');
+  if (vPerfil) {
+    var f2 = vPerfil.getAttribute('data-fecha');
+    var d2 = Math.round((new Date(f2) - new Date(hoy)) / 86400000);
+    vPerfil.style.color = f2 < hoy ? 'var(--red)' : d2 <= 7 ? 'var(--yellow)' : 'var(--green-light)';
+  }
+})();
+
+// ── Ratings ──
+var pendingRatings = {};
+
+function setStar(vid, star) {
+  pendingRatings[vid] = star;
+  document.getElementById('stars-' + vid).querySelectorAll('.star').forEach(function(s) {
+    s.classList.toggle('lit', parseInt(s.getAttribute('data-star')) <= star);
+  });
+}
+
+function enviarRating(vid) {
+  var rating = pendingRatings[vid];
+  if (!rating) { showToast('Seleccioná una calificación (1-5 ★)'); return; }
+  var commentEl = document.getElementById('comment-' + vid);
+  var comentario = commentEl ? commentEl.value : '';
+  var btn = document.getElementById('btn-' + vid);
+  if (btn) btn.disabled = true;
+  fetch('/mi-estado/{{ token }}/rating/' + vid, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rating: rating, comentario: comentario })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      var avgEl = document.getElementById('avg-' + vid);
+      var cntEl = document.getElementById('cnt-' + vid);
+      if (avgEl) avgEl.textContent = data.avg.toFixed(1);
+      if (cntEl) cntEl.textContent = data.count;
+      var ok = document.getElementById('ok-' + vid);
+      if (ok) { ok.style.display = 'block'; setTimeout(function(){ ok.style.display='none'; }, 3000); }
+      if (btn) { btn.textContent = 'Actualizar calificación'; btn.disabled = false; }
+    } else {
+      showToast(data.msg || 'Error al guardar');
+      if (btn) btn.disabled = false;
+    }
+  })
+  .catch(function() { showToast('Error de conexión'); if (btn) btn.disabled = false; });
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2800);
 }
 </script>
-{% endblock %}
+</body>
+</html>

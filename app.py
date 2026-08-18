@@ -312,6 +312,17 @@ def init_db():
         registrado_por TEXT DEFAULT 'Admin',
         FOREIGN KEY (socio_id) REFERENCES socios(id)
     );
+    CREATE TABLE IF NOT EXISTS variedad_ratings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        variedad_id INTEGER NOT NULL,
+        socio_id INTEGER NOT NULL,
+        rating INTEGER NOT NULL,
+        comentario TEXT,
+        fecha TEXT DEFAULT (date('now')),
+        UNIQUE(variedad_id, socio_id),
+        FOREIGN KEY (variedad_id) REFERENCES variedades(id),
+        FOREIGN KEY (socio_id) REFERENCES socios(id)
+    );
     ''')
     db.commit()
     db.close()
@@ -425,6 +436,14 @@ def _migrate():
             fecha TEXT DEFAULT (date('now')),
             hora TEXT DEFAULT (time('now','localtime')),
             registrado_por TEXT DEFAULT 'Admin')''')
+    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if 'variedad_ratings' not in tables:
+        db.execute('''CREATE TABLE variedad_ratings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            variedad_id INTEGER NOT NULL, socio_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL, comentario TEXT,
+            fecha TEXT DEFAULT (date('now')),
+            UNIQUE(variedad_id, socio_id))''')
     db.commit()
     db.close()
 
@@ -493,26 +512,74 @@ def portal(token):
     db = get_db()
     s = db.execute('SELECT * FROM socios WHERE token=?', (token,)).fetchone()
     if not s: return redirect(url_for('landing'))
-    docs = db.execute('SELECT * FROM documentos WHERE socio_id=? ORDER BY fecha DESC', (s['id'],)).fetchall()
-    variedades = db.execute('SELECT * FROM variedades WHERE activa=1 ORDER BY nombre').fetchall()
+    docs  = db.execute('SELECT * FROM documentos WHERE socio_id=? ORDER BY fecha DESC', (s['id'],)).fetchall()
     cuota_actual = db.execute(
         'SELECT * FROM cuotas WHERE socio_id=? ORDER BY fecha_vencimiento DESC LIMIT 1', (s['id'],)
     ).fetchone()
     hoy = date.today().isoformat()
     mes_inicio = date.today().replace(day=1).isoformat()
     consumido_mes = (db.execute(
-        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=? AND fecha >= ?",
+        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=? AND fecha>=?",
         (s['id'], mes_inicio)).fetchone()[0] or 0) + (db.execute(
-        "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND fecha_pedido >= ? AND estado='entregado'",
+        "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND fecha_pedido>=? AND estado='entregado'",
         (s['id'], mes_inicio)).fetchone()[0] or 0)
-    ultimas_dispensaciones = db.execute(
-        'SELECT * FROM dispensaciones WHERE socio_id=? ORDER BY fecha DESC, id DESC LIMIT 5', (s['id'],)
-    ).fetchall()
-    return render_template('portal.html', s=s, docs=docs,
-                           variedades=variedades, cuota_actual=cuota_actual,
-                           consumido_mes=round(consumido_mes,1), hoy=hoy,
-                           ultimas_dispensaciones=ultimas_dispensaciones,
-                           etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR)
+    total_consumido = (db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=?", (s['id'],)).fetchone()[0] or 0) + (
+        db.execute("SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND estado='entregado'",
+        (s['id'],)).fetchone()[0] or 0)
+    # Historial combinado
+    disp_hist = db.execute(
+        "SELECT fecha, variedad, gramos, 'dispensario' as tipo FROM dispensaciones WHERE socio_id=? ORDER BY fecha DESC, id DESC",
+        (s['id'],)).fetchall()
+    ped_hist = db.execute(
+        "SELECT fecha_entrega as fecha, variedad, gramos, 'pedido' as tipo FROM pedidos WHERE socio_id=? AND estado='entregado' ORDER BY fecha_entrega DESC",
+        (s['id'],)).fetchall()
+    historial = sorted([dict(r) for r in list(disp_hist)+list(ped_hist)],
+                       key=lambda x: x['fecha'] or '0000', reverse=True)
+    # Variedades con ratings
+    variedades_raw = db.execute('SELECT * FROM variedades WHERE activa=1 ORDER BY nombre').fetchall()
+    variedades_set = {r['variedad'] for r in disp_hist}
+    variedades_set |= {r['variedad'] for r in ped_hist}
+    variedades = []
+    for v in variedades_raw:
+        avg_row = db.execute('SELECT AVG(rating), COUNT(*) FROM variedad_ratings WHERE variedad_id=?', (v['id'],)).fetchone()
+        mi_r = db.execute('SELECT rating, comentario FROM variedad_ratings WHERE variedad_id=? AND socio_id=?',
+                          (v['id'], s['id'])).fetchone()
+        variedades.append({
+            **dict(v),
+            'avg_rating': round(avg_row[0] or 0, 1),
+            'rating_count': avg_row[1] or 0,
+            'mi_rating': mi_r['rating'] if mi_r else 0,
+            'mi_comentario': mi_r['comentario'] if mi_r else '',
+            'puede_votar': v['nombre'] in variedades_set,
+        })
+    return render_template('portal.html',
+        s=s, docs=docs, cuota_actual=cuota_actual, hoy=hoy,
+        consumido_mes=round(consumido_mes,1),
+        total_consumido=round(total_consumido,1),
+        historial=historial, variedades=variedades,
+        token=token,
+        etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR)
+
+@app.route('/mi-estado/<token>/rating/<int:vid>', methods=['POST'])
+def portal_rating(token, vid):
+    db = get_db()
+    s = db.execute('SELECT * FROM socios WHERE token=?', (token,)).fetchone()
+    if not s: return jsonify(ok=False), 403
+    rating = int(request.json.get('rating', 0) if request.is_json else request.form.get('rating', 0))
+    comentario = (request.json.get('comentario','') if request.is_json else request.form.get('comentario','')).strip()[:400]
+    if not 1 <= rating <= 5: return jsonify(ok=False, msg='Rating inválido'), 400
+    existing = db.execute('SELECT id FROM variedad_ratings WHERE variedad_id=? AND socio_id=?', (vid, s['id'])).fetchone()
+    today = date.today().isoformat()
+    if existing:
+        db.execute('UPDATE variedad_ratings SET rating=?,comentario=?,fecha=? WHERE id=?',
+                   (rating, comentario, today, existing['id']))
+    else:
+        db.execute('INSERT INTO variedad_ratings (variedad_id,socio_id,rating,comentario) VALUES (?,?,?,?)',
+                   (vid, s['id'], rating, comentario))
+    db.commit()
+    avg = db.execute('SELECT AVG(rating), COUNT(*) FROM variedad_ratings WHERE variedad_id=?', (vid,)).fetchone()
+    return jsonify(ok=True, avg=round(avg[0] or 0, 1), count=avg[1] or 0)
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  ADMIN
