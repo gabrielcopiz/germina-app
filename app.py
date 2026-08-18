@@ -507,6 +507,24 @@ def confirmacion(token):
     if not s: return redirect(url_for('landing'))
     return render_template('confirmacion.html', s=s)
 
+@app.route('/acceso-socio', methods=['GET', 'POST'])
+def acceso_socio():
+    error = None
+    if request.method == 'POST':
+        dni = (request.form.get('dni') or '').strip().replace('.', '').replace('-', '').replace(' ', '')
+        if not dni:
+            error = 'Ingresá tu DNI para continuar.'
+        else:
+            db = get_db()
+            socio = db.execute(
+                "SELECT token FROM socios WHERE REPLACE(REPLACE(REPLACE(dni,'.',''),'-',''),' ','') = ?",
+                (dni,)).fetchone()
+            if socio:
+                return redirect(url_for('portal', token=socio['token']))
+            else:
+                error = 'No encontramos un socio con ese DNI. Verificá que esté bien escrito o contactanos.'
+    return render_template('acceso_socio.html', error=error)
+
 @app.route('/mi-estado/<token>')
 def portal(token):
     db = get_db()

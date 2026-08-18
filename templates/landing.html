@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Cannawaka — Dispositivo de Salud | Cannabis Medicinal CABA{% endblock %}
+{% block title %}Germina — Cannabis Social Club | Cannabis Medicinal Argentina{% endblock %}
 
 {% block extra_styles %}
 .hero {
@@ -53,6 +53,13 @@
   transition: opacity 0.2s, transform 0.2s;
 }
 .hero-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+.hero-cta-secondary {
+  display: inline-block; margin-left: 1rem;
+  color: rgba(255,255,255,0.6); font-size: 0.88rem; font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.25); padding-bottom: 1px;
+  transition: color 0.2s;
+}
+.hero-cta-secondary:hover { color: var(--gold); }
 .hero-note {
   margin-top: 1rem;
   font-size: 0.75rem;
@@ -203,6 +210,7 @@
         Somos un dispositivo de salud cannábico en Buenos Aires. Acompañamos a pacientes, cuidadores y profesionales dentro del marco legal argentino.
       </p>
       <a href="{{ url_for('solicitud') }}" class="hero-cta">Quiero unirme al club →</a>
+      <a href="{{ url_for('acceso_socio') }}" class="hero-cta-secondary">Ya soy socio →</a>
       <p class="hero-note">Proceso 100% gratuito · Completamente legal · REPROCANN</p>
       <div class="hero-stats">
         <div>
@@ -230,10 +238,10 @@
   <div class="container">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;">
       <div>
-        <div class="section-label">Sobre Cannawaka</div>
+        <div class="section-label">Sobre Germina</div>
         <h2 class="section-title">Un espacio de salud, no solo un club</h2>
         <p class="section-sub">
-          Cannawaka nació con la convicción de que el cannabis medicinal es un derecho. Somos un dispositivo de salud que conecta a pacientes con el sistema legal, los acompaña en su proceso y construye comunidad de cuidado.
+          Germina nació con la convicción de que el cannabis medicinal es un derecho. Somos una asociación que conecta a pacientes con el sistema legal, los acompaña en su proceso y construye comunidad de cuidado.
         </p>
         <p class="section-sub" style="margin-top:1rem;">
           Formamos parte del <strong>Consejo Consultivo de la Ley 27.350</strong>, la ley que regula el uso medicinal del cannabis en Argentina.
@@ -348,7 +356,7 @@
         <div class="step-num">05</div>
         <div>
           <div class="step-title">Accedés a la comunidad</div>
-          <div class="step-desc">Como socio activo de Cannawaka tenés acceso a nuestra red de profesionales, información actualizada y acompañamiento continuo.</div>
+          <div class="step-desc">Como socio activo de Germina tenés acceso a nuestra red de profesionales, información actualizada y acompañamiento continuo.</div>
         </div>
       </div>
     </div>
@@ -361,7 +369,7 @@
     <div class="section-label">Marco legal</div>
     <h2 class="section-title">100% legal en Argentina</h2>
     <p class="section-sub">
-      El cannabis medicinal está regulado por ley nacional desde 2017. Cannawaka opera dentro del marco legal vigente.
+      El cannabis medicinal está regulado por ley nacional desde 2017. Germina opera dentro del marco legal vigente.
     </p>
     <div class="ley-card">
       <div class="ley-num">Ley Nacional N° 27.350</div>
@@ -382,7 +390,7 @@
         Completar la solicitud no te compromete a nada.<br>
         Es el primer paso para conocer tu situación y qué opciones tenés.
       </p>
-      <a href="{{ url_for('solicitud') }}" class="hero-cta">Quiero unirme a Cannawaka →</a>
+      <a href="{{ url_for('solicitud') }}" class="hero-cta">Quiero unirme a Germina →</a>
       <p style="margin-top:1rem;font-size:0.72rem;color:rgba(255,255,255,0.3);">Gratuito · Confidencial · Sin compromiso</p>
     </div>
   </div>
