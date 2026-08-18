@@ -546,7 +546,8 @@ def confirmacion(token):
 
 @app.route('/club-demo')
 def club_landing():
-    return render_template('club_landing.html')
+    nombre = request.args.get('nombre', 'Club Raíz')
+    return render_template('club_landing.html', club_nombre=nombre)
 
 def _enviar_propuesta(club_nombre, contacto_nombre, email_dest):
     """Genera PDFs y los envía por email. Retorna True si ok, False si falla."""
@@ -626,8 +627,8 @@ def contacto_club():
         else:
             ok = _enviar_propuesta(club_nombre, contacto_nombre, email_dest)
             if ok:
-                enviado = True
-                email_enviado = email_dest
+                return redirect(url_for('club_landing', nombre=club_nombre))
+            email_enviado = email_dest
             else:
                 if not MAIL_USER:
                     error = 'El sistema de envío de emails no está configurado aún. Escribinos directamente a besparkcreativa@gmail.com'
