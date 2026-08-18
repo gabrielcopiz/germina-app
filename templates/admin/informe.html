@@ -1,0 +1,238 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Informe del día — Germina Admin{% endblock %}
+{% block topbar_title %}Informe del día{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Print styles */
+@media print {
+  .sidebar, .topbar, .no-print { display: none !important; }
+  .main { margin-left: 0 !important; }
+  .content { padding: 0 !important; }
+  .card { break-inside: avoid; }
+}
+
+.informe-header {
+  background: var(--green-deep);
+  border-radius: 16px;
+  padding: 2rem 2.4rem;
+  margin-bottom: 1.8rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.informe-fecha-label {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 0.3rem;
+}
+.informe-fecha-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; color: var(--cream); font-weight: 500;
+}
+.informe-actions { display: flex; gap: 0.8rem; align-items: center; }
+
+.kpi-informe {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.8rem;
+}
+.kpi-inf-card {
+  background: var(--white); border-radius: 14px;
+  border: 1px solid var(--border); padding: 1.3rem 1.4rem;
+  text-align: center;
+}
+.kpi-inf-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; font-weight: 500; line-height: 1; margin-bottom: 0.3rem;
+}
+.kpi-inf-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.section-inf {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+  margin: 1.6rem 0 0.6rem;
+}
+
+.inf-card {
+  background: var(--white); border-radius: 14px;
+  border: 1px solid var(--border); overflow: hidden;
+  margin-bottom: 1.2rem;
+}
+.inf-card-header {
+  padding: 0.9rem 1.4rem; border-bottom: 1px solid var(--border);
+  font-size: 0.82rem; font-weight: 700; color: var(--green-deep);
+  background: var(--cream);
+}
+.empty-inf { padding: 1.5rem; text-align: center; color: var(--muted); font-size: 0.84rem; }
+
+/* date picker form */
+.fecha-form {
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.fecha-form input[type=date] {
+  padding: 0.4rem 0.8rem; border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.82rem;
+  background: rgba(255,255,255,0.08); color: var(--cream);
+  color-scheme: dark;
+}
+.fecha-form button {
+  padding: 0.4rem 1rem; background: var(--gold); color: var(--green-deep);
+  border: none; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
+  cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── HEADER INFORME ── -->
+<div class="informe-header">
+  <div>
+    <div class="informe-fecha-label">Informe de cierre</div>
+    <div class="informe-fecha-val">{{ fmt_fecha_larga(fecha) }}</div>
+  </div>
+  <div class="informe-actions">
+    <form class="fecha-form no-print" method="GET" action="{{ url_for('admin_informe') }}">
+      <input type="date" name="fecha" value="{{ fecha }}">
+      <button type="submit">Ver</button>
+    </form>
+    <button class="btn btn-gold no-print" onclick="window.print()">🖨 Imprimir</button>
+  </div>
+</div>
+
+<!-- ── KPIs ── -->
+<div class="kpi-informe">
+  <div class="kpi-inf-card">
+    <div class="kpi-inf-val" style="color:var(--green-deep);">{{ socios_atendidos }}</div>
+    <div class="kpi-inf-label">Socios atendidos</div>
+  </div>
+  <div class="kpi-inf-card">
+    <div class="kpi-inf-val" style="color:var(--green-mid);">{{ total_g }}<span style="font-size:1.1rem;">g</span></div>
+    <div class="kpi-inf-label">Total dispensado</div>
+  </div>
+  <div class="kpi-inf-card">
+    <div class="kpi-inf-val" style="color:var(--gold);">{{ variedades_count }}</div>
+    <div class="kpi-inf-label">Variedades dispensadas</div>
+  </div>
+  <div class="kpi-inf-card">
+    <div class="kpi-inf-val" style="color:#5C3D8F;">{{ pedidos_entregados_count }}</div>
+    <div class="kpi-inf-label">Pedidos entregados</div>
+  </div>
+</div>
+
+<!-- ── DISPENSACIONES DEL DÍA ── -->
+<div class="section-inf">Dispensaciones del día</div>
+<div class="inf-card">
+  <div class="inf-card-header">Detalle de dispensaciones — {{ dispensaciones|length }} registros</div>
+  {% if dispensaciones %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Hora</th>
+          <th>Socio</th>
+          <th>Variedad</th>
+          <th>Gramos</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in dispensaciones %}
+        <tr>
+          <td style="color:var(--muted);font-size:0.75rem;">{{ loop.index }}</td>
+          <td style="color:var(--muted);font-size:0.78rem;">{{ d.fecha or '—' }}</td>
+          <td class="fw-600" style="font-size:0.84rem;">{{ d.nombre }} {{ d.apellido }}</td>
+          <td style="font-size:0.84rem;">{{ d.variedad }}</td>
+          <td style="font-weight:700;color:var(--green-mid);">{{ d.gramos }}g</td>
+          <td class="text-xs text-muted">{{ d.notas or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-inf">Sin dispensaciones registradas para esta fecha.</div>
+  {% endif %}
+</div>
+
+<!-- ── RESUMEN POR VARIEDAD ── -->
+{% if resumen_variedades %}
+<div class="section-inf">Resumen por variedad</div>
+<div class="inf-card">
+  <div class="inf-card-header">Totales por variedad</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Variedad</th>
+          <th>Dispensaciones</th>
+          <th>Total (g)</th>
+          <th>% del día</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in resumen_variedades %}
+        <tr>
+          <td class="fw-600">{{ r.variedad }}</td>
+          <td>{{ r.cnt }}</td>
+          <td style="font-weight:700;color:var(--green-mid);">{{ "%.1f"|format(r.total_g) }}g</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div style="flex:1;height:5px;background:var(--cream-dark);border-radius:3px;overflow:hidden;">
+                <div style="height:100%;border-radius:3px;background:var(--green-mid);width:{{ ((r.total_g / total_g)*100)|round if total_g > 0 else 0 }}%;"></div>
+              </div>
+              <span class="text-xs text-muted">{{ ((r.total_g / total_g)*100)|round if total_g > 0 else 0 }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── PEDIDOS ENTREGADOS ── -->
+{% if pedidos_entregados %}
+<div class="section-inf">Pedidos entregados</div>
+<div class="inf-card">
+  <div class="inf-card-header">Pedidos marcados como entregados hoy</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Socio</th>
+          <th>Variedad</th>
+          <th>Gramos</th>
+          <th>Precio</th>
+          <th>Forma de pago</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pedidos_entregados %}
+        <tr>
+          <td style="color:var(--gold);font-weight:600;font-size:0.82rem;">{{ p.codigo }}</td>
+          <td class="fw-600" style="font-size:0.84rem;">{{ p.nombre }} {{ p.apellido }}</td>
+          <td style="font-size:0.84rem;">{{ p.variedad }}</td>
+          <td style="font-weight:700;color:var(--green-mid);">{{ p.gramos }}g</td>
+          <td style="font-size:0.84rem;">${{ "%.0f"|format(p.precio) }}</td>
+          <td>
+            <span class="badge badge-aprobado">{{ forma_pago_label.get(p.forma_pago, p.forma_pago or '—') }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="section-inf">Pedidos entregados</div>
+<div class="inf-card">
+  <div class="empty-inf">Sin pedidos entregados en esta fecha.</div>
+</div>
+{% endif %}
+
+<!-- Footer de informe -->
+<div style="text-align:center;padding:1.5rem 0 2rem;color:var(--muted);font-size:0.72rem;">
+  Germina &mdash; Informe generado el {{ hoy }}
+</div>
+
+{% endblock %}

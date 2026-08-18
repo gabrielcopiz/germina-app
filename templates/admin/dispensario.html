@@ -1,0 +1,319 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Dispensario — Germina Admin{% endblock %}
+{% block topbar_title %}Dispensario{% endblock %}
+
+{% block extra_head %}
+<style>
+.disp-layout {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  gap: 1.5rem;
+  align-items: start;
+}
+.panel-left, .panel-right {
+  background: var(--white);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.panel-header {
+  padding: 1.1rem 1.4rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-body { padding: 1.4rem; }
+.panel-title {
+  font-size: 0.85rem; font-weight: 700; color: var(--green-deep); letter-spacing: 0.01em;
+}
+
+/* Search box */
+.search-socio-wrap { position: relative; margin-bottom: 1rem; }
+.search-socio-wrap input {
+  width: 100%;
+  padding: 0.7rem 1rem 0.7rem 2.4rem;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: 'Inter', sans-serif; font-size: 0.88rem;
+  background: var(--cream); color: var(--text);
+  transition: border-color 0.2s;
+}
+.search-socio-wrap input:focus { outline: none; border-color: var(--green-mid); background: var(--white); }
+.search-icon {
+  position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: 0.95rem; pointer-events: none;
+}
+
+/* Socio list */
+.socio-list {
+  max-height: 220px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: 1.2rem;
+}
+.socio-list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.7rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+.socio-list-item:last-child { border-bottom: none; }
+.socio-list-item:hover { background: var(--cream); }
+.socio-list-item.selected { background: #EEF6F0; }
+.socio-nombre { font-size: 0.85rem; font-weight: 600; color: var(--green-deep); }
+.socio-etapa { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
+.socio-list-empty { padding: 1.2rem; text-align: center; color: var(--muted); font-size: 0.82rem; }
+
+/* Socio seleccionado banner */
+.socio-banner {
+  background: #EEF6F0; border: 1.5px solid var(--green-light);
+  border-radius: 12px; padding: 1rem 1.2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+.socio-banner-nombre { font-size: 1rem; font-weight: 700; color: var(--green-deep); }
+.socio-banner-meta { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
+.cupo-bar-wrap { margin-top: 0.5rem; }
+.cupo-bar { height: 6px; background: var(--cream-dark); border-radius: 3px; overflow: hidden; margin-top: 0.2rem; }
+.cupo-bar-fill { height: 100%; border-radius: 3px; background: var(--green-mid); }
+
+/* Disp form */
+.disp-form { }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem; }
+
+/* Hoy panel */
+.disp-hoy-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.disp-hoy-table thead th {
+  text-align: left; font-size: 0.62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted); padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--cream);
+}
+.disp-hoy-table tbody td {
+  padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--border); vertical-align: middle;
+}
+.disp-hoy-table tbody tr:last-child td { border-bottom: none; }
+.disp-hoy-table tbody tr:hover { background: var(--cream); }
+
+.total-hoy-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.9rem 1.2rem;
+  background: var(--green-deep);
+  color: var(--cream);
+}
+.total-hoy-label { font-size: 0.78rem; font-weight: 600; }
+.total-hoy-val { font-family: 'Playfair Display', serif; font-size: 1.4rem; }
+
+.hidden { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<script>
+window.SOCIOS = {{ socios_activos | tojson }};
+</script>
+
+<div class="disp-layout">
+
+  <!-- ── PANEL IZQUIERDO: REGISTRAR ── -->
+  <div class="panel-left">
+    <div class="panel-header">
+      <span class="panel-title">💊 Registrar dispensación</span>
+      <span style="font-size:0.72rem;color:var(--muted);">{{ hoy }}</span>
+    </div>
+    <div class="panel-body">
+
+      <!-- Search socio -->
+      <div style="margin-bottom:0.5rem;">
+        <label style="font-size:0.75rem;font-weight:600;color:var(--green-deep);display:block;margin-bottom:0.4rem;">Buscar socio</label>
+        <div class="search-socio-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="buscar-socio" placeholder="Nombre o apellido…" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- Lista de socios -->
+      <div class="socio-list" id="socio-list">
+        <div class="socio-list-empty" id="socio-placeholder">Escribí para buscar un socio</div>
+      </div>
+
+      <!-- Socio seleccionado (oculto hasta elegir) -->
+      <div id="socio-banner" class="socio-banner hidden">
+        <div>
+          <div class="socio-banner-nombre" id="banner-nombre">—</div>
+          <div class="socio-banner-meta" id="banner-meta">—</div>
+          <div class="cupo-bar-wrap">
+            <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);">
+              <span>Cupo mensual</span>
+              <span id="banner-cupo-texto">—</span>
+            </div>
+            <div class="cupo-bar"><div class="cupo-bar-fill" id="banner-cupo-fill" style="width:0%;"></div></div>
+          </div>
+        </div>
+        <button type="button" onclick="limpiarSocio()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted);">✕</button>
+      </div>
+
+      <!-- Formulario -->
+      <form method="POST" action="{{ url_for('admin_dispensario') }}" class="disp-form" id="disp-form">
+        <input type="hidden" name="socio_id" id="socio_id_input">
+
+        <div class="form-row">
+          <div class="form-group-a">
+            <label for="variedad">Variedad</label>
+            <select name="variedad" id="variedad" class="form-control-a" required>
+              <option value="">— Seleccionar —</option>
+              {% for v in variedades_stock %}
+              <option value="{{ v.variedad }}">{{ v.variedad }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group-a">
+            <label for="gramos">Gramos</label>
+            <input type="number" name="gramos" id="gramos" class="form-control-a"
+                   placeholder="0.0" step="0.1" min="0.1" max="100" required>
+          </div>
+        </div>
+
+        <div class="form-group-a">
+          <label for="notas">Notas (opcional)</label>
+          <input type="text" name="notas" id="notas" class="form-control-a" placeholder="Observaciones…">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.4rem;border-radius:10px;padding:0.75rem;">
+          Registrar dispensación
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ── PANEL DERECHO: DISPENSACIONES DE HOY ── -->
+  <div class="panel-right">
+    <div class="panel-header">
+      <span class="panel-title">Dispensaciones de hoy</span>
+      <span class="badge badge-activo">{{ dispensaciones_hoy|length }} registros</span>
+    </div>
+
+    {% if dispensaciones_hoy %}
+    <div style="overflow-x:auto;">
+      <table class="disp-hoy-table">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Socio</th>
+            <th>Variedad</th>
+            <th>g</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in dispensaciones_hoy %}
+          <tr>
+            <td style="color:var(--muted);font-size:0.78rem;">
+              {% if d.fecha %}{{ d.fecha }}{% else %}—{% endif %}
+            </td>
+            <td>
+              <div class="fw-600" style="font-size:0.82rem;">{{ d.nombre }} {{ d.apellido }}</div>
+            </td>
+            <td style="font-size:0.82rem;">{{ d.variedad }}</td>
+            <td style="font-weight:700;color:var(--green-mid);">{{ d.gramos }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:2rem;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">💊</div>
+      <p class="text-muted text-sm">Sin dispensaciones registradas hoy.</p>
+    </div>
+    {% endif %}
+
+    <div class="total-hoy-row">
+      <span class="total-hoy-label">Total dispensado hoy</span>
+      <span class="total-hoy-val">{{ total_hoy_g }}g</span>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var socios = window.SOCIOS || [];
+  var selectedSocio = null;
+
+  var inputBuscar = document.getElementById('buscar-socio');
+  var listaEl     = document.getElementById('socio-list');
+  var placeholder = document.getElementById('socio-placeholder');
+  var bannerEl    = document.getElementById('socio-banner');
+  var bannerNombre = document.getElementById('banner-nombre');
+  var bannerMeta   = document.getElementById('banner-meta');
+  var bannerCupoTexto = document.getElementById('banner-cupo-texto');
+  var bannerCupoFill  = document.getElementById('banner-cupo-fill');
+  var socioIdInput = document.getElementById('socio_id_input');
+  var dispForm    = document.getElementById('disp-form');
+
+  function renderLista(filtrados) {
+    listaEl.innerHTML = '';
+    if (filtrados.length === 0) {
+      listaEl.innerHTML = '<div class="socio-list-empty">Sin resultados</div>';
+      return;
+    }
+    filtrados.forEach(function(s) {
+      var item = document.createElement('div');
+      item.className = 'socio-list-item';
+      item.innerHTML = '<div><div class="socio-nombre">' + s.nombre + ' ' + s.apellido + '</div>' +
+                       '<div class="socio-etapa">' + s.etapa + ' · ID ' + s.id + '</div></div>' +
+                       '<span style="font-size:0.72rem;color:var(--green-mid);font-weight:600;">Cupo: ' + (s.cupo_mensual_g || 30) + 'g</span>';
+      item.addEventListener('click', function() { seleccionarSocio(s); });
+      listaEl.appendChild(item);
+    });
+  }
+
+  function seleccionarSocio(s) {
+    selectedSocio = s;
+    socioIdInput.value = s.id;
+
+    // Mostrar banner
+    bannerNombre.textContent = s.nombre + ' ' + s.apellido;
+    bannerMeta.textContent = 'Etapa: ' + s.etapa + ' · Cupo: ' + (s.cupo_mensual_g || 30) + 'g/mes';
+    var cupo = s.cupo_mensual_g || 30;
+    bannerCupoTexto.textContent = cupo + 'g';
+    bannerCupoFill.style.width = '0%'; // no tenemos consumo actual en este contexto
+    bannerEl.classList.remove('hidden');
+
+    // Ocultar lista
+    listaEl.innerHTML = '';
+    inputBuscar.value = s.nombre + ' ' + s.apellido;
+  }
+
+  function limpiarSocio() {
+    selectedSocio = null;
+    socioIdInput.value = '';
+    bannerEl.classList.add('hidden');
+    inputBuscar.value = '';
+    listaEl.innerHTML = '<div class="socio-list-empty" id="socio-placeholder">Escribí para buscar un socio</div>';
+  }
+  window.limpiarSocio = limpiarSocio;
+
+  inputBuscar.addEventListener('keyup', function() {
+    var q = this.value.trim().toLowerCase();
+    if (!q) {
+      listaEl.innerHTML = '<div class="socio-list-empty">Escribí para buscar un socio</div>';
+      return;
+    }
+    var filtrados = socios.filter(function(s) {
+      return (s.nombre + ' ' + s.apellido).toLowerCase().indexOf(q) !== -1;
+    });
+    renderLista(filtrados);
+  });
+
+  dispForm.addEventListener('submit', function(e) {
+    if (!socioIdInput.value) {
+      e.preventDefault();
+      alert('Seleccioná un socio primero.');
+    }
+  });
+})();
+</script>
+{% endblock %}

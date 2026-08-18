@@ -584,6 +584,29 @@ def admin_dashboard():
         "SELECT COUNT(*) FROM pedidos WHERE estado IN ('pendiente','preparando')"
     ).fetchone()[0]
 
+    # ── Datos para gráfico de últimas 8 semanas ──
+    chart_semanas = []
+    for i in range(7, -1, -1):
+        semana_inicio = (date.today() - timedelta(weeks=i)).isoformat()
+        semana_fin = (date.today() - timedelta(weeks=i-1)).isoformat()
+        cnt = db.execute(
+            "SELECT COUNT(*) FROM socios WHERE DATE(created_at) >= ? AND DATE(created_at) < ?",
+            (semana_inicio, semana_fin)
+        ).fetchone()[0]
+        label = f"S-{8-i}"
+        chart_semanas.append({'label': label, 'cnt': cnt})
+
+    # ── KPIs de hoy para el dashboard ──
+    disp_hoy_count = db.execute(
+        "SELECT COUNT(*) FROM dispensaciones WHERE fecha = ?", (hoy,)
+    ).fetchone()[0]
+    disp_hoy_g = db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE fecha = ?", (hoy,)
+    ).fetchone()[0]
+    disp_hoy_socios = db.execute(
+        "SELECT COUNT(DISTINCT socio_id) FROM dispensaciones WHERE fecha = ?", (hoy,)
+    ).fetchone()[0]
+
     return render_template('admin/dashboard.html',
         total=total, nuevos_mes=nuevos_mes, nuevos_hoy=nuevos_hoy,
         activos=activos, aprobados=aprobados, en_revision=en_revision,
@@ -609,7 +632,106 @@ def admin_dashboard():
         alertas_stock_bajo=alertas_stock_bajo,
         cosechas_urgentes=cosechas_urgentes,
         pedidos_pendientes=pedidos_pendientes,
+        # gráfico actividad
+        chart_semanas=chart_semanas,
+        # kpis de hoy
+        disp_hoy_count=disp_hoy_count,
+        disp_hoy_g=round(disp_hoy_g, 1),
+        disp_hoy_socios=disp_hoy_socios,
     )
+
+@app.route('/admin/dispensario', methods=['GET','POST'])
+@login_required
+def admin_dispensario():
+    db = get_db()
+    hoy = date.today().isoformat()
+
+    if request.method == 'POST':
+        socio_id = request.form.get('socio_id')
+        variedad = request.form.get('variedad','').strip()
+        gramos   = float(request.form.get('gramos', 0) or 0)
+        notas    = request.form.get('notas','').strip()
+        if socio_id and variedad and gramos > 0:
+            db.execute(
+                "INSERT INTO dispensaciones (socio_id, variedad, gramos, fecha, notas) VALUES (?,?,?,?,?)",
+                (socio_id, variedad, gramos, hoy, notas)
+            )
+            db.commit()
+            flash(f'Dispensación registrada: {gramos}g de {variedad}')
+        return redirect(url_for('admin_dispensario'))
+
+    socios_activos = db.execute(
+        "SELECT id, nombre, apellido, etapa, cupo_mensual_g FROM socios WHERE etapa IN ('activo','aprobado') ORDER BY nombre"
+    ).fetchall()
+
+    variedades_stock = db.execute('''
+        SELECT DISTINCT cu.variedad
+        FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
+        ORDER BY cu.variedad
+    ''').fetchall()
+
+    dispensaciones_hoy = db.execute('''
+        SELECT d.*, s.nombre, s.apellido
+        FROM dispensaciones d JOIN socios s ON s.id = d.socio_id
+        WHERE d.fecha = ?
+        ORDER BY d.id DESC
+    ''', (hoy,)).fetchall()
+
+    total_hoy_g = sum(d['gramos'] for d in dispensaciones_hoy)
+
+    return render_template('admin/dispensario.html',
+        socios_activos=[dict(s) for s in socios_activos],
+        variedades_stock=variedades_stock,
+        dispensaciones_hoy=dispensaciones_hoy,
+        total_hoy_g=round(total_hoy_g, 1),
+        hoy=hoy,
+    )
+
+
+@app.route('/admin/informe')
+@login_required
+def admin_informe():
+    db = get_db()
+    hoy = date.today().isoformat()
+    fecha_param = request.args.get('fecha', hoy)
+
+    dispensaciones = db.execute('''
+        SELECT d.*, s.nombre, s.apellido
+        FROM dispensaciones d JOIN socios s ON s.id = d.socio_id
+        WHERE d.fecha = ?
+        ORDER BY d.id ASC
+    ''', (fecha_param,)).fetchall()
+
+    resumen_variedades = db.execute('''
+        SELECT variedad, COUNT(*) as cnt, SUM(gramos) as total_g
+        FROM dispensaciones WHERE fecha = ?
+        GROUP BY variedad ORDER BY total_g DESC
+    ''', (fecha_param,)).fetchall()
+
+    pedidos_entregados = db.execute('''
+        SELECT p.*, s.nombre, s.apellido
+        FROM pedidos p JOIN socios s ON s.id = p.socio_id
+        WHERE DATE(p.fecha_entrega) = ? AND p.estado = 'entregado'
+        ORDER BY p.fecha_entrega DESC
+    ''', (fecha_param,)).fetchall()
+
+    socios_atendidos = len(set(d['socio_id'] for d in dispensaciones))
+    total_g = sum(d['gramos'] for d in dispensaciones)
+    variedades_count = len(set(d['variedad'] for d in dispensaciones))
+
+    return render_template('admin/informe.html',
+        dispensaciones=dispensaciones,
+        resumen_variedades=resumen_variedades,
+        pedidos_entregados=pedidos_entregados,
+        socios_atendidos=socios_atendidos,
+        total_g=round(total_g, 1),
+        variedades_count=variedades_count,
+        pedidos_entregados_count=len(pedidos_entregados),
+        fecha=fecha_param,
+        hoy=hoy,
+        forma_pago_label=FORMA_PAGO_LABEL,
+    )
+
 
 @app.route('/admin/socios')
 @login_required

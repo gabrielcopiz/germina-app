@@ -231,6 +231,12 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_stock') }}" class="nav-item {% if request.endpoint == 'admin_stock' %}active{% endif %}">
       <span class="nav-icon">📦</span> Stock
     </a>
+    <a href="{{ url_for('admin_dispensario') }}" class="nav-item {% if request.endpoint == 'admin_dispensario' %}active{% endif %}">
+      <span class="nav-icon">💊</span> Dispensario
+    </a>
+    <a href="{{ url_for('admin_informe') }}" class="nav-item {% if request.endpoint == 'admin_informe' %}active{% endif %}">
+      <span class="nav-icon">📊</span> Informe del día
+    </a>
     <div class="nav-section-label" style="margin-top:0.5rem;">Exportar</div>
     <a href="{{ url_for('admin_exportar') }}" class="nav-item">
       <span class="nav-icon">⬇️</span> Socios CSV

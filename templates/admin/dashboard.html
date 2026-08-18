@@ -3,20 +3,74 @@
 {% block topbar_title %}Dashboard{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* ── HOY BAR ── */
+.hoy-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.8rem;
+}
+.hoy-card {
+  background: var(--green-deep); border-radius: 16px;
+  padding: 1.4rem 1.6rem; position: relative; overflow: hidden;
+}
+.hoy-card::after {
+  content: ''; position: absolute; right: -18px; top: -18px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+}
+.hoy-eyebrow {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.13em;
+  text-transform: uppercase; color: rgba(200,164,74,0.8); margin-bottom: 0.5rem;
+}
+.hoy-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem; font-weight: 500; color: #fff; line-height: 1;
+  margin-bottom: 0.3rem;
+}
+.hoy-label { font-size: 0.75rem; color: rgba(255,255,255,0.55); font-weight: 500; }
+
+/* ── KPI CARDS MEJORADAS ── */
+.kpi-grid-v2 {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.8rem;
+}
+.kpi-v2 {
+  background: var(--white); border-radius: 16px;
+  border: 1px solid var(--border); padding: 1.3rem 1.4rem;
+  display: flex; align-items: flex-start; gap: 1rem;
+}
+.kpi-icon-circle {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.kpi-v2-body {}
+.kpi-v2-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.9rem; font-weight: 500; line-height: 1; margin-bottom: 0.25rem;
+}
+.kpi-v2-label { font-size: 0.71rem; color: var(--muted); font-weight: 500; }
+.kpi-v2-sub   { font-size: 0.63rem; color: var(--muted); margin-top: 0.1rem; }
+
+/* ── CHART CARD ── */
+.chart-card { background: var(--white); border-radius: 16px; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+.chart-card .card-header { padding: 1.2rem 1.6rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.chart-card .chart-wrap { padding: 1.4rem 1.6rem; }
+
+/* ── SECTION TITLE ── */
 .section-title-dash {
   font-family: 'Playfair Display', serif;
-  font-size: 1.3rem; color: var(--green-deep);
-  margin: 2rem 0 1rem; display: flex; align-items: center; gap: 0.6rem;
+  font-size: 1.2rem; color: var(--green-deep);
+  margin: 1.8rem 0 1rem; display: flex; align-items: center; gap: 0.6rem;
 }
-.section-title-dash span {
-  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+.section-title-dash .badge-tag {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--gold); background: var(--gold-light); padding: 0.2rem 0.6rem; border-radius: 100px;
   font-family: 'Inter', sans-serif;
-}</style>
-<style>
+}
+
+/* ── ALERTAS ── */
 .alert-panel {
-  border-radius: 12px; padding: 1rem 1.4rem; margin-bottom: 1.5rem;
+  border-radius: 12px; padding: 1rem 1.4rem; margin-bottom: 0.6rem;
   display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
 }
 .alert-panel.warning { background: #FEF9EC; border: 1px solid #E8C97A; }
@@ -37,36 +91,56 @@
 
 {% block content %}
 
-<!-- ══ PANEL DE ALERTAS ══ -->
+<!-- ══ BARRA DE HOY ══ -->
+<div class="hoy-grid">
+  <div class="hoy-card">
+    <div class="hoy-eyebrow">Hoy</div>
+    <div class="hoy-value">{{ disp_hoy_count }}</div>
+    <div class="hoy-label">Dispensaciones</div>
+  </div>
+  <div class="hoy-card">
+    <div class="hoy-eyebrow">Hoy</div>
+    <div class="hoy-value">{{ disp_hoy_g }}<span style="font-size:1.1rem;opacity:.7;">g</span></div>
+    <div class="hoy-label">Gramos dispensados</div>
+  </div>
+  <div class="hoy-card">
+    <div class="hoy-eyebrow">Hoy</div>
+    <div class="hoy-value">{{ disp_hoy_socios }}</div>
+    <div class="hoy-label">Socios atendidos</div>
+  </div>
+  <div class="hoy-card">
+    <div class="hoy-eyebrow">Hoy</div>
+    <div class="hoy-value">{{ nuevos_hoy }}</div>
+    <div class="hoy-label">Solicitudes nuevas</div>
+  </div>
+</div>
+
+<!-- ══ ALERTAS ══ -->
 {% set total_alertas = alertas_stock_bajo|length + cosechas_urgentes|length + (1 if en_revision > 0 else 0) + (1 if pedidos_pendientes > 0 else 0) %}
 {% if total_alertas > 0 %}
 <div style="margin-bottom:1.5rem;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem;">
-    🔔 Alertas activas
+  <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.6rem;">
+    Alertas activas ({{ total_alertas }})
   </div>
-
   {% if alertas_stock_bajo %}
-  <div class="alert-panel danger" style="margin-bottom:0.6rem;">
+  <div class="alert-panel danger">
     <div class="alert-icon">📦</div>
     <div style="flex:1;">
-      <div class="alert-title">Stock bajo — {{ alertas_stock_bajo|length }} variedad{% if alertas_stock_bajo|length != 1 %}es{% endif %} con menos de 50g disponibles</div>
+      <div class="alert-title">Stock bajo — {{ alertas_stock_bajo|length }} variedad{% if alertas_stock_bajo|length != 1 %}es{% endif %} con menos de 50g</div>
       <div class="alert-body">
         {% for a in alertas_stock_bajo %}
-        <span class="alert-tag {% if a.disponible_g <= 0 %}red{% else %}gold{% endif %}">
-          {{ a.variedad }}: {{ a.disponible_g }}g
-        </span>
+        <span class="alert-tag {% if a.disponible_g <= 0 %}red{% else %}gold{% endif %}">{{ a.variedad }}: {{ a.disponible_g }}g</span>
         {% endfor %}
       </div>
     </div>
     <a href="{{ url_for('admin_stock') }}" class="btn btn-outline btn-sm" style="align-self:center;">Ver stock →</a>
   </div>
   {% endif %}
-
   {% if cosechas_urgentes %}
-  <div class="alert-panel warning" style="margin-bottom:0.6rem;">
+  <div class="alert-panel warning">
     <div class="alert-icon">🌾</div>
     <div style="flex:1;">
-      <div class="alert-title">Cosechas próximas — {{ cosechas_urgentes|length }} cultivo{% if cosechas_urgentes|length != 1 %}s{% endif %} listo{% if cosechas_urgentes|length != 1 %}s{% endif %} en los próximos 14 días</div>
+      <div class="alert-title">Cosechas próximas — {{ cosechas_urgentes|length }} cultivo{% if cosechas_urgentes|length != 1 %}s{% endif %} listo{% if cosechas_urgentes|length != 1 %}s{% endif %} en 14 días</div>
       <div class="alert-body">
         {% for c in cosechas_urgentes %}
         <span class="alert-tag gold">{{ c.codigo }} · {{ c.variedad }} · {{ fmt_fecha(c.cosecha_estimada) }}</span>
@@ -76,7 +150,6 @@
     <a href="{{ url_for('admin_cultivos') }}" class="btn btn-outline btn-sm" style="align-self:center;">Ver cultivos →</a>
   </div>
   {% endif %}
-
   <div style="display:flex;gap:0.6rem;flex-wrap:wrap;">
     {% if en_revision > 0 %}
     <div class="alert-panel info" style="flex:1;min-width:220px;margin-bottom:0;">
@@ -102,37 +175,62 @@
 </div>
 {% endif %}
 
-<!-- KPIs -->
-<div class="kpi-grid">
-  <div class="kpi-card" style="border-top-color:#1A3520;">
-    <div class="kpi-value" style="color:#1A3520;">{{ total }}</div>
-    <div class="kpi-label">Socios totales</div>
+<!-- ══ KPIs PRINCIPALES ══ -->
+<div class="kpi-grid-v2">
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:#EEF6F0;">🌿</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:var(--green-deep);">{{ total }}</div>
+      <div class="kpi-v2-label">Socios totales</div>
+      <div class="kpi-v2-sub">{{ nuevos_mes }} nuevos este mes</div>
+    </div>
   </div>
-  <div class="kpi-card" style="border-top-color:#C8A44A;">
-    <div class="kpi-value" style="color:#C8A44A;">{{ nuevos_mes }}</div>
-    <div class="kpi-label">Nuevos este mes</div>
-    <div class="kpi-sub">{{ nuevos_hoy }} hoy</div>
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:#C8F0D0;">✅</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:#1A5C30;">{{ activos }}</div>
+      <div class="kpi-v2-label">Socios activos</div>
+      <div class="kpi-v2-sub">{{ aprobados }} aprobados pendientes</div>
+    </div>
   </div>
-  <div class="kpi-card" style="border-top-color:#2D5C38;">
-    <div class="kpi-value" style="color:#2D5C38;">{{ activos }}</div>
-    <div class="kpi-label">Socios activos</div>
-    <div class="kpi-sub">{{ aprobados }} aprobados esperando</div>
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:#FEF9EC;">🔍</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:#B8953F;">{{ en_revision }}</div>
+      <div class="kpi-v2-label">En revisión</div>
+      <div class="kpi-v2-sub">Requieren atención</div>
+    </div>
   </div>
-  <div class="kpi-card" style="border-top-color:#4A7C5E;">
-    <div class="kpi-value" style="color:#4A7C5E;">{{ en_revision }}</div>
-    <div class="kpi-label">En revisión</div>
-    <div class="kpi-sub">Requieren atención</div>
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:#F0EDEA;">📈</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:var(--green-mid);">{{ tasa_activacion }}%</div>
+      <div class="kpi-v2-label">Tasa activación</div>
+      <div class="kpi-v2-sub">Solicitud → Activo</div>
+    </div>
   </div>
-  <div class="kpi-card" style="border-top-color:#C8A44A;">
-    <div class="kpi-value" style="color:#C8A44A;">{{ tasa_activacion }}%</div>
-    <div class="kpi-label">Tasa de activación</div>
-    <div class="kpi-sub">Solicitud → Activo</div>
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:var(--gold-light);">🌾</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:var(--gold);">{{ cosecha_mes_g }}<span style="font-size:1rem;">g</span></div>
+      <div class="kpi-v2-label">Cosechado este mes</div>
+      <div class="kpi-v2-sub">{{ cosecha_total_g }}g total histórico</div>
+    </div>
   </div>
 </div>
 
-<!-- Funnel + Origen -->
+<!-- ══ GRÁFICO ACTIVIDAD + FUNNEL ══ -->
 <div class="grid-2" style="gap:1.5rem;margin-bottom:1.5rem;">
-  <div class="card">
+  <div class="chart-card">
+    <div class="card-header">
+      <span class="card-title">Nuevos socios — últimas 8 semanas</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="chartActividad" height="160"></canvas>
+    </div>
+  </div>
+
+  <div class="card" style="border-radius:16px;">
     <div class="card-header"><span class="card-title">Funnel de socios</span></div>
     <div class="card-body">
       {% set max_val = funnel.values()|max if funnel.values()|max > 0 else 1 %}
@@ -149,8 +247,11 @@
       {% endfor %}
     </div>
   </div>
+</div>
 
-  <div class="card">
+<!-- ══ ORIGEN + PERFIL ══ -->
+<div class="grid-3" style="gap:1.5rem;margin-bottom:1.5rem;">
+  <div class="card" style="border-radius:16px;">
     <div class="card-header"><span class="card-title">¿Cómo nos encontraron?</span></div>
     <div class="card-body">
       {% if origenes %}
@@ -169,14 +270,8 @@
       {% endif %}
     </div>
   </div>
-</div>
 
-<!-- Tipo de socio + Diagnósticos -->
-<div class="section-title-dash">Perfil de socios <span>Trazabilidad</span></div>
-
-<div class="grid-3" style="gap:1.5rem;margin-bottom:1.5rem;">
-  <!-- Tipo -->
-  <div class="card">
+  <div class="card" style="border-radius:16px;">
     <div class="card-header"><span class="card-title">🌿 Tipo de socio</span></div>
     <div class="card-body">
       {% if tipos %}
@@ -192,70 +287,7 @@
     </div>
   </div>
 
-  <!-- Top referidores -->
-  <div class="card">
-    <div class="card-header"><span class="card-title">🤝 Top referidores</span></div>
-    <div class="card-body">
-      {% if top_referidores %}
-        {% for r in top_referidores %}
-        <div class="stat-row">
-          <span class="stat-key">{{ r['referido_por']|title }}</span>
-          <span class="stat-val">{{ r['cnt'] }}</span>
-        </div>
-        {% endfor %}
-      {% else %}
-        <p class="text-muted text-sm">Sin referidos todavía.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Médicos -->
-  <div class="card">
-    <div class="card-header"><span class="card-title">🩺 Médicos prescriptores</span></div>
-    <div class="card-body">
-      {% if medicos %}
-        {% for m in medicos %}
-        <div class="stat-row">
-          <div>
-            <span class="stat-key fw-600" style="color:var(--text);">{{ m['medico_prescriptor']|title }}</span>
-            {% if m['especialidad_medico'] %}
-            <div class="text-xs text-muted">{{ m['especialidad_medico']|title }}</div>
-            {% endif %}
-          </div>
-          <span class="stat-val">{{ m['cnt'] }}</span>
-        </div>
-        {% endfor %}
-      {% else %}
-        <p class="text-muted text-sm">Sin datos todavía.</p>
-      {% endif %}
-    </div>
-  </div>
-</div>
-
-<div class="grid-3" style="gap:1.5rem;margin-bottom:1.5rem;">
-  <!-- Diagnósticos top -->
-  <div class="card">
-    <div class="card-header"><span class="card-title">🏥 Top diagnósticos</span></div>
-    <div class="card-body">
-      {% if diagnosticos %}
-        {% set max_d = diagnosticos[0]['cnt'] %}
-        {% for d in diagnosticos %}
-        <div style="margin-bottom:0.6rem;">
-          <div class="flex-between" style="margin-bottom:0.2rem;">
-            <span class="text-sm text-muted">{{ d['diagnostico']|title }}</span>
-            <span class="fw-600 text-sm" style="color:var(--green-deep);">{{ d['cnt'] }}</span>
-          </div>
-          <div class="mini-bar"><div class="mini-bar-fill" style="background:#C8A44A;width:{{ ((d['cnt']/max_d)*100)|round }}%;"></div></div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <p class="text-muted text-sm">Sin datos todavía.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Género -->
-  <div class="card">
+  <div class="card" style="border-radius:16px;">
     <div class="card-header"><span class="card-title">👥 Género</span></div>
     <div class="card-body">
       {% if generos %}
@@ -274,54 +306,48 @@
       {% endif %}
     </div>
   </div>
+</div>
 
-  <!-- Barrios -->
-  <div class="card">
-    <div class="card-header"><span class="card-title">📍 Zonas de origen</span></div>
-    <div class="card-body">
-      {% if barrios %}
-        {% for b in barrios %}
-        <div class="stat-row">
-          <span class="stat-key">{{ b['barrio']|title }}</span>
-          <span class="stat-val">{{ b['cnt'] }}</span>
-        </div>
-        {% endfor %}
-      {% else %}
-        <p class="text-muted text-sm">Sin datos todavía.</p>
-      {% endif %}
+<!-- ══ CULTIVOS ══ -->
+<div class="section-title-dash">Producción <span class="badge-tag">REPROCANN</span></div>
+
+<div class="kpi-grid-v2" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:#EEF6F0;">🪴</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:var(--green-mid);">{{ total_plantas_activas }}</div>
+      <div class="kpi-v2-label">Plantas activas</div>
+      <div class="kpi-v2-sub">{{ cultivos_activos }} cultivos en curso</div>
+    </div>
+  </div>
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:#FFF0E8;">🌸</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:#E07B30;">{{ plantas_por_etapa.get('floracion',0) }}</div>
+      <div class="kpi-v2-label">En floración</div>
+      <div class="kpi-v2-sub">{{ plantas_por_etapa.get('prefloracion',0) }} en pre-floración</div>
+    </div>
+  </div>
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:var(--gold-light);">🌾</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:var(--gold);">{{ cosecha_mes_g }}<span style="font-size:1rem;">g</span></div>
+      <div class="kpi-v2-label">Cosechado este mes</div>
+      <div class="kpi-v2-sub">{{ cosecha_total_g }}g histórico</div>
+    </div>
+  </div>
+  <div class="kpi-v2">
+    <div class="kpi-icon-circle" style="background:#F0EBF8;">✨</div>
+    <div class="kpi-v2-body">
+      <div class="kpi-v2-value" style="color:#5C3D8F;">{{ plantas_por_etapa.get('cosecha',0) + plantas_por_etapa.get('curado',0) }}</div>
+      <div class="kpi-v2-label">Listas / en curado</div>
+      <div class="kpi-v2-sub">Plantas cosechadas</div>
     </div>
   </div>
 </div>
 
-<!-- ══ CULTIVOS ══ -->
-<div class="section-title-dash">Producción — Trazabilidad de cultivos <span>REPROCANN</span></div>
-
-<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
-  <div class="kpi-card" style="border-top-color:#2D5C38;">
-    <div class="kpi-value" style="color:#2D5C38;">{{ total_plantas_activas }}</div>
-    <div class="kpi-label">Plantas activas</div>
-    <div class="kpi-sub">{{ cultivos_activos }} cultivos en curso</div>
-  </div>
-  <div class="kpi-card" style="border-top-color:#E07B30;">
-    <div class="kpi-value" style="color:#E07B30;">{{ plantas_por_etapa.get('floracion',0) }}</div>
-    <div class="kpi-label">En floración</div>
-    <div class="kpi-sub">{{ plantas_por_etapa.get('prefloracion',0) }} en pre-floración</div>
-  </div>
-  <div class="kpi-card" style="border-top-color:#C8A44A;">
-    <div class="kpi-value" style="color:#C8A44A;">{{ cosecha_mes_g }}g</div>
-    <div class="kpi-label">Cosechado este mes</div>
-    <div class="kpi-sub">{{ cosecha_total_g }}g total histórico</div>
-  </div>
-  <div class="kpi-card" style="border-top-color:#5C3D8F;">
-    <div class="kpi-value" style="color:#5C3D8F;">{{ plantas_por_etapa.get('cosecha',0) + plantas_por_etapa.get('curado',0) }}</div>
-    <div class="kpi-label">Listas / en curado</div>
-    <div class="kpi-sub">Plantas cosechadas</div>
-  </div>
-</div>
-
 <div class="grid-2" style="gap:1.5rem;margin-bottom:1.5rem;">
-  <!-- Plantas por etapa -->
-  <div class="card">
+  <div class="card" style="border-radius:16px;">
     <div class="card-header">
       <span class="card-title">🌱 Plantas por etapa del ciclo</span>
       <a href="{{ url_for('admin_cultivos') }}" class="btn btn-outline btn-sm">Ver cultivos</a>
@@ -342,8 +368,7 @@
     </div>
   </div>
 
-  <!-- Próximas cosechas -->
-  <div class="card">
+  <div class="card" style="border-radius:16px;">
     <div class="card-header"><span class="card-title">🌾 Próximas cosechas estimadas</span></div>
     {% if proximas_cosechas %}
     <div class="table-wrap">
@@ -368,10 +393,10 @@
   </div>
 </div>
 
-<!-- Últimos socios -->
+<!-- ══ ÚLTIMAS SOLICITUDES ══ -->
 <div class="section-title-dash">Operativo</div>
 
-<div class="card">
+<div class="card" style="border-radius:16px;margin-bottom:2rem;">
   <div class="card-header">
     <span class="card-title">Últimas solicitudes</span>
     <a href="{{ url_for('admin_socios') }}" class="btn btn-outline btn-sm">Ver todos</a>
@@ -404,4 +429,59 @@
   <div class="card-body"><p class="text-muted text-sm">Sin solicitudes todavía.</p></div>
   {% endif %}
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var datos = {{ chart_semanas | tojson }};
+  var labels = datos.map(function(d){ return d.label; });
+  var values = datos.map(function(d){ return d.cnt; });
+
+  var ctx = document.getElementById('chartActividad');
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Nuevos socios',
+        data: values,
+        backgroundColor: 'rgba(45,92,56,0.18)',
+        borderColor: '#2D5C38',
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1A3520',
+          titleColor: '#F5F2EC',
+          bodyColor: '#C8A44A',
+          padding: 10,
+          cornerRadius: 8,
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#6B6560', font: { size: 11 } }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { color: '#6B6560', font: { size: 11 }, stepSize: 1 }
+        }
+      }
+    }
+  });
+})();
+</script>
 {% endblock %}
