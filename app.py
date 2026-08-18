@@ -287,8 +287,30 @@ def init_db():
         efectos TEXT,
         indicaciones TEXT,
         sabor TEXT,
+        imagen_url TEXT,
         activa INTEGER DEFAULT 1,
         created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE TABLE IF NOT EXISTS cuotas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        socio_id INTEGER NOT NULL,
+        tipo TEXT DEFAULT 'mensual',
+        monto REAL DEFAULT 0,
+        fecha_pago TEXT,
+        fecha_vencimiento TEXT,
+        estado TEXT DEFAULT 'pagada',
+        notas TEXT,
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY (socio_id) REFERENCES socios(id)
+    );
+    CREATE TABLE IF NOT EXISTS accesos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        socio_id INTEGER NOT NULL,
+        tipo TEXT DEFAULT 'entrada',
+        fecha TEXT DEFAULT (date('now')),
+        hora TEXT DEFAULT (time('now','localtime')),
+        registrado_por TEXT DEFAULT 'Admin',
+        FOREIGN KEY (socio_id) REFERENCES socios(id)
     );
     ''')
     db.commit()
@@ -380,8 +402,29 @@ def _migrate():
             genetica TEXT DEFAULT 'hibrido',
             thc_pct REAL DEFAULT 0, cbd_pct REAL DEFAULT 0,
             descripcion TEXT, efectos TEXT, indicaciones TEXT, sabor TEXT,
-            activa INTEGER DEFAULT 1,
+            imagen_url TEXT, activa INTEGER DEFAULT 1,
             created_at TEXT DEFAULT (datetime('now','localtime')))''')
+    else:
+        vcols = {r[1] for r in db.execute("PRAGMA table_info(variedades)")}
+        if 'imagen_url' not in vcols:
+            db.execute('ALTER TABLE variedades ADD COLUMN imagen_url TEXT')
+    if 'cuotas' not in tables:
+        db.execute('''CREATE TABLE cuotas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            socio_id INTEGER NOT NULL,
+            tipo TEXT DEFAULT 'mensual',
+            monto REAL DEFAULT 0,
+            fecha_pago TEXT, fecha_vencimiento TEXT,
+            estado TEXT DEFAULT 'pagada', notas TEXT,
+            created_at TEXT DEFAULT (datetime('now','localtime')))''')
+    if 'accesos' not in tables:
+        db.execute('''CREATE TABLE accesos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            socio_id INTEGER NOT NULL,
+            tipo TEXT DEFAULT 'entrada',
+            fecha TEXT DEFAULT (date('now')),
+            hora TEXT DEFAULT (time('now','localtime')),
+            registrado_por TEXT DEFAULT 'Admin')''')
     db.commit()
     db.close()
 
@@ -451,7 +494,24 @@ def portal(token):
     s = db.execute('SELECT * FROM socios WHERE token=?', (token,)).fetchone()
     if not s: return redirect(url_for('landing'))
     docs = db.execute('SELECT * FROM documentos WHERE socio_id=? ORDER BY fecha DESC', (s['id'],)).fetchall()
+    variedades = db.execute('SELECT * FROM variedades WHERE activa=1 ORDER BY nombre').fetchall()
+    cuota_actual = db.execute(
+        'SELECT * FROM cuotas WHERE socio_id=? ORDER BY fecha_vencimiento DESC LIMIT 1', (s['id'],)
+    ).fetchone()
+    hoy = date.today().isoformat()
+    mes_inicio = date.today().replace(day=1).isoformat()
+    consumido_mes = (db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=? AND fecha >= ?",
+        (s['id'], mes_inicio)).fetchone()[0] or 0) + (db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND fecha_pedido >= ? AND estado='entregado'",
+        (s['id'], mes_inicio)).fetchone()[0] or 0)
+    ultimas_dispensaciones = db.execute(
+        'SELECT * FROM dispensaciones WHERE socio_id=? ORDER BY fecha DESC, id DESC LIMIT 5', (s['id'],)
+    ).fetchall()
     return render_template('portal.html', s=s, docs=docs,
+                           variedades=variedades, cuota_actual=cuota_actual,
+                           consumido_mes=round(consumido_mes,1), hoy=hoy,
+                           ultimas_dispensaciones=ultimas_dispensaciones,
                            etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR)
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -630,6 +690,19 @@ def admin_dashboard():
         "SELECT COUNT(DISTINCT socio_id) FROM dispensaciones WHERE fecha = ?", (hoy,)
     ).fetchone()[0]
 
+    # ── cuotas vencidas ──
+    cuotas_vencidas = db.execute(
+        "SELECT COUNT(*) FROM cuotas WHERE fecha_vencimiento < ? AND estado='pagada'", (hoy,)
+    ).fetchone()[0]
+    # ── aforo actual ──
+    entradas_hoy_d = db.execute(
+        "SELECT COUNT(*) FROM accesos WHERE fecha=? AND tipo='entrada'", (hoy,)
+    ).fetchone()[0]
+    salidas_hoy_d = db.execute(
+        "SELECT COUNT(*) FROM accesos WHERE fecha=? AND tipo='salida'", (hoy,)
+    ).fetchone()[0]
+    aforo_actual = max(0, entradas_hoy_d - salidas_hoy_d)
+
     return render_template('admin/dashboard.html',
         total=total, nuevos_mes=nuevos_mes, nuevos_hoy=nuevos_hoy,
         activos=activos, aprobados=aprobados, en_revision=en_revision,
@@ -661,6 +734,9 @@ def admin_dashboard():
         disp_hoy_count=disp_hoy_count,
         disp_hoy_g=round(disp_hoy_g, 1),
         disp_hoy_socios=disp_hoy_socios,
+        # cuotas y aforo
+        cuotas_vencidas=cuotas_vencidas,
+        aforo_actual=aforo_actual,
     )
 
 @app.route('/admin/variedades', methods=['GET','POST'])
@@ -674,7 +750,7 @@ def admin_variedades():
             if nombre:
                 try:
                     db.execute(
-                        'INSERT INTO variedades (nombre,genetica,thc_pct,cbd_pct,descripcion,efectos,indicaciones,sabor) VALUES (?,?,?,?,?,?,?,?)',
+                        'INSERT INTO variedades (nombre,genetica,thc_pct,cbd_pct,descripcion,efectos,indicaciones,sabor,imagen_url) VALUES (?,?,?,?,?,?,?,?,?)',
                         (nombre,
                          request.form.get('genetica','hibrido'),
                          float(request.form.get('thc_pct',0) or 0),
@@ -682,7 +758,8 @@ def admin_variedades():
                          request.form.get('descripcion','').strip(),
                          request.form.get('efectos','').strip(),
                          request.form.get('indicaciones','').strip(),
-                         request.form.get('sabor','').strip()))
+                         request.form.get('sabor','').strip(),
+                         request.form.get('imagen_url','').strip() or None))
                     db.commit()
                     flash(f'Variedad "{nombre}" agregada al catálogo ✓')
                 except Exception:
@@ -702,7 +779,7 @@ def admin_variedad_edit(vid):
         db.execute('UPDATE variedades SET activa = 1 - activa WHERE id=?', (vid,))
     elif accion == 'editar':
         db.execute(
-            'UPDATE variedades SET nombre=?,genetica=?,thc_pct=?,cbd_pct=?,descripcion=?,efectos=?,indicaciones=?,sabor=? WHERE id=?',
+            'UPDATE variedades SET nombre=?,genetica=?,thc_pct=?,cbd_pct=?,descripcion=?,efectos=?,indicaciones=?,sabor=?,imagen_url=? WHERE id=?',
             (request.form.get('nombre','').strip(),
              request.form.get('genetica','hibrido'),
              float(request.form.get('thc_pct',0) or 0),
@@ -711,9 +788,118 @@ def admin_variedad_edit(vid):
              request.form.get('efectos','').strip(),
              request.form.get('indicaciones','').strip(),
              request.form.get('sabor','').strip(),
+             request.form.get('imagen_url','').strip() or None,
              vid))
     db.commit()
     return redirect(url_for('admin_variedades'))
+
+@app.route('/admin/cuotas')
+@login_required
+def admin_cuotas():
+    db = get_db()
+    hoy = date.today().isoformat()
+    estado_f = request.args.get('estado','')
+    q = request.args.get('q','').strip()
+
+    sql = '''SELECT c.*, s.nombre, s.apellido, s.etapa
+             FROM cuotas c JOIN socios s ON s.id=c.socio_id
+             WHERE 1=1'''
+    params = []
+    if estado_f == 'vencida':
+        sql += ' AND c.fecha_vencimiento < ? AND c.estado != "cancelada"'
+        params.append(hoy)
+    elif estado_f:
+        sql += ' AND c.estado=?'; params.append(estado_f)
+    if q:
+        sql += ' AND (s.nombre LIKE ? OR s.apellido LIKE ?)'
+        params += [f'%{q}%', f'%{q}%']
+    sql += ' ORDER BY c.fecha_vencimiento ASC, c.id DESC'
+    cuotas = db.execute(sql, params).fetchall()
+
+    total_recaudado = db.execute('SELECT COALESCE(SUM(monto),0) FROM cuotas WHERE estado="pagada"').fetchone()[0]
+    vencidas_count  = db.execute('SELECT COUNT(*) FROM cuotas WHERE fecha_vencimiento < ? AND estado="pagada"', (hoy,)).fetchone()[0]
+    sin_cuota_count = db.execute(
+        "SELECT COUNT(*) FROM socios WHERE etapa='activo' AND id NOT IN (SELECT DISTINCT socio_id FROM cuotas WHERE fecha_vencimiento >= ?)", (hoy,)
+    ).fetchone()[0]
+
+    socios_activos = db.execute(
+        "SELECT id,nombre,apellido FROM socios WHERE etapa IN ('activo','aprobado') ORDER BY nombre"
+    ).fetchall()
+    return render_template('admin/cuotas.html',
+        cuotas=cuotas, estado_f=estado_f, q=q,
+        total_recaudado=round(total_recaudado,2),
+        vencidas_count=vencidas_count,
+        sin_cuota_count=sin_cuota_count,
+        socios_activos=socios_activos, hoy=hoy)
+
+@app.route('/admin/socio/<int:sid>/cuota', methods=['POST'])
+@login_required
+def admin_agregar_cuota(sid):
+    db = get_db()
+    tipo  = request.form.get('tipo','mensual')
+    monto = float(request.form.get('monto',0) or 0)
+    fecha_pago = request.form.get('fecha_pago') or date.today().isoformat()
+    dias = {'mensual':30,'trimestral':90,'semestral':180,'anual':365}.get(tipo,30)
+    from datetime import timedelta
+    fecha_venc = (datetime.strptime(fecha_pago,'%Y-%m-%d') + timedelta(days=dias)).strftime('%Y-%m-%d')
+    notas = request.form.get('notas','').strip()
+    db.execute(
+        'INSERT INTO cuotas (socio_id,tipo,monto,fecha_pago,fecha_vencimiento,estado,notas) VALUES (?,?,?,?,?,?,?)',
+        (sid, tipo, monto, fecha_pago, fecha_venc, 'pagada', notas))
+    db.commit()
+    flash(f'Cuota {tipo} registrada — vence el {fecha_venc}')
+    return redirect(url_for('admin_socio', sid=sid))
+
+@app.route('/admin/aforo', methods=['GET','POST'])
+@login_required
+def admin_aforo():
+    db = get_db()
+    hoy = date.today().isoformat()
+    if request.method == 'POST':
+        socio_id = request.form.get('socio_id')
+        tipo     = request.form.get('tipo','entrada')
+        hora     = datetime.now().strftime('%H:%M')
+        if socio_id:
+            db.execute('INSERT INTO accesos (socio_id,tipo,fecha,hora) VALUES (?,?,?,?)',
+                       (socio_id, tipo, hoy, hora))
+            db.commit()
+            s = db.execute('SELECT nombre,apellido FROM socios WHERE id=?', (socio_id,)).fetchone()
+            flash(f'{"Entrada" if tipo=="entrada" else "Salida"} registrada: {s["nombre"] if s else ""}')
+        return redirect(url_for('admin_aforo'))
+
+    entradas_hoy = db.execute(
+        'SELECT COUNT(*) FROM accesos WHERE fecha=? AND tipo="entrada"', (hoy,)
+    ).fetchone()[0]
+    salidas_hoy = db.execute(
+        'SELECT COUNT(*) FROM accesos WHERE fecha=? AND tipo="salida"', (hoy,)
+    ).fetchone()[0]
+    aforo_actual = max(0, entradas_hoy - salidas_hoy)
+
+    dentro = db.execute('''
+        SELECT a.socio_id, a.hora, s.nombre, s.apellido
+        FROM accesos a JOIN socios s ON s.id=a.socio_id
+        WHERE a.fecha=? AND a.tipo='entrada'
+          AND a.socio_id NOT IN (
+              SELECT socio_id FROM accesos WHERE fecha=? AND tipo='salida'
+          )
+        ORDER BY a.hora ASC
+    ''', (hoy, hoy)).fetchall()
+
+    historial = db.execute('''
+        SELECT a.*, s.nombre, s.apellido
+        FROM accesos a JOIN socios s ON s.id=a.socio_id
+        WHERE a.fecha=?
+        ORDER BY a.id DESC LIMIT 50
+    ''', (hoy,)).fetchall()
+
+    socios_activos = db.execute(
+        "SELECT id,nombre,apellido FROM socios WHERE etapa IN ('activo','aprobado') ORDER BY nombre"
+    ).fetchall()
+
+    return render_template('admin/aforo.html',
+        dentro=dentro, historial=historial, aforo_actual=aforo_actual,
+        entradas_hoy=entradas_hoy, salidas_hoy=salidas_hoy,
+        socios_activos=[dict(s) for s in socios_activos], hoy=hoy)
 
 @app.route('/admin/dispensario', methods=['GET','POST'])
 @login_required
@@ -870,6 +1056,12 @@ def admin_socio(sid):
         'SELECT * FROM dispensaciones WHERE socio_id=? ORDER BY fecha DESC, id DESC LIMIT 30',
         (sid,)
     ).fetchall()
+    cuota_actual = db.execute(
+        'SELECT * FROM cuotas WHERE socio_id=? ORDER BY fecha_vencimiento DESC LIMIT 1', (sid,)
+    ).fetchone()
+    todas_cuotas = db.execute(
+        'SELECT * FROM cuotas WHERE socio_id=? ORDER BY fecha_pago DESC', (sid,)
+    ).fetchall()
     stock_variedades = db.execute('''
         SELECT cu.variedad,
                COALESCE(SUM(co.peso_seco_g),0)
@@ -886,6 +1078,7 @@ def admin_socio(sid):
         total_consumido=total_consumido, total_gastado=total_gastado,
         stock_variedades=stock_variedades, member_url=member_url,
         dispensaciones_socio=dispensaciones_socio,
+        cuota_actual=cuota_actual, todas_cuotas=todas_cuotas,
         etapas=ETAPAS, etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR,
         tipo_socio_label=TIPO_SOCIO_LABEL,
         etapas_cultivo=ETAPAS_CULTIVO,

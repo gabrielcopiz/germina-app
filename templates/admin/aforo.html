@@ -1,0 +1,193 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Control de Aforo — Germina Admin{% endblock %}
+{% block topbar_title %}🚪 Control de aforo{% endblock %}
+
+{% block extra_head %}
+<style>
+.aforo-layout {
+  display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start;
+}
+.aforo-counter {
+  background:var(--green-deep); border-radius:20px;
+  padding:2rem; text-align:center; margin-bottom:1.5rem;
+}
+.aforo-num {
+  font-family:'Playfair Display',serif;
+  font-size:4rem; font-weight:500; color:#fff; line-height:1;
+}
+.aforo-label { font-size:0.8rem; color:rgba(255,255,255,0.55); margin-top:0.4rem; text-transform:uppercase; letter-spacing:0.1em; }
+.dentro-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0.75rem 1rem; border-bottom:1px solid var(--border);
+}
+.dentro-item:last-child { border-bottom:none; }
+.search-wrap { position:relative; margin-bottom:0.8rem; }
+.search-wrap input {
+  width:100%; padding:0.65rem 1rem 0.65rem 2.2rem;
+  border:1.5px solid var(--border); border-radius:10px;
+  font-family:'Inter',sans-serif; font-size:0.85rem;
+  background:var(--cream); transition:border-color 0.2s;
+}
+.search-wrap input:focus { outline:none; border-color:var(--green-mid); background:var(--white); }
+.search-icon { position:absolute; left:0.7rem; top:50%; transform:translateY(-50%); color:var(--muted); }
+.socio-pick { max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; margin-bottom:1rem; }
+.socio-pick-item {
+  padding:0.65rem 1rem; cursor:pointer; border-bottom:1px solid var(--border);
+  font-size:0.84rem; transition:background 0.1s;
+}
+.socio-pick-item:last-child { border-bottom:none; }
+.socio-pick-item:hover { background:var(--cream); }
+.mov-badge-e { background:#C8F0D0; color:#1A5C30; border-radius:100px; padding:0.15rem 0.5rem; font-size:0.65rem; font-weight:700; }
+.mov-badge-s { background:#F5E8D5; color:#5C3D1A; border-radius:100px; padding:0.15rem 0.5rem; font-size:0.65rem; font-weight:700; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Counter de aforo -->
+<div class="aforo-counter">
+  <div class="aforo-num">{{ aforo_actual }}</div>
+  <div class="aforo-label">Socios dentro del club ahora · {{ hoy }}</div>
+  <div style="display:flex;justify-content:center;gap:2rem;margin-top:1rem;">
+    <div style="text-align:center;">
+      <div style="font-size:1.4rem;font-weight:700;color:rgba(200,240,208,0.9);">{{ entradas_hoy }}</div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);">entradas hoy</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-size:1.4rem;font-weight:700;color:rgba(245,232,213,0.9);">{{ salidas_hoy }}</div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);">salidas hoy</div>
+    </div>
+  </div>
+</div>
+
+<div class="aforo-layout">
+
+  <!-- Panel izquierdo: quién está adentro + registro -->
+  <div>
+    <!-- Registrar entrada/salida -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header"><span class="card-title">Registrar entrada / salida</span></div>
+      <div class="card-body">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="buscar-socio-aforo" placeholder="Nombre del socio…" autocomplete="off">
+        </div>
+        <div class="socio-pick" id="socio-pick-list">
+          <div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center;">Escribí para buscar</div>
+        </div>
+        <form method="POST" action="{{ url_for('admin_aforo') }}" id="aforo-form">
+          <input type="hidden" name="socio_id" id="aforo-socio-id">
+          <input type="hidden" name="tipo" id="aforo-tipo" value="entrada">
+          <div style="display:flex;gap:0.6rem;margin-top:0.5rem;">
+            <button type="submit" onclick="setTipo('entrada')"
+              class="btn btn-primary" style="flex:1;justify-content:center;border-radius:8px;">
+              ▲ Registrar entrada
+            </button>
+            <button type="submit" onclick="setTipo('salida')"
+              class="btn btn-outline" style="flex:1;justify-content:center;border-radius:8px;">
+              ▼ Registrar salida
+            </button>
+          </div>
+        </form>
+        <div id="aforo-selected" style="margin-top:0.8rem;display:none;background:#EEF6F0;border-radius:8px;padding:0.6rem 1rem;font-size:0.85rem;font-weight:600;color:var(--green-deep);"></div>
+      </div>
+    </div>
+
+    <!-- Quién está dentro -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Socios dentro ahora</span>
+        <span class="badge badge-activo">{{ dentro|length }}</span>
+      </div>
+      {% if dentro %}
+        {% for d in dentro %}
+        <div class="dentro-item">
+          <div>
+            <div class="fw-600 text-sm">{{ d.nombre }} {{ d.apellido }}</div>
+            <div class="text-xs text-muted">Entró a las {{ d.hora }}</div>
+          </div>
+          <form method="POST" action="{{ url_for('admin_aforo') }}">
+            <input type="hidden" name="socio_id" value="{{ d.socio_id }}">
+            <input type="hidden" name="tipo" value="salida">
+            <button type="submit" class="btn btn-outline btn-sm">↓ Salida</button>
+          </form>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="card-body">
+        <p class="text-muted text-sm">No hay socios registrados dentro en este momento.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Panel derecho: historial del día -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Movimientos de hoy</span>
+    </div>
+    {% if historial %}
+    <div>
+      {% for h in historial %}
+      <div style="display:flex;align-items:center;gap:0.8rem;padding:0.65rem 1.2rem;border-bottom:1px solid var(--border);">
+        <span class="{{ 'mov-badge-e' if h.tipo=='entrada' else 'mov-badge-s' }}">
+          {{ '▲ Entrada' if h.tipo=='entrada' else '▼ Salida' }}
+        </span>
+        <div style="flex:1;">
+          <div class="fw-600 text-sm">{{ h.nombre }} {{ h.apellido }}</div>
+        </div>
+        <span class="text-xs text-muted">{{ h.hora }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card-body">
+      <p class="text-muted text-sm">Sin movimientos registrados hoy.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+var SOCIOS = {{ socios_activos | tojson }};
+var selectedSocioId = null;
+
+var buscar = document.getElementById('buscar-socio-aforo');
+var lista = document.getElementById('socio-pick-list');
+var selectedDiv = document.getElementById('aforo-selected');
+
+buscar.addEventListener('keyup', function() {
+  var q = this.value.trim().toLowerCase();
+  lista.innerHTML = '';
+  if (!q) { lista.innerHTML = '<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center;">Escribí para buscar</div>'; return; }
+  var res = SOCIOS.filter(function(s) { return (s.nombre+' '+s.apellido).toLowerCase().includes(q); });
+  if (!res.length) { lista.innerHTML = '<div style="padding:1rem;color:var(--muted);font-size:0.82rem;text-align:center;">Sin resultados</div>'; return; }
+  res.forEach(function(s) {
+    var el = document.createElement('div');
+    el.className = 'socio-pick-item';
+    el.textContent = s.nombre + ' ' + s.apellido;
+    el.addEventListener('click', function() {
+      selectedSocioId = s.id;
+      document.getElementById('aforo-socio-id').value = s.id;
+      buscar.value = s.nombre + ' ' + s.apellido;
+      lista.innerHTML = '';
+      selectedDiv.textContent = '✓ Seleccionado: ' + s.nombre + ' ' + s.apellido;
+      selectedDiv.style.display = 'block';
+    });
+    lista.appendChild(el);
+  });
+});
+
+function setTipo(tipo) {
+  document.getElementById('aforo-tipo').value = tipo;
+  if (!document.getElementById('aforo-socio-id').value) {
+    event.preventDefault();
+    alert('Seleccioná un socio primero');
+  }
+}
+</script>
+{% endblock %}

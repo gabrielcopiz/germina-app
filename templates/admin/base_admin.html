@@ -237,6 +237,12 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_dispensario') }}" class="nav-item {% if request.endpoint == 'admin_dispensario' %}active{% endif %}">
       <span class="nav-icon">💊</span> Dispensario
     </a>
+    <a href="{{ url_for('admin_aforo') }}" class="nav-item {% if request.endpoint == 'admin_aforo' %}active{% endif %}">
+      <span class="nav-icon">🚪</span> Aforo
+    </a>
+    <a href="{{ url_for('admin_cuotas') }}" class="nav-item {% if request.endpoint == 'admin_cuotas' %}active{% endif %}">
+      <span class="nav-icon">💳</span> Cuotas
+    </a>
     <a href="{{ url_for('admin_informe') }}" class="nav-item {% if request.endpoint == 'admin_informe' %}active{% endif %}">
       <span class="nav-icon">📊</span> Informe del día
     </a>

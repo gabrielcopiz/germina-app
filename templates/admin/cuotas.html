@@ -1,0 +1,178 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Cuotas — Germina Admin{% endblock %}
+{% block topbar_title %}💳 Cuotas y membresías{% endblock %}
+
+{% block extra_head %}
+<style>
+.cuota-badge {
+  display:inline-block; padding:0.2rem 0.55rem; border-radius:100px;
+  font-size:0.67rem; font-weight:700; letter-spacing:0.02em;
+}
+.cuota-pagada  { background:#C8F0D0; color:#1A5C30; }
+.cuota-vencida { background:#FDEAEA; color:#9B2222; }
+.cuota-cancelada { background:#F0EDEA; color:#999; }
+.form-add-cuota {
+  background:var(--white); border:1.5px solid var(--green-mid);
+  border-radius:12px; padding:1.2rem 1.4rem; margin-bottom:1.5rem;
+  display:none;
+}
+.form-add-cuota.open { display:block; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPIs -->
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card" style="border-top-color:#2D5C38;">
+    <div class="kpi-value" style="color:#2D5C38;">${{ total_recaudado }}</div>
+    <div class="kpi-label">Total recaudado</div>
+    <div class="kpi-sub">Suma de cuotas pagadas</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#C8A44A;">
+    <div class="kpi-value" style="color:#C8A44A;">{{ cuotas|length }}</div>
+    <div class="kpi-label">Cuotas registradas</div>
+    <div class="kpi-sub">Total histórico</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#C0392B;">
+    <div class="kpi-value" style="color:#C0392B;">{{ vencidas_count }}</div>
+    <div class="kpi-label">Cuotas vencidas</div>
+    <div class="kpi-sub">Socios que deben renovar</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:#E07B30;">
+    <div class="kpi-value" style="color:#E07B30;">{{ sin_cuota_count }}</div>
+    <div class="kpi-label">Socios sin cuota</div>
+    <div class="kpi-sub">Activos sin cuota vigente</div>
+  </div>
+</div>
+
+<!-- Header + filtros + botón agregar -->
+<div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+  <form method="GET" style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+    <input type="text" name="q" value="{{ q }}" placeholder="Buscar socio…"
+           class="form-control-a" style="width:200px;">
+    <select name="estado" class="form-control-a" style="width:160px;">
+      <option value="">Todas</option>
+      <option value="pagada" {% if estado_f=='pagada' %}selected{% endif %}>Pagadas</option>
+      <option value="vencida" {% if estado_f=='vencida' %}selected{% endif %}>Vencidas</option>
+      <option value="cancelada" {% if estado_f=='cancelada' %}selected{% endif %}>Canceladas</option>
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm">Filtrar</button>
+    {% if estado_f or q %}<a href="{{ url_for('admin_cuotas') }}" class="btn btn-outline btn-sm">✕ Limpiar</a>{% endif %}
+  </form>
+  <button onclick="document.getElementById('form-nueva-cuota').classList.toggle('open')" class="btn btn-primary">
+    + Registrar cuota
+  </button>
+</div>
+
+<!-- Formulario nueva cuota -->
+<div id="form-nueva-cuota" class="form-add-cuota">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+    <span style="font-weight:700;font-size:0.9rem;color:var(--green-deep);">Registrar pago de cuota</span>
+    <button type="button" onclick="document.getElementById('form-nueva-cuota').classList.remove('open')"
+            style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted);">×</button>
+  </div>
+  <form method="POST" action="">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:0.7rem;margin-bottom:0.7rem;">
+      <div class="form-group-a" style="margin:0">
+        <label>Socio *</label>
+        <select name="socio_id" class="form-control-a" required>
+          <option value="">— Seleccionar —</option>
+          {% for sc in socios_activos %}
+          <option value="{{ sc.id }}">{{ sc.nombre }} {{ sc.apellido }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group-a" style="margin:0">
+        <label>Tipo</label>
+        <select name="tipo" class="form-control-a">
+          <option value="mensual">Mensual (30d)</option>
+          <option value="trimestral">Trimestral (90d)</option>
+          <option value="semestral">Semestral (180d)</option>
+          <option value="anual">Anual (365d)</option>
+        </select>
+      </div>
+      <div class="form-group-a" style="margin:0">
+        <label>Monto ($)</label>
+        <input type="number" name="monto" class="form-control-a" value="0" min="0" step="0.01">
+      </div>
+      <div class="form-group-a" style="margin:0">
+        <label>Fecha de pago</label>
+        <input type="date" name="fecha_pago" class="form-control-a" value="{{ hoy }}">
+      </div>
+    </div>
+    <div class="form-group-a" style="margin-bottom:0.7rem;">
+      <label>Notas <span style="font-weight:400;color:var(--muted);">opcional</span></label>
+      <input type="text" name="notas" class="form-control-a" placeholder="Observaciones…">
+    </div>
+    <div style="display:flex;gap:0.6rem;justify-content:flex-end;">
+      <button type="button" onclick="document.getElementById('form-nueva-cuota').classList.remove('open')" class="btn btn-outline btn-sm">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Registrar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Tabla de cuotas -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Historial de cuotas</span>
+    <span style="font-size:0.72rem;color:var(--muted);">{{ cuotas|length }} resultado{% if cuotas|length != 1 %}s{% endif %}</span>
+  </div>
+  {% if cuotas %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Socio</th>
+          <th>Tipo</th>
+          <th>Monto</th>
+          <th>Pagó el</th>
+          <th>Vence</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cuotas %}
+        {% set vencida = c.fecha_vencimiento and c.fecha_vencimiento < hoy %}
+        <tr onclick="location.href='{{ url_for('admin_socio', sid=c.socio_id) }}'" style="cursor:pointer;">
+          <td>
+            <div class="fw-600 text-sm">{{ c.nombre }} {{ c.apellido }}</div>
+          </td>
+          <td class="text-sm">{{ c.tipo|title }}</td>
+          <td style="font-weight:700;color:var(--green-deep);">${{ c.monto }}</td>
+          <td class="text-xs text-muted">{{ fmt_fecha(c.fecha_pago) }}</td>
+          <td>
+            <span style="font-size:0.82rem;font-weight:600;color:{{ '#C0392B' if vencida else 'var(--green-mid)' }};">
+              {{ fmt_fecha(c.fecha_vencimiento) }}
+            </span>
+          </td>
+          <td>
+            {% if vencida %}
+            <span class="cuota-badge cuota-vencida">Vencida</span>
+            {% elif c.estado == 'cancelada' %}
+            <span class="cuota-badge cuota-cancelada">Cancelada</span>
+            {% else %}
+            <span class="cuota-badge cuota-pagada">Al día</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <p class="text-muted text-sm">Sin cuotas registradas todavía.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+// Al seleccionar el socio en el formulario rápido, armar la URL correcta del POST
+document.querySelector('#form-nueva-cuota form').addEventListener('submit', function(e) {
+  var sid = this.querySelector('[name="socio_id"]').value;
+  if (!sid) { e.preventDefault(); alert('Seleccioná un socio'); return; }
+  this.action = '/admin/socio/' + sid + '/cuota';
+});
+</script>
+{% endblock %}

@@ -1,30 +1,74 @@
 {% extends 'base.html' %}
-{% block title %}Mi estado — Cannawaka{% endblock %}
+{% block title %}Mi estado — Germina{% endblock %}
 
 {% block extra_styles %}
-.portal-wrap { max-width: 620px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
-.portal-head {
-  background: var(--green-deep); border-radius: 16px;
-  padding: 2rem; margin-bottom: 1.5rem; color: var(--cream);
+.portal-wrap { max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+
+/* Carnet digital */
+.carnet {
+  background: linear-gradient(135deg, #1A3520 0%, #2D5C38 60%, #1A3520 100%);
+  border-radius: 20px; padding: 1.8rem 1.8rem 1.4rem;
+  margin-bottom: 1.5rem; color: var(--cream);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  position: relative; overflow: hidden;
 }
-.portal-head-name {
+.carnet::before {
+  content: ''; position: absolute; right: -30px; top: -30px;
+  width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(200,164,74,0.08);
+}
+.carnet-logo {
   font-family: 'Playfair Display', serif;
-  font-size: 1.7rem; font-weight: 500; margin-bottom: 0.3rem;
+  font-size: 1rem; color: var(--gold); margin-bottom: 1.2rem; letter-spacing: 0.04em;
 }
-.portal-head-tipo {
-  font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase;
-  letter-spacing: 0.1em;
+.carnet-logo span { opacity: 0.7; }
+.carnet-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 500; margin-bottom: 0.2rem;
+}
+.carnet-tipo {
+  font-size: 0.68rem; color: rgba(255,255,255,0.45);
+  text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 1.2rem;
+}
+.carnet-bottom {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: 0.5rem;
+}
+.carnet-qr {
+  background: #fff; padding: 6px; border-radius: 8px; display: inline-block;
+}
+.carnet-data { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+.carnet-data strong { color: rgba(255,255,255,0.85); display: block; font-size: 0.82rem; }
+.carnet-cupo {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(200,164,74,0.2); border: 1px solid rgba(200,164,74,0.3);
+  border-radius: 100px; padding: 0.3rem 0.8rem;
+  font-size: 0.72rem; color: var(--gold); font-weight: 600; margin-top: 0.6rem;
 }
 
-/* estado badge */
+/* Estado badge */
 .estado-badge {
   display: inline-flex; align-items: center; gap: 0.5rem;
-  padding: 0.45rem 1rem; border-radius: 100px;
-  font-size: 0.78rem; font-weight: 600;
-  margin-top: 1rem;
+  padding: 0.35rem 0.9rem; border-radius: 100px;
+  font-size: 0.72rem; font-weight: 600; margin-top: 0.8rem;
 }
 
-/* timeline */
+/* Cards */
+.info-card {
+  background: var(--white); border-radius: 14px;
+  border: 1px solid var(--border); padding: 1.2rem 1.5rem; margin-bottom: 1rem;
+}
+.info-card-title {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--gold); font-weight: 700; margin-bottom: 0.8rem;
+}
+.info-row { display: flex; justify-content: space-between; padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+.info-row:last-child { border-bottom: none; }
+.info-key { color: var(--muted); font-size: 0.78rem; }
+.info-val { font-weight: 500; color: var(--text); }
+
+/* Timeline */
 .timeline { display: flex; flex-direction: column; gap: 0; }
 .tl-step { display: flex; gap: 1rem; }
 .tl-left { display: flex; flex-direction: column; align-items: center; }
@@ -44,60 +88,93 @@
 .tl-title.pending { color: var(--muted); font-weight: 400; }
 .tl-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
 
-.info-card {
-  background: var(--white); border-radius: 12px;
-  border: 1px solid var(--border); padding: 1.2rem 1.5rem;
-  margin-bottom: 1rem;
-}
-.info-card-title {
-  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
-  color: var(--gold); font-weight: 700; margin-bottom: 0.8rem;
-}
-.info-row { display: flex; justify-content: space-between; padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-.info-row:last-child { border-bottom: none; }
-.info-key { color: var(--muted); font-size: 0.78rem; }
-.info-val { font-weight: 500; color: var(--text); }
-
+/* Doc row */
 .doc-row {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem;
 }
 .doc-row:last-child { border-bottom: none; }
-.doc-estado {
-  padding: 0.25rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600;
-}
+.doc-estado { padding: 0.25rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 600; }
 .doc-estado.pendiente { background: #FEF3CD; color: #7A5C00; }
 .doc-estado.entregado { background: #D4EAD9; color: #1A3520; }
 .doc-estado.rechazado { background: #FDE8E8; color: #9B2222; }
+
+/* Variedades menu */
+.var-menu-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+}
+@media (max-width: 500px) { .var-menu-grid { grid-template-columns: 1fr; } }
+.var-menu-card {
+  background: var(--white); border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 1rem; transition: border-color 0.15s;
+}
+.var-menu-card:hover { border-color: var(--green-light); }
+.var-menu-nombre { font-family: 'Playfair Display',serif; font-size: 1rem; color: var(--green-deep); margin-bottom: 0.3rem; }
+.var-menu-gen {
+  display: inline-block; font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 0.12rem 0.45rem; border-radius: 100px; margin-bottom: 0.5rem;
+}
+.gen-indica { background:#E8D5F5;color:#5C2D8A; }
+.gen-sativa { background:#FEF3C7;color:#7A5C00; }
+.gen-hibrido { background:#D4EAD9;color:#1A3520; }
+.gen-cbd_dominante { background:#D5EEF5;color:#1A4A5C; }
+.gen-auto { background:#F5E8D5;color:#5C3D1A; }
+.var-pct-row { display:flex;gap:0.4rem;align-items:center;margin-bottom:0.3rem; }
+.var-pct-bar { flex:1;height:4px;background:var(--cream-dark);border-radius:2px;overflow:hidden; }
+.var-pct-fill { height:100%;border-radius:2px; }
+.var-tags-mini { display:flex;flex-wrap:wrap;gap:0.25rem;margin-top:0.4rem; }
+.var-tag-mini { background:var(--cream);border:1px solid var(--border);border-radius:100px;font-size:0.6rem;padding:0.1rem 0.4rem;color:var(--text); }
+.var-desc-mini { font-size:0.75rem;color:var(--muted);margin-top:0.35rem;line-height:1.5; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
 {% endblock %}
 
 {% block content %}
 <div class="portal-wrap">
-  <div class="portal-head">
-    <div class="portal-head-tipo">
+
+  <!-- CARNET DIGITAL -->
+  <div class="carnet">
+    <div class="carnet-logo">Germi<span>na</span></div>
+    <div class="carnet-name">{{ s.nombre }} {{ s.apellido }}</div>
+    <div class="carnet-tipo">
       {% set tipos = {'paciente':'Paciente','cuidador':'Cuidador','productor':'Autocultivador','investigador':'Profesional'} %}
-      {{ tipos.get(s.tipo_socio, s.tipo_socio) }} · Cannawaka
+      {{ tipos.get(s.tipo_socio, s.tipo_socio or 'Socio') }} · Club Germina
     </div>
-    <div class="portal-head-name">{{ s.nombre }} {{ s.apellido }}</div>
-    <div>
-      {% set bc = etapa_color.get(s.etapa, '#888') %}
-      {% set bl = etapa_label.get(s.etapa, s.etapa) %}
-      <span class="estado-badge" style="background:{{ bc }}22;color:{{ bc }};border:1px solid {{ bc }}44;">
-        {{ bl }}
-      </span>
+    {% set bc = etapa_color.get(s.etapa, '#888') %}
+    {% set bl = etapa_label.get(s.etapa, s.etapa) %}
+    <span class="estado-badge" style="background:{{ bc }}33;color:{{ bc }};border:1px solid {{ bc }}55;">
+      {{ bl }}
+    </span>
+    {% if s.etapa == 'activo' and s.cupo_mensual_g %}
+    <div class="carnet-cupo">
+      🌿 Cupo mensual: {{ consumido_mes }}g / {{ s.cupo_mensual_g or 30 }}g consumido este mes
+    </div>
+    {% endif %}
+    <div class="carnet-bottom">
+      <div class="carnet-data">
+        {% if s.dni %}<span>DNI</span><strong>{{ s.dni }}</strong>{% endif %}
+        <span style="margin-top:0.4rem;display:block;">Desde</span>
+        <strong>{{ s.created_at[:10] if s.created_at else '—' }}</strong>
+        {% if cuota_actual %}
+        <span style="margin-top:0.4rem;display:block;">Cuota vence</span>
+        <strong id="carnet-vence" data-fecha="{{ cuota_actual.fecha_vencimiento }}" style="color:rgba(200,164,74,0.9);">
+          {{ cuota_actual.fecha_vencimiento or '—' }}
+        </strong>
+        {% endif %}
+      </div>
+      <div class="carnet-qr">
+        <div id="qr-portal" style="display:inline-block;"></div>
+      </div>
     </div>
   </div>
 
   <!-- Timeline de etapas -->
   <div class="info-card">
-    <div class="info-card-title">Tu proceso en Cannawaka</div>
+    <div class="info-card-title">Tu proceso en Germina</div>
     {% set etapas_list = [
-      ('solicitud',     'Solicitud recibida',    'Tu solicitud llegó al equipo de Cannawaka.'),
+      ('solicitud',     'Solicitud recibida',    'Tu solicitud llegó al equipo de Germina.'),
       ('documentacion', 'Pendiente de documentos','Necesitamos que aportes documentación.'),
       ('en_revision',   'En revisión',            'El equipo está evaluando tu caso.'),
       ('aprobado',      'Aprobado',               'Tu solicitud fue aprobada. Próximos pasos en camino.'),
-      ('activo',        'Socio activo',           'Sos parte de la comunidad Cannawaka.'),
+      ('activo',        'Socio activo',           '¡Sos parte de la comunidad Germina!'),
     ] %}
     <div class="timeline">
       {% set etapas_ids = ['solicitud','documentacion','en_revision','aprobado','activo'] %}
@@ -124,35 +201,80 @@
     </div>
   </div>
 
+  <!-- Últimas dispensaciones (si hay) -->
+  {% if ultimas_dispensaciones %}
+  <div class="info-card">
+    <div class="info-card-title">Últimas dispensaciones</div>
+    {% for d in ultimas_dispensaciones %}
+    <div class="info-row">
+      <span class="info-key">{{ d.fecha }}</span>
+      <span class="info-val" style="font-weight:600;">{{ d.variedad }}</span>
+      <span style="color:var(--gold);font-weight:700;">{{ d.gramos }}g</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Menú de variedades disponibles -->
+  {% if variedades %}
+  <div class="info-card">
+    <div class="info-card-title">Variedades disponibles en el club</div>
+    <div class="var-menu-grid">
+      {% for v in variedades %}
+      <div class="var-menu-card">
+        {% if v.imagen_url %}
+        <img src="{{ v.imagen_url }}" alt="{{ v.nombre }}"
+             style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:0.5rem;">
+        {% endif %}
+        <div class="var-menu-nombre">{{ v.nombre }}</div>
+        <span class="var-menu-gen gen-{{ v.genetica or 'hibrido' }}">
+          {% if v.genetica == 'indica' %}Índica{% elif v.genetica == 'sativa' %}Sativa
+          {% elif v.genetica == 'cbd_dominante' %}CBD{% elif v.genetica == 'auto' %}Auto
+          {% else %}Híbrido{% endif %}
+        </span>
+        {% if v.thc_pct or v.cbd_pct %}
+        <div class="var-pct-row">
+          <span style="font-size:0.62rem;font-weight:700;color:#E07B30;min-width:32px;">THC</span>
+          <div class="var-pct-bar"><div class="var-pct-fill" style="background:#E07B30;width:{{ [(v.thc_pct or 0)/35*100,100]|min|round }}%;"></div></div>
+          <span style="font-size:0.65rem;font-weight:700;color:#E07B30;min-width:32px;text-align:right;">{{ v.thc_pct or 0 }}%</span>
+        </div>
+        <div class="var-pct-row">
+          <span style="font-size:0.62rem;font-weight:700;color:#2D5C38;min-width:32px;">CBD</span>
+          <div class="var-pct-bar"><div class="var-pct-fill" style="background:#2D5C38;width:{{ [(v.cbd_pct or 0)/25*100,100]|min|round }}%;"></div></div>
+          <span style="font-size:0.65rem;font-weight:700;color:#2D5C38;min-width:32px;text-align:right;">{{ v.cbd_pct or 0 }}%</span>
+        </div>
+        {% endif %}
+        {% if v.descripcion %}
+        <div class="var-desc-mini">{{ v.descripcion }}</div>
+        {% endif %}
+        {% if v.efectos %}
+        <div class="var-tags-mini">
+          {% for ef in v.efectos.split(',')[:3] %}
+          <span class="var-tag-mini">{{ ef.strip() }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if v.indicaciones %}
+        <div class="var-tags-mini" style="margin-top:0.2rem;">
+          {% for ind in v.indicaciones.split(',')[:2] %}
+          <span class="var-tag-mini" style="background:var(--green-pale);border-color:var(--green-light);">💊 {{ ind.strip() }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Datos registrados -->
   <div class="info-card">
     <div class="info-card-title">Tus datos registrados</div>
-    <div class="info-row">
-      <span class="info-key">DNI</span>
-      <span class="info-val">{{ s.dni }}</span>
-    </div>
-    {% if s.email %}
-    <div class="info-row">
-      <span class="info-key">Email</span>
-      <span class="info-val">{{ s.email }}</span>
-    </div>
-    {% endif %}
-    {% if s.telefono %}
-    <div class="info-row">
-      <span class="info-key">WhatsApp</span>
-      <span class="info-val">{{ s.telefono }}</span>
-    </div>
-    {% endif %}
-    {% if s.diagnostico %}
-    <div class="info-row">
-      <span class="info-key">Condición</span>
-      <span class="info-val">{{ s.diagnostico }}</span>
-    </div>
-    {% endif %}
-    <div class="info-row">
-      <span class="info-key">Solicitud</span>
-      <span class="info-val">{{ s.created_at[:10] if s.created_at else '—' }}</span>
-    </div>
+    {% if s.dni %}<div class="info-row"><span class="info-key">DNI</span><span class="info-val">{{ s.dni }}</span></div>{% endif %}
+    {% if s.email %}<div class="info-row"><span class="info-key">Email</span><span class="info-val">{{ s.email }}</span></div>{% endif %}
+    {% if s.telefono %}<div class="info-row"><span class="info-key">WhatsApp</span><span class="info-val">{{ s.telefono }}</span></div>{% endif %}
+    {% if s.diagnostico %}<div class="info-row"><span class="info-key">Condición</span><span class="info-val">{{ s.diagnostico }}</span></div>{% endif %}
+    <div class="info-row"><span class="info-key">Alta</span><span class="info-val">{{ s.created_at[:10] if s.created_at else '—' }}</span></div>
   </div>
 
   <!-- Documentación -->
@@ -168,14 +290,32 @@
   </div>
   {% endif %}
 
-  <div style="text-align:center;margin-top:2rem;">
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">
-      ¿Tenés dudas? Escribinos a Instagram
-    </p>
-    <a href="https://instagram.com/cannawaka" target="_blank"
+  <div style="text-align:center;margin-top:2rem;padding-bottom:1rem;">
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">¿Tenés dudas? Escribinos por WhatsApp o Instagram</p>
+    <a href="https://instagram.com/germina.clubs" target="_blank"
        style="display:inline-flex;align-items:center;gap:0.5rem;background:var(--green-deep);color:var(--cream);padding:0.7rem 1.5rem;border-radius:100px;font-size:0.85rem;font-weight:600;">
-      @cannawaka en Instagram ↗
+      @germina.clubs ↗
     </a>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+new QRCode(document.getElementById('qr-portal'), {
+  text: window.location.href,
+  width: 80, height: 80,
+  colorDark: '#1A3520', colorLight: '#ffffff',
+});
+// Color fecha vencimiento cuota en carnet
+var v = document.getElementById('carnet-vence');
+if (v) {
+  var hoy = new Date().toISOString().split('T')[0];
+  if (v.getAttribute('data-fecha') < hoy) {
+    v.style.color = '#FF8080';
+    v.textContent = v.getAttribute('data-fecha') + ' ⚠ Vencida';
+  }
+}
+</script>
 {% endblock %}
