@@ -227,7 +227,7 @@ a { color: inherit; text-decoration: none; }
 
   <!-- ─── INICIO ─── -->
   <div class="page active" id="page-inicio">
-    {% set cupo = s.cupo_mensual or 30 %}
+    {% set cupo = s.cupo_mensual_g or 30 %}
     {% set pct_cupo = [((consumido_mes / cupo) * 100)|round(0)|int, 100]|min %}
     <div class="carnet">
       <div class="carnet-header">
@@ -415,8 +415,8 @@ a { color: inherit; text-decoration: none; }
       <div class="info-row"><span class="info-label">Email</span><span class="info-val">{{ s.email or '—' }}</span></div>
       <div class="info-row"><span class="info-label">Teléfono</span><span class="info-val">{{ s.telefono or '—' }}</span></div>
       <div class="info-row"><span class="info-label">Estado</span><span class="info-val">{{ etapa_label.get(s.etapa, s.etapa) }}</span></div>
-      <div class="info-row"><span class="info-label">Cupo mensual</span><span class="info-val">{{ s.cupo_mensual or 30 }}g</span></div>
-      <div class="info-row"><span class="info-label">REPROCANN</span><span class="info-val">{{ s.reprocann or '—' }}</span></div>
+      <div class="info-row"><span class="info-label">Cupo mensual</span><span class="info-val">{{ s.cupo_mensual_g or 30 }}g</span></div>
+      <div class="info-row"><span class="info-label">Médico prescriptor</span><span class="info-val">{{ s.medico_prescriptor or '—' }}</span></div>
     </div>
 
     {% if cuota_actual %}
