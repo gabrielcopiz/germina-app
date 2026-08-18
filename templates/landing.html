@@ -209,8 +209,10 @@
       <p class="hero-sub">
         Somos un dispositivo de salud cannábico en Buenos Aires. Acompañamos a pacientes, cuidadores y profesionales dentro del marco legal argentino.
       </p>
-      <a href="{{ url_for('solicitud') }}" class="hero-cta">Quiero unirme al club →</a>
-      <a href="{{ url_for('acceso_socio') }}" class="hero-cta-secondary">Ya soy socio →</a>
+      <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
+        <a href="{{ url_for('solicitud') }}" class="hero-cta">Quiero unirme al club →</a>
+        <a href="{{ url_for('acceso_socio') }}" style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.25);color:var(--cream);font-weight:600;font-size:0.9rem;padding:0.85rem 1.6rem;border-radius:100px;transition:background 0.2s;">🔐 Soy socio — accedé a tu portal</a>
+      </div>
       <p class="hero-note">Proceso 100% gratuito · Completamente legal · REPROCANN</p>
       <div class="hero-stats">
         <div>

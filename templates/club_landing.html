@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raíz — Club de Cannabis Medicinal · Buenos Aires</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink:       #0C0F0A;
+  --ink2:      #141A11;
+  --ink3:      #1C2619;
+  --card:      #1F2B1C;
+  --card2:     #273323;
+  --green:     #6DBF5A;
+  --green-d:   #4A9A38;
+  --green-pale:#C8F0BE;
+  --gold:      #D4A843;
+  --gold-light:#F0CC78;
+  --cream:     #F2EFE8;
+  --cream2:    #E8E4DC;
+  --border:    rgba(255,255,255,0.08);
+  --text:      #E8F0E4;
+  --text2:     rgba(232,240,228,0.6);
+  --text3:     rgba(232,240,228,0.35);
+  --red:       #E05C5C;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: var(--ink); color: var(--text); line-height: 1.6; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  padding: 0 2rem; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  transition: background 0.3s, border-bottom 0.3s;
+}
+.nav.scrolled { background: rgba(12,15,10,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.nav-logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--cream); letter-spacing: 0.02em; }
+.nav-logo span { color: var(--green); }
+.nav-links { display: flex; align-items: center; gap: 2rem; }
+.nav-links a { font-size: 0.85rem; color: var(--text2); font-weight: 500; transition: color 0.2s; }
+.nav-links a:hover { color: var(--green); }
+.nav-cta {
+  background: var(--green); color: var(--ink) !important;
+  font-weight: 700 !important; font-size: 0.82rem !important;
+  padding: 0.55rem 1.3rem; border-radius: 100px; transition: opacity 0.2s !important;
+}
+.nav-cta:hover { opacity: 0.88 !important; }
+.nav-menu { display: none; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh; display: flex; align-items: center;
+  position: relative; overflow: hidden; padding: 0 2rem;
+}
+.hero-video-wrap {
+  position: absolute; inset: 0; z-index: 0;
+}
+.hero-video-wrap video {
+  width: 100%; height: 100%; object-fit: cover; opacity: 0.25;
+}
+.hero-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(135deg, rgba(12,15,10,0.92) 0%, rgba(12,15,10,0.7) 60%, rgba(12,15,10,0.4) 100%);
+}
+.hero-content { position: relative; z-index: 2; max-width: 720px; padding-top: 5rem; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: rgba(109,191,90,0.12); border: 1px solid rgba(109,191,90,0.3);
+  color: var(--green); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 0.4rem 0.9rem; border-radius: 100px; margin-bottom: 2rem;
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  line-height: 1.1; font-weight: 500; color: var(--cream); margin-bottom: 1.5rem;
+}
+.hero-title em { color: var(--green); font-style: italic; }
+.hero-sub { font-size: 1.05rem; color: var(--text2); line-height: 1.8; max-width: 560px; margin-bottom: 2.5rem; }
+.hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.btn-primary {
+  display: inline-block; background: var(--green); color: var(--ink);
+  font-weight: 700; font-size: 0.95rem; padding: 1rem 2.2rem; border-radius: 100px;
+  transition: opacity 0.2s, transform 0.2s; letter-spacing: 0.01em;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-2px); }
+.btn-secondary {
+  display: inline-block; border: 1.5px solid rgba(255,255,255,0.2); color: var(--text2);
+  font-size: 0.9rem; font-weight: 500; padding: 0.95rem 1.8rem; border-radius: 100px;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-secondary:hover { border-color: var(--green); color: var(--green); }
+.hero-note { font-size: 0.73rem; color: var(--text3); }
+.hero-trust { display: flex; gap: 2rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.trust-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--text2); }
+.trust-icon { font-size: 1.1rem; }
+
+/* ── DOLOR ── */
+.dolor {
+  background: var(--ink2); padding: 5rem 2rem;
+}
+.container { max-width: 1100px; margin: 0 auto; }
+.section-chip {
+  display: inline-block; background: rgba(109,191,90,0.1); border: 1px solid rgba(109,191,90,0.2);
+  color: var(--green); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 0.35rem 0.85rem; border-radius: 100px; margin-bottom: 1.25rem;
+}
+.section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 3.5vw, 2.8rem); line-height: 1.2; color: var(--cream); margin-bottom: 1.25rem; }
+.section-sub { font-size: 1rem; color: var(--text2); max-width: 560px; line-height: 1.8; }
+.dolor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 3rem; }
+.dolor-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 1.5rem; transition: border-color 0.2s;
+}
+.dolor-card:hover { border-color: rgba(109,191,90,0.25); }
+.dolor-icon { font-size: 1.8rem; margin-bottom: 0.75rem; }
+.dolor-q { font-size: 0.95rem; font-weight: 600; color: var(--cream); margin-bottom: 0.5rem; line-height: 1.4; }
+.dolor-r { font-size: 0.82rem; color: var(--text2); line-height: 1.7; }
+.dolor-r strong { color: var(--green); }
+
+/* ── SOLUCIÓN ── */
+.solucion { padding: 6rem 2rem; }
+.solucion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; margin-top: 4rem; }
+.solucion-lista { display: flex; flex-direction: column; gap: 1.5rem; }
+.sol-item { display: flex; gap: 1rem; align-items: flex-start; }
+.sol-num {
+  width: 36px; height: 36px; border-radius: 50%; background: rgba(109,191,90,0.15);
+  border: 1px solid rgba(109,191,90,0.3); display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; color: var(--green); flex-shrink: 0;
+}
+.sol-text-title { font-size: 0.95rem; font-weight: 600; color: var(--cream); margin-bottom: 0.25rem; }
+.sol-text-desc { font-size: 0.82rem; color: var(--text2); line-height: 1.7; }
+.solucion-visual {
+  background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+  overflow: hidden; position: relative;
+}
+.solucion-img { width: 100%; height: 380px; object-fit: cover; opacity: 0.7; }
+.solucion-img-placeholder {
+  width: 100%; height: 380px;
+  background: linear-gradient(135deg, var(--card2) 0%, var(--ink3) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 6rem;
+}
+.solucion-badge {
+  position: absolute; bottom: 1.5rem; left: 1.5rem; right: 1.5rem;
+  background: rgba(12,15,10,0.85); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem;
+}
+.badge-stat-row { display: flex; gap: 1.5rem; }
+.badge-stat-num { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--green); line-height: 1; }
+.badge-stat-label { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+/* ── VARIEDADES ── */
+.variedades { background: var(--ink2); padding: 6rem 2rem; }
+.var-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; margin-top: 3rem; }
+.var-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  overflow: hidden; transition: transform 0.2s, border-color 0.2s;
+}
+.var-card:hover { transform: translateY(-4px); border-color: rgba(109,191,90,0.25); }
+.var-img { width: 100%; height: 160px; object-fit: cover; }
+.var-img-placeholder { width: 100%; height: 140px; background: var(--card2); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+.var-body { padding: 1rem; }
+.var-badge { display: inline-block; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; margin-bottom: 0.5rem; }
+.var-badge.sativa { background: rgba(212,168,67,0.15); color: var(--gold); border: 1px solid rgba(212,168,67,0.25); }
+.var-badge.indica { background: rgba(90,90,200,0.15); color: #9090F0; border: 1px solid rgba(90,90,200,0.25); }
+.var-badge.hibrida { background: rgba(109,191,90,0.15); color: var(--green); border: 1px solid rgba(109,191,90,0.25); }
+.var-badge.cbd { background: rgba(212,168,67,0.15); color: var(--gold-light); border: 1px solid rgba(212,168,67,0.25); }
+.var-nombre { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--cream); margin-bottom: 0.35rem; }
+.var-desc { font-size: 0.75rem; color: var(--text2); line-height: 1.6; }
+.var-pct { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.var-pct-badge { font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 100px; background: rgba(255,255,255,0.07); color: var(--text2); }
+.variedades-cta { text-align: center; margin-top: 2.5rem; }
+.var-lock-msg { font-size: 0.82rem; color: var(--text3); margin-top: 0.75rem; }
+
+/* ── PROCESO ── */
+.proceso { padding: 6rem 2rem; }
+.proceso-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0; margin-top: 4rem; position: relative; }
+.proceso-steps::before {
+  content: ''; position: absolute; top: 28px; left: 15%; right: 15%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(109,191,90,0.3), transparent);
+}
+.paso { text-align: center; padding: 0 1.5rem; position: relative; }
+.paso-num {
+  width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 1.25rem;
+  background: var(--card); border: 1.5px solid rgba(109,191,90,0.3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--green);
+  position: relative; z-index: 1;
+}
+.paso-title { font-size: 0.95rem; font-weight: 600; color: var(--cream); margin-bottom: 0.5rem; }
+.paso-desc { font-size: 0.78rem; color: var(--text2); line-height: 1.7; }
+
+/* ── BENEFICIOS ── */
+.beneficios { background: var(--ink2); padding: 6rem 2rem; }
+.bene-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 3rem; }
+.bene-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 1.5rem; display: flex; gap: 1rem; align-items: flex-start;
+}
+.bene-icon { font-size: 1.5rem; flex-shrink: 0; }
+.bene-title { font-size: 0.9rem; font-weight: 600; color: var(--cream); margin-bottom: 0.3rem; }
+.bene-desc { font-size: 0.78rem; color: var(--text2); line-height: 1.7; }
+
+/* ── TESTIMONIOS ── */
+.testimonios { padding: 6rem 2rem; }
+.test-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; margin-top: 3rem; }
+.test-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem;
+  position: relative;
+}
+.test-stars { color: var(--gold); font-size: 0.9rem; margin-bottom: 1rem; letter-spacing: 2px; }
+.test-text { font-size: 0.88rem; color: var(--text2); line-height: 1.8; margin-bottom: 1.25rem; font-style: italic; }
+.test-text::before { content: '"'; font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--green); line-height: 0; vertical-align: -0.5rem; margin-right: 0.25rem; }
+.test-autor { font-size: 0.78rem; font-weight: 600; color: var(--cream); }
+.test-condicion { font-size: 0.7rem; color: var(--green); margin-top: 2px; }
+
+/* ── FAQ ── */
+.faq { background: var(--ink2); padding: 6rem 2rem; }
+.faq-list { margin-top: 3rem; max-width: 720px; margin-left: auto; margin-right: auto; }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-q {
+  width: 100%; text-align: left; padding: 1.25rem 0; background: none; border: none;
+  color: var(--cream); font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  font-family: inherit;
+}
+.faq-q:hover { color: var(--green); }
+.faq-arrow { color: var(--green); font-size: 1.1rem; transition: transform 0.2s; flex-shrink: 0; }
+.faq-a { font-size: 0.85rem; color: var(--text2); line-height: 1.8; padding-bottom: 1.25rem; display: none; }
+.faq-item.open .faq-arrow { transform: rotate(180deg); }
+.faq-item.open .faq-a { display: block; }
+
+/* ── CTA FINAL ── */
+.cta-final {
+  padding: 7rem 2rem; text-align: center;
+  background: linear-gradient(135deg, var(--ink3) 0%, var(--ink) 100%);
+  position: relative; overflow: hidden;
+}
+.cta-final::before {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(109,191,90,0.07) 0%, transparent 70%);
+}
+.cta-final-content { position: relative; z-index: 1; }
+.cta-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3.2rem); color: var(--cream); margin-bottom: 1.25rem; line-height: 1.2; }
+.cta-sub { font-size: 1rem; color: var(--text2); max-width: 500px; margin: 0 auto 2.5rem; line-height: 1.8; }
+.cta-nota { font-size: 0.72rem; color: var(--text3); margin-top: 1.25rem; }
+
+/* ── LEGAL BAR ── */
+.legal-bar {
+  background: var(--ink2); border-top: 1px solid var(--border);
+  padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem;
+  flex-wrap: wrap; justify-content: center;
+}
+.legal-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.7rem; color: var(--text3); font-weight: 500;
+}
+.legal-chip::before { content: '✓'; color: var(--green); font-weight: 700; }
+
+/* ── FOOTER ── */
+.footer { background: var(--ink); border-top: 1px solid var(--border); padding: 2.5rem 2rem; }
+.footer-inner { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1.5rem; }
+.footer-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--cream); margin-bottom: 0.4rem; }
+.footer-logo span { color: var(--green); }
+.footer-legal { font-size: 0.7rem; color: var(--text3); line-height: 1.8; }
+.footer-links { display: flex; gap: 1.5rem; }
+.footer-links a { font-size: 0.78rem; color: var(--text3); transition: color 0.2s; }
+.footer-links a:hover { color: var(--green); }
+
+/* ── WHATSAPP ── */
+.wa-btn {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: #25D366; color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+  transition: transform 0.2s;
+}
+.wa-btn:hover { transform: scale(1.08); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .nav-menu { display: block; color: var(--text2); font-size: 1.4rem; cursor: pointer; background:none; border:none; }
+  .solucion-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .solucion-visual { order: -1; }
+  .proceso-steps::before { display: none; }
+  .hero-content { padding-top: 6rem; }
+  .legal-bar { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-logo">Raí<span>z</span></div>
+  <div class="nav-links">
+    <a href="#nosotros">Nosotros</a>
+    <a href="#variedades">Variedades</a>
+    <a href="#proceso">Cómo unirse</a>
+    <a href="#faq">Preguntas</a>
+    <a href="#unirse" class="nav-cta">Quiero ser socio</a>
+  </div>
+  <button class="nav-menu" aria-label="Menú">☰</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-video-wrap">
+    <video autoplay muted loop playsinline poster="">
+      <source src="https://cdn.coverr.co/videos/coverr-green-cannabis-plant-6508/1080p.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-eyebrow">🌿 Club cannábico medicinal · Ley 27.350</div>
+      <h1 class="hero-title">
+        El alivio que buscás<br>existe. Y es <em>completamente legal.</em>
+      </h1>
+      <p class="hero-sub">
+        Raíz es un club cannábico medicinal en Buenos Aires. Variedades de calidad garantizada, asesoramiento profesional y acompañamiento real — dentro del marco legal argentino.
+      </p>
+      <div class="hero-actions">
+        <a href="#unirse" class="btn-primary">Quiero ser socio →</a>
+        <a href="#proceso" class="btn-secondary">¿Cómo funciona?</a>
+      </div>
+      <p class="hero-note">Gratuito · Legal · Confidencial · Sin compromiso</p>
+      <div class="hero-trust">
+        <div class="trust-item"><span class="trust-icon">🏛️</span> Ley Nacional 27.350</div>
+        <div class="trust-item"><span class="trust-icon">📋</span> Registro REPROCANN</div>
+        <div class="trust-item"><span class="trust-icon">🔒</span> 100% confidencial</div>
+        <div class="trust-item"><span class="trust-icon">👨‍⚕️</span> Asesoramiento médico</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOLOR -->
+<section class="dolor" id="nosotros">
+  <div class="container">
+    <span class="section-chip">¿Te identificás?</span>
+    <h2 class="section-title">Sabemos lo que estás viviendo</h2>
+    <p class="section-sub">Acceder a cannabis medicinal de calidad en Argentina no debería ser tan difícil. Pero la realidad es que muchos pacientes se encuentran solos ante estas dudas:</p>
+    <div class="dolor-grid">
+      <div class="dolor-card">
+        <div class="dolor-icon">😰</div>
+        <div class="dolor-q">"No sé si lo que compro en la calle es seguro o tiene lo que dice tener"</div>
+        <div class="dolor-r">En Raíz accedés a variedades con <strong>concentración verificada de THC y CBD</strong>, cultivadas en condiciones controladas.</div>
+      </div>
+      <div class="dolor-card">
+        <div class="dolor-icon">⚖️</div>
+        <div class="dolor-q">"Tengo miedo de que sea ilegal y me meta en problemas"</div>
+        <div class="dolor-r">Operamos bajo la <strong>Ley 27.350</strong> y el registro REPROCANN. Nuestros socios están protegidos legalmente.</div>
+      </div>
+      <div class="dolor-card">
+        <div class="dolor-icon">🤷</div>
+        <div class="dolor-q">"No sé qué variedad me sirve para mi condición ni qué dosis tomar"</div>
+        <div class="dolor-r">Te acompañamos con <strong>orientación personalizada</strong> según tu diagnóstico, historial y objetivos terapéuticos.</div>
+      </div>
+      <div class="dolor-card">
+        <div class="dolor-icon">💸</div>
+        <div class="dolor-q">"Los precios son inconsistentes y nunca sé si me están cobrando de más"</div>
+        <div class="dolor-r">Como club sin fines de lucro, los costos son <strong>transparentes y accesibles</strong>. Sin intermediarios ni especulación.</div>
+      </div>
+      <div class="dolor-card">
+        <div class="dolor-icon">😶</div>
+        <div class="dolor-q">"Me da vergüenza o no quiero que se enteren que uso cannabis"</div>
+        <div class="dolor-r">Tu membresía es <strong>estrictamente confidencial</strong>. Nadie fuera del club accede a tu información.</div>
+      </div>
+      <div class="dolor-card">
+        <div class="dolor-icon">🏥</div>
+        <div class="dolor-q">"Mi médico no sabe nada de cannabis y no sé a quién preguntarle"</div>
+        <div class="dolor-r">Contamos con <strong>profesionales especializados</strong> y una red de médicos prescriptores que trabajan con nosotros.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUCIÓN -->
+<section class="solucion">
+  <div class="container">
+    <div class="solucion-grid">
+      <div>
+        <span class="section-chip">La solución</span>
+        <h2 class="section-title">Un lugar donde el cannabis medicinal se toma en serio</h2>
+        <p class="section-sub" style="margin-bottom:2rem;">Raíz no es un dispensario clandestino. Somos una asociación civil registrada, con procesos claros y gente real que te acompaña.</p>
+        <div class="solucion-lista">
+          <div class="sol-item">
+            <div class="sol-num">1</div>
+            <div>
+              <div class="sol-text-title">Variedades medicinales verificadas</div>
+              <div class="sol-text-desc">Cada variedad está documentada con sus concentraciones exactas. Sabés exactamente qué estás consumiendo y para qué sirve.</div>
+            </div>
+          </div>
+          <div class="sol-item">
+            <div class="sol-num">2</div>
+            <div>
+              <div class="sol-text-title">Cupo mensual personalizado</div>
+              <div class="sol-text-desc">Tu cupo se define según tu condición y recomendación médica. Lo gestionás vos desde tu portal personal, con historial completo.</div>
+            </div>
+          </div>
+          <div class="sol-item">
+            <div class="sol-num">3</div>
+            <div>
+              <div class="sol-text-title">Comunidad y acompañamiento real</div>
+              <div class="sol-text-desc">No estás solo. Formas parte de una comunidad de pacientes y contás con el respaldo de nuestro equipo en cada etapa.</div>
+            </div>
+          </div>
+          <div class="sol-item">
+            <div class="sol-num">4</div>
+            <div>
+              <div class="sol-text-title">Portal de socio 100% digital</div>
+              <div class="sol-text-desc">Accedé a tu carnet digital, historial de retiros, catálogo de variedades y estado de tu membresía desde el celular.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="solucion-visual">
+        <div class="solucion-img-placeholder">🌿</div>
+        <div class="solucion-badge">
+          <div class="badge-stat-row">
+            <div>
+              <div class="badge-stat-num">+120</div>
+              <div class="badge-stat-label">Socios activos</div>
+            </div>
+            <div>
+              <div class="badge-stat-num">6</div>
+              <div class="badge-stat-label">Variedades disponibles</div>
+            </div>
+            <div>
+              <div class="badge-stat-num">Ley</div>
+              <div class="badge-stat-label">27.350 registrados</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VARIEDADES -->
+<section class="variedades" id="variedades">
+  <div class="container">
+    <span class="section-chip">Catálogo</span>
+    <h2 class="section-title">Variedades disponibles para socios</h2>
+    <p class="section-sub">Cada cepa está seleccionada por su perfil terapéutico. Las concentraciones exactas están disponibles para socios activos.</p>
+    <div class="var-grid">
+      <div class="var-card">
+        <div class="var-img-placeholder">🌿</div>
+        <div class="var-body">
+          <span class="var-badge indica">Índica</span>
+          <div class="var-nombre">Northern Lights</div>
+          <div class="var-desc">Efecto corporal profundo. Ideal para insomnio, dolor crónico y espasmos musculares.</div>
+          <div class="var-pct"><span class="var-pct-badge">THC 18%</span><span class="var-pct-badge">CBD 0.5%</span></div>
+        </div>
+      </div>
+      <div class="var-card">
+        <div class="var-img-placeholder">🌱</div>
+        <div class="var-body">
+          <span class="var-badge sativa">Sativa</span>
+          <div class="var-nombre">Blue Dream</div>
+          <div class="var-desc">Equilibrio entre claridad mental y relajación corporal. Para ansiedad y fatiga diurna.</div>
+          <div class="var-pct"><span class="var-pct-badge">THC 19%</span><span class="var-pct-badge">CBD 1%</span></div>
+        </div>
+      </div>
+      <div class="var-card">
+        <div class="var-img-placeholder">💚</div>
+        <div class="var-body">
+          <span class="var-badge cbd">Alto CBD</span>
+          <div class="var-nombre">Charlotte Web</div>
+          <div class="var-desc">Sin efecto psicoactivo. Pionera en tratamiento de epilepsia, inflamación y ansiedad severa.</div>
+          <div class="var-pct"><span class="var-pct-badge">THC 0.3%</span><span class="var-pct-badge">CBD 17%</span></div>
+        </div>
+      </div>
+      <div class="var-card" style="display:flex;align-items:center;justify-content:center;min-height:220px;background:rgba(109,191,90,0.04);border-style:dashed;">
+        <div style="text-align:center;padding:1.5rem;">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">🔒</div>
+          <div style="font-size:0.85rem;color:var(--text3);">+3 variedades disponibles<br>para socios activos</div>
+        </div>
+      </div>
+    </div>
+    <div class="variedades-cta">
+      <a href="#unirse" class="btn-primary">Convertirme en socio para ver el catálogo completo →</a>
+      <div class="var-lock-msg">El catálogo completo con concentraciones exactas y precios está disponible solo para socios.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESO -->
+<section class="proceso" id="proceso">
+  <div class="container">
+    <span class="section-chip">El proceso</span>
+    <h2 class="section-title" style="text-align:center;">Unirte es simple. Cuatro pasos.</h2>
+    <div class="proceso-steps">
+      <div class="paso">
+        <div class="paso-num">1</div>
+        <div class="paso-title">Completás tu solicitud</div>
+        <div class="paso-desc">Un formulario rápido con tus datos personales y tu condición de salud. No te compromete a nada.</div>
+      </div>
+      <div class="paso">
+        <div class="paso-num">2</div>
+        <div class="paso-title">Te contactamos</div>
+        <div class="paso-desc">Nuestro equipo revisa tu solicitud y te orienta sobre documentación y siguientes pasos. Generalmente en 24–48 horas.</div>
+      </div>
+      <div class="paso">
+        <div class="paso-num">3</div>
+        <div class="paso-title">Entregás tu documentación</div>
+        <div class="paso-desc">DNI, constancia REPROCANN (o te ayudamos a tramitarla) y prescripción médica si la tenés.</div>
+      </div>
+      <div class="paso">
+        <div class="paso-num">4</div>
+        <div class="paso-title">Activamos tu membresía</div>
+        <div class="paso-desc">Recibís tu carnet digital y acceso a tu portal personal con historial, catálogo y cupo mensual.</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:3rem;">
+      <a href="#unirse" class="btn-primary">Empezar mi solicitud →</a>
+    </div>
+  </div>
+</section>
+
+<!-- BENEFICIOS -->
+<section class="beneficios" id="beneficios">
+  <div class="container">
+    <span class="section-chip">Membresía</span>
+    <h2 class="section-title">Lo que incluye ser socio de Raíz</h2>
+    <div class="bene-grid">
+      <div class="bene-card">
+        <div class="bene-icon">📱</div>
+        <div>
+          <div class="bene-title">Portal digital personal</div>
+          <div class="bene-desc">Accedé desde el celular a tu carnet, historial de retiros, cupo disponible y catálogo de variedades.</div>
+        </div>
+      </div>
+      <div class="bene-card">
+        <div class="bene-icon">🌿</div>
+        <div>
+          <div class="bene-title">Cupo mensual garantizado</div>
+          <div class="bene-desc">Retirá tu cupo mensual de manera confiable, con stock garantizado y sin sorpresas.</div>
+        </div>
+      </div>
+      <div class="bene-card">
+        <div class="bene-icon">👨‍⚕️</div>
+        <div>
+          <div class="bene-title">Orientación especializada</div>
+          <div class="bene-desc">Consultá con nuestro equipo sobre variedades, dosis y métodos de consumo según tu perfil.</div>
+        </div>
+      </div>
+      <div class="bene-card">
+        <div class="bene-icon">📋</div>
+        <div>
+          <div class="bene-title">Acompañamiento REPROCANN</div>
+          <div class="bene-desc">Te ayudamos a tramitar y renovar tu registro REPROCANN si todavía no lo tenés.</div>
+        </div>
+      </div>
+      <div class="bene-card">
+        <div class="bene-icon">🔒</div>
+        <div>
+          <div class="bene-title">Confidencialidad total</div>
+          <div class="bene-desc">Tu información no sale del club. Tratamiento de datos bajo normativa argentina vigente.</div>
+        </div>
+      </div>
+      <div class="bene-card">
+        <div class="bene-icon">⭐</div>
+        <div>
+          <div class="bene-title">Sistema de calificaciones</div>
+          <div class="bene-desc">Calificá las variedades que probaste y leé las experiencias de otros socios para elegir mejor.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIOS -->
+<section class="testimonios">
+  <div class="container">
+    <span class="section-chip">Socios</span>
+    <h2 class="section-title">Lo que dicen quienes ya son parte</h2>
+    <div class="test-grid">
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">Llevaba tres años comprando en la calle sin saber exactamente qué estaba tomando. Desde que soy socio de Raíz dormí por primera vez sin pastillas.</div>
+        <div class="test-autor">Marcela G.</div>
+        <div class="test-condicion">Insomnio crónico · Socio hace 8 meses</div>
+      </div>
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">Me daba mucho miedo el tema legal. El equipo de Raíz me explicó todo, me ayudó con el REPROCANN y nunca me sentí juzgado. El proceso fue muy simple.</div>
+        <div class="test-autor">Roberto M.</div>
+        <div class="test-condicion">Artritis reumatoidea · Socio hace 5 meses</div>
+      </div>
+      <div class="test-card">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">La app es increíble. Veo mi historial, elijo la variedad, calificó mi experiencia. Nunca pensé que acceder a cannabis medicinal iba a ser tan organizado y serio.</div>
+        <div class="test-autor">Florencia D.</div>
+        <div class="test-condicion">Ansiedad y dolor neuropático · Socio hace 11 meses</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <span class="section-chip">Dudas frecuentes</span>
+    <h2 class="section-title" style="text-align:center;">Tus preguntas, respondidas</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Es legal ser socio de un club cannábico?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">Sí. La Ley Nacional 27.350 regula el uso medicinal del cannabis en Argentina desde 2017. Los socios registrados en el REPROCANN tienen respaldo legal explícito. Raíz opera dentro de este marco y te acompaña en cada paso del proceso de registro.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Necesito tener REPROCANN para unirme?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">Podés iniciar el proceso sin tenerlo aún. Te ayudamos a tramitar tu registro REPROCANN como parte del proceso de ingreso al club. Solo necesitás un diagnóstico médico que justifique el uso medicinal del cannabis.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Cuánto cuesta la membresía?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">El proceso de solicitud e ingreso es completamente gratuito. La membresía incluye una cuota mensual que cubre los costos de producción, mantenimiento y acompañamiento. El monto exacto se informa durante el proceso de admisión según tu perfil.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Mis datos son confidenciales?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">Absolutamente. Toda tu información personal y médica está protegida y no sale del club bajo ningún concepto. Operamos bajo la normativa de protección de datos argentina. Ningún tercero tiene acceso a tu membresía.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Cómo retiro mi cupo mensual?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">Podés retirar tu cupo directamente en el club o solicitar delivery (según disponibilidad en tu zona). Todo queda registrado en tu portal personal con fecha, variedad y cantidad. También podés ver tu cupo disponible en tiempo real desde el celular.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          ¿Puedo saber exactamente qué hay en lo que consumo?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">Sí. Cada variedad disponible tiene documentado su perfil de cannabinoides: concentración de THC, CBD, genética y efectos esperados. Esta información está disponible para todos los socios activos en el catálogo digital.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final" id="unirse">
+  <div class="cta-final-content">
+    <div class="section-chip" style="margin-bottom:1.5rem;">Empezá hoy</div>
+    <h2 class="cta-title">Merecés acceder al<br><em>alivio que necesitás</em>,<br>de forma segura y legal.</h2>
+    <p class="cta-sub">Completar la solicitud no te compromete a nada. Nuestro equipo se contacta con vos y te explica todo sin presión.</p>
+    <a href="{{ url_for('solicitud') if url_for is defined else '#' }}" class="btn-primary" style="font-size:1rem;padding:1.1rem 2.5rem;">Quiero ser socio de Raíz →</a>
+    <div class="cta-nota">Proceso gratuito · Sin compromisos · Respuesta en 24–48 horas</div>
+  </div>
+</section>
+
+<!-- LEGAL BAR -->
+<div class="legal-bar">
+  <span class="legal-chip">Ley Nacional 27.350</span>
+  <span class="legal-chip">Registro REPROCANN</span>
+  <span class="legal-chip">ONG sin fines de lucro</span>
+  <span class="legal-chip">Confidencialidad garantizada</span>
+  <span class="legal-chip">Buenos Aires, Argentina</span>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="footer-logo">Raí<span>z</span></div>
+      <div class="footer-legal">
+        Club de Cannabis Medicinal · Asociación Civil sin fines de lucro<br>
+        Ley N° 27.350 · Buenos Aires, Argentina<br>
+        © 2026 Raíz · Todos los derechos reservados
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="#nosotros">Nosotros</a>
+      <a href="#variedades">Variedades</a>
+      <a href="#proceso">Proceso</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </div>
+</footer>
+
+<!-- WhatsApp -->
+<a href="https://wa.me/5491100000000" class="wa-btn" target="_blank" rel="noopener" title="Escribinos por WhatsApp">💬</a>
+
+<script>
+// Nav scroll
+window.addEventListener('scroll', function() {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// FAQ toggle
+function toggleFaq(btn) {
+  var item = btn.parentElement;
+  var wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(function(i){ i.classList.remove('open'); });
+  if (!wasOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>

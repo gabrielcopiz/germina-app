@@ -538,6 +538,10 @@ def confirmacion(token):
     if not s: return redirect(url_for('landing'))
     return render_template('confirmacion.html', s=s)
 
+@app.route('/club-demo')
+def club_landing():
+    return render_template('club_landing.html')
+
 @app.route('/acceso-socio', methods=['GET', 'POST'])
 def acceso_socio():
     error = None
