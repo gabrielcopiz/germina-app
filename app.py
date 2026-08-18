@@ -342,6 +342,17 @@ def init_db():
         key TEXT PRIMARY KEY,
         value TEXT
     );
+    CREATE TABLE IF NOT EXISTS prospectos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT,
+        email TEXT,
+        whatsapp TEXT,
+        club TEXT,
+        pais TEXT,
+        socios TEXT,
+        mensaje TEXT,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
     ''')
     db.commit()
     db.close()
@@ -634,6 +645,33 @@ def _enviar_propuesta(club_nombre, contacto_nombre, email_dest):
     except Exception as e:
         print(f'[EMAIL ERROR] {e}')
         return False
+
+@app.route('/api/lead', methods=['POST', 'OPTIONS'])
+def api_lead():
+    if request.method == 'OPTIONS':
+        r = make_response()
+        r.headers['Access-Control-Allow-Origin'] = '*'
+        r.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        r.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return r
+    data = request.get_json(silent=True) or {}
+    db = get_db()
+    db.execute(
+        'INSERT INTO prospectos (nombre,email,whatsapp,club,pais,socios,mensaje) VALUES (?,?,?,?,?,?,?)',
+        (
+            (data.get('nombre') or '')[:120],
+            (data.get('email')  or '')[:120],
+            (data.get('whatsapp') or '')[:60],
+            (data.get('club')   or '')[:120],
+            (data.get('pais')   or '')[:80],
+            (data.get('socios') or '')[:80],
+            (data.get('mensaje') or '')[:500],
+        )
+    )
+    db.commit()
+    r = jsonify({'ok': True})
+    r.headers['Access-Control-Allow-Origin'] = '*'
+    return r
 
 @app.route('/api/set-demo-club', methods=['POST', 'OPTIONS'])
 def api_set_demo_club():
@@ -1392,6 +1430,13 @@ def admin_agregar_doc(sid):
                         (sid, tipo, estado, notas))
         get_db().commit()
     return redirect(url_for('admin_socio', sid=sid))
+
+@app.route('/admin/prospectos')
+@login_required
+def admin_prospectos():
+    db = get_db()
+    prospectos = db.execute('SELECT * FROM prospectos ORDER BY id DESC').fetchall()
+    return render_template('admin/prospectos.html', prospectos=prospectos)
 
 @app.route('/admin/exportar')
 @login_required

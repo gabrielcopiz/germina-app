@@ -1,0 +1,62 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Prospectos — Germina Admin{% endblock %}
+{% block topbar_title %}Prospectos{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+  <div>
+    <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--green-deep);">Clubes interesados</div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:0.2rem;">Formularios completados en la landing de Germina</div>
+  </div>
+  <div style="background:var(--green-pale);color:var(--green-deep);font-weight:700;font-size:1.1rem;padding:0.6rem 1.4rem;border-radius:10px;">
+    {{ prospectos|length }} prospecto{% if prospectos|length != 1 %}s{% endif %}
+  </div>
+</div>
+
+{% if prospectos %}
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Fecha</th>
+          <th>Club</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>WhatsApp</th>
+          <th>País</th>
+          <th>Socios</th>
+          <th>Mensaje</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in prospectos %}
+        <tr>
+          <td style="color:var(--muted);font-size:0.75rem;">{{ p.id }}</td>
+          <td style="font-size:0.78rem;white-space:nowrap;">{{ p.created_at[:16] if p.created_at else '—' }}</td>
+          <td><strong style="color:var(--green-deep);">{{ p.club or '—' }}</strong></td>
+          <td>{{ p.nombre or '—' }}</td>
+          <td><a href="mailto:{{ p.email }}" style="color:var(--green-mid);">{{ p.email or '—' }}</a></td>
+          <td>
+            {% if p.whatsapp %}
+            <a href="https://wa.me/{{ p.whatsapp|replace('+','')|replace(' ','')|replace('-','') }}" target="_blank" style="color:var(--green-mid);">{{ p.whatsapp }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ p.pais or '—' }}</td>
+          <td style="font-size:0.8rem;">{{ p.socios or '—' }}</td>
+          <td style="font-size:0.78rem;color:var(--muted);max-width:220px;">{{ p.mensaje or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div style="text-align:center;padding:4rem 2rem;color:var(--muted);">
+  <div style="font-size:2.5rem;margin-bottom:1rem;">📋</div>
+  <div style="font-size:1rem;font-weight:600;color:var(--green-deep);margin-bottom:0.4rem;">Todavía no hay prospectos</div>
+  <div style="font-size:0.84rem;">Los clubes que completen el formulario de la landing aparecerán aquí.</div>
+</div>
+{% endif %}
+{% endblock %}
