@@ -481,6 +481,18 @@ def _migrate():
                  'https://images.unsplash.com/photo-1569987516701-4e74f4ac0e15?auto=format&fit=crop&w=600&q=80',1),
             ]
         )
+    # Actualizar imágenes de variedades seed con diosaplanta.com
+    imagenes_seed = {
+        'OG Kush':        'https://www.diosaplanta.com/img/cms/blog/og-kush-diosaplanta.jpg',
+        'Blue Dream':     'https://www.diosaplanta.com/img/cms/blog/blue-dream-diosaplanta.jpg',
+        'Northern Lights':'https://www.diosaplanta.com/img/cms/blog/northern-lights-diosaplanta.jpg',
+        'Charlotte Web':  'https://www.diosaplanta.com/img/cms/blog/charlotte-web-diosaplanta.jpg',
+        'Jack Herer':     'https://www.diosaplanta.com/img/cms/blog/jack-herer-diosaplanta.jpg',
+        'Amnesia Haze':   'https://www.diosaplanta.com/img/cms/blog/amnesia-haze-diosaplanta.jpg',
+    }
+    for nombre, url in imagenes_seed.items():
+        db.execute('UPDATE variedades SET imagen_url=? WHERE nombre=? AND (imagen_url IS NULL OR imagen_url NOT LIKE ?)',
+                   (url, nombre, '%diosaplanta.com%'))
     db.commit()
     db.close()
 
