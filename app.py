@@ -444,6 +444,37 @@ def _migrate():
             rating INTEGER NOT NULL, comentario TEXT,
             fecha TEXT DEFAULT (date('now')),
             UNIQUE(variedad_id, socio_id))''')
+    # Seed variedades de muestra si el catálogo está vacío
+    if db.execute('SELECT COUNT(*) FROM variedades').fetchone()[0] == 0:
+        db.executemany(
+            'INSERT OR IGNORE INTO variedades (nombre,genetica,thc_pct,cbd_pct,descripcion,efectos,indicaciones,sabor,imagen_url,activa) VALUES (?,?,?,?,?,?,?,?,?,?)',
+            [
+                ('OG Kush','Hibrida',22.0,0.3,
+                 'Cepa clásica californiana con efectos profundamente relajantes. Ideal para dolor crónico e insomnio. Aroma terroso con notas de pino y limón.',
+                 'Relajante, Eufórico, Sedante','Dolor crónico, Insomnio, Estrés','Tierra, Pino, Cítrico',
+                 'https://images.unsplash.com/photo-1536063211352-0b94219f3212?auto=format&fit=crop&w=600&q=80',1),
+                ('Blue Dream','Sativa',19.0,1.0,
+                 'Híbrida sativa que equilibra relajación corporal con estimulación mental suave. Perfecta para uso diurno, ansiedad y fatiga. Sabor dulce a frutas del bosque.',
+                 'Energizante, Creativo, Equilibrado','Ansiedad, Depresión, Fatiga','Frutas, Dulce, Vainilla',
+                 'https://images.unsplash.com/photo-1603909223429-69bb7101f420?auto=format&fit=crop&w=600&q=80',1),
+                ('Northern Lights','Indica',18.0,0.5,
+                 'Una de las índicas más puras del mundo. Efecto profundamente corporal y sedante. Muy usada para insomnio severo, dolor muscular y espasmos.',
+                 'Sedante, Relajante, Somnífera','Insomnio severo, Espasmos, Dolor muscular','Tierra, Dulce, Resina',
+                 'https://images.unsplash.com/photo-1591035897819-f4bdf739f446?auto=format&fit=crop&w=600&q=80',1),
+                ('Charlotte Web','CBD',0.3,17.0,
+                 'Variedad alta en CBD sin efectos psicoactivos. Pionera en el tratamiento de epilepsia refractaria, inflamación y ansiedad. Ideal para pacientes sensibles al THC.',
+                 'Sin psicoactividad, Antiinflamatorio, Ansiolítico','Epilepsia, Inflamación, Ansiedad','Floral, Suave, Herbal',
+                 'https://images.unsplash.com/photo-1616587894289-86480e533129?auto=format&fit=crop&w=600&q=80',1),
+                ('Jack Herer','Sativa',21.0,0.8,
+                 'Sativa legendaria que aporta claridad mental, enfoque y bienestar general. Utilizada para TDAH, depresión y fatiga crónica. Aroma a pino con notas especiadas.',
+                 'Enfocado, Claro, Eufórico','TDAH, Depresión, Fatiga crónica','Pino, Madera, Especias',
+                 'https://images.unsplash.com/photo-1611226077260-6b8b5a4b1a5d?auto=format&fit=crop&w=600&q=80',1),
+                ('Amnesia Haze','Sativa',24.0,0.2,
+                 'Sativa de alto THC con efecto cerebral intenso y duradero. Indicada para depresión, fatiga y falta de apetito. Sabor cítrico con notas de limón y menta.',
+                 'Cerebral, Eufórico, Estimulante','Depresión, Falta de apetito, Fatiga','Limón, Menta, Cítrico',
+                 'https://images.unsplash.com/photo-1569987516701-4e74f4ac0e15?auto=format&fit=crop&w=600&q=80',1),
+            ]
+        )
     db.commit()
     db.close()
 
