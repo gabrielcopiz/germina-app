@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Solicitar demo — Germina{% endblock %}
+
+{% block extra_styles %}
+.contacto-wrap {
+  min-height: calc(100vh - 64px - 120px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 3rem 1rem;
+}
+.contacto-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: 20px;
+  padding: 2.5rem 2rem; width: 100%; max-width: 520px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.07);
+}
+.contacto-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: rgba(74,124,94,0.1); border: 1px solid rgba(74,124,94,0.25);
+  color: var(--green-mid); font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 0.35rem 0.85rem;
+  border-radius: 100px; margin-bottom: 1rem;
+}
+.contacto-title {
+  font-family: 'Playfair Display', serif; font-size: 1.7rem;
+  color: var(--green-deep); margin-bottom: 0.5rem; line-height: 1.2;
+}
+.contacto-sub { font-size: 0.88rem; color: var(--muted); line-height: 1.7; margin-bottom: 2rem; }
+.form-group { margin-bottom: 1.1rem; }
+.form-label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+.form-input {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 0.8rem 1rem; font-size: 0.95rem; font-family: inherit;
+  color: var(--text); background: var(--cream); outline: none; transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--green-mid); background: #fff; }
+.form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6560' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; }
+.form-textarea { resize: vertical; min-height: 90px; }
+.btn-submit {
+  width: 100%; margin-top: 0.5rem; padding: 0.95rem;
+  background: var(--green-deep); color: var(--cream);
+  border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: background 0.2s;
+}
+.btn-submit:hover { background: var(--green-mid); }
+.success-box {
+  background: #C8F0D0; border: 1.5px solid #4A9A38; border-radius: 14px;
+  padding: 1.5rem 1.25rem; text-align: center;
+}
+.success-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+.success-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: #1A5C30; margin-bottom: 0.5rem; }
+.success-sub { font-size: 0.85rem; color: #2D5C38; line-height: 1.7; }
+.error-msg { background: #FEF0F0; border: 1px solid #F5C6C6; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.82rem; color: #C0392B; margin-bottom: 1rem; }
+.form-note { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 0.75rem; }
+{% endblock %}
+
+{% block content %}
+<div class="contacto-wrap">
+  <div class="contacto-card">
+
+    {% if enviado %}
+    <div class="success-box">
+      <span class="success-icon">✅</span>
+      <div class="success-title">¡Solicitud recibida!</div>
+      <p class="success-sub">
+        Te enviamos la propuesta comercial y el manual de usuario a <strong>{{ email_enviado }}</strong>.<br><br>
+        También incluimos las credenciales de acceso al entorno de demostración para que puedas explorar la plataforma hoy mismo.<br><br>
+        <em>Si no ves el mail en los próximos minutos, revisá la carpeta de spam.</em>
+      </p>
+    </div>
+
+    {% else %}
+    <div class="contacto-badge">🌿 Para gestores de clubes</div>
+    <h1 class="contacto-title">Solicitá tu demo de Germina</h1>
+    <p class="contacto-sub">Completá tus datos y te enviamos la propuesta comercial + manual de usuario + acceso al dashboard de demostración.</p>
+
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('contacto_club') }}">
+      <div class="form-group">
+        <label class="form-label">Nombre de tu club / asociación *</label>
+        <input class="form-input" type="text" name="club_nombre" required placeholder="Ej: Club Cannábico Medicinal BA" value="{{ form.club_nombre or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tu nombre y apellido *</label>
+        <input class="form-input" type="text" name="contacto_nombre" required placeholder="Ej: Juan Pérez" value="{{ form.contacto_nombre or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input class="form-input" type="email" name="email" required placeholder="tu@email.com" value="{{ form.email or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">WhatsApp / Teléfono</label>
+        <input class="form-input" type="text" name="telefono" placeholder="Ej: +54 9 11 1234-5678" value="{{ form.telefono or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ciudad / Provincia</label>
+        <input class="form-input" type="text" name="ciudad" placeholder="Ej: Buenos Aires" value="{{ form.ciudad or '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cantidad de socios actuales (aprox.)</label>
+        <select class="form-input form-select" name="socios">
+          <option value="">Seleccioná una opción</option>
+          <option value="menos_20">Menos de 20</option>
+          <option value="20_50">20 a 50</option>
+          <option value="50_100">50 a 100</option>
+          <option value="mas_100">Más de 100</option>
+          <option value="en_formacion">Club en formación</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">¿Algo que quieras contarnos?</label>
+        <textarea class="form-input form-textarea" name="mensaje" placeholder="Contanos sobre tu club, tu situación actual, qué problema querés resolver...">{{ form.mensaje or '' }}</textarea>
+      </div>
+      <button class="btn-submit" type="submit">Recibir propuesta y demo →</button>
+      <p class="form-note">🔒 Tus datos son confidenciales y no se comparten con terceros.</p>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

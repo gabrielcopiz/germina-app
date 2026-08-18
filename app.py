@@ -1,15 +1,21 @@
-import os, sqlite3, csv, io, secrets
+import os, sqlite3, csv, io, secrets, smtplib
 from datetime import datetime, date, timedelta
 from functools import wraps
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 from flask import (Flask, render_template, request, redirect, url_for,
                    session, flash, jsonify, make_response, g)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('CW_SECRET_KEY', 'cannawaka-dev-2026')
 
-DB_PATH   = os.environ.get('CW_DB_PATH', 'cannawaka.db')
+DB_PATH    = os.environ.get('CW_DB_PATH', 'cannawaka.db')
 ADMIN_USER = os.environ.get('CW_ADMIN_USER', 'admin')
 ADMIN_PASS = os.environ.get('CW_ADMIN_PASS', 'germina2026')
+MAIL_USER  = os.environ.get('MAIL_USER', '')
+MAIL_PASS  = os.environ.get('MAIL_PASS', '')
+RENDER_URL = os.environ.get('RENDER_URL', 'https://germina-app.onrender.com')
 CLUB_NOMBRE = os.environ.get('CW_CLUB_NOMBRE', 'Cannawaka')
 
 # ─── helpers ───────────────────────────────────────────────────────────────
@@ -541,6 +547,94 @@ def confirmacion(token):
 @app.route('/club-demo')
 def club_landing():
     return render_template('club_landing.html')
+
+def _enviar_propuesta(club_nombre, contacto_nombre, email_dest):
+    """Genera PDFs y los envía por email. Retorna True si ok, False si falla."""
+    if not MAIL_USER or not MAIL_PASS:
+        return False
+    try:
+        from pdf_germina import generar_propuesta, generar_manual
+        pdf_prop  = generar_propuesta(club_nombre, contacto_nombre)
+        pdf_man   = generar_manual()
+
+        msg = MIMEMultipart('mixed')
+        msg['Subject'] = f'Germina — Propuesta comercial para {club_nombre}'
+        msg['From']    = f'Germina <{MAIL_USER}>'
+        msg['To']      = email_dest
+
+        cuerpo = f"""<html><body style="font-family:Arial,sans-serif;color:#1E1E1E;max-width:580px;margin:0 auto;">
+<div style="background:#1A3520;padding:28px 32px;border-radius:12px 12px 0 0;">
+  <h1 style="font-family:Georgia,serif;color:#F5F2EC;font-size:28px;margin:0;">
+    Germi<span style="color:#C8A44A;">na</span>
+  </h1>
+  <p style="color:rgba(255,255,255,0.6);font-size:12px;margin:4px 0 0;">Plataforma de Gestión para Cannabis Social Clubs</p>
+</div>
+<div style="background:#fff;padding:32px;border:1px solid #D8D3C8;border-top:none;border-radius:0 0 12px 12px;">
+  <p style="font-size:16px;">Hola <strong>{contacto_nombre}</strong>,</p>
+  <p>Gracias por tu interés en Germina. Adjunto a este mail encontrás:</p>
+  <ul style="line-height:2;">
+    <li>📄 <strong>Propuesta comercial</strong> para {club_nombre}</li>
+    <li>📘 <strong>Manual de usuario</strong> completo del panel de administración</li>
+  </ul>
+  <p>También podés explorar la plataforma ahora mismo con estas credenciales de demostración:</p>
+  <div style="background:#F5F2EC;border:1px solid #D8D3C8;border-radius:10px;padding:16px 20px;margin:20px 0;">
+    <strong>Panel de administración:</strong><br>
+    🔗 URL: <a href="{RENDER_URL}/admin" style="color:#2D5C38;">{RENDER_URL}/admin</a><br>
+    👤 Usuario: <code style="background:#EDE8DF;padding:2px 6px;border-radius:4px;">admin</code><br>
+    🔑 Contraseña: <code style="background:#EDE8DF;padding:2px 6px;border-radius:4px;">germina2026</code>
+  </div>
+  <p>Si tenés dudas o querés que hablemos, respondé este mail o escribinos directamente.</p>
+  <p style="margin-top:28px;">Saludos,<br><strong>Equipo Germina / Spark Creativa</strong><br>
+  <span style="color:#6B6560;font-size:13px;">besparkcreativa@gmail.com</span></p>
+</div>
+</body></html>"""
+
+        msg.attach(MIMEText(cuerpo, 'html', 'utf-8'))
+
+        att1 = MIMEApplication(pdf_prop.read(), _subtype='pdf')
+        att1.add_header('Content-Disposition', 'attachment',
+                        filename=f'Germina_Propuesta_{club_nombre.replace(" ","_")}.pdf')
+        msg.attach(att1)
+
+        att2 = MIMEApplication(pdf_man.read(), _subtype='pdf')
+        att2.add_header('Content-Disposition', 'attachment',
+                        filename='Germina_Manual_de_Usuario.pdf')
+        msg.attach(att2)
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as srv:
+            srv.starttls()
+            srv.login(MAIL_USER, MAIL_PASS)
+            srv.send_message(msg)
+        return True
+    except Exception as e:
+        print(f'[EMAIL ERROR] {e}')
+        return False
+
+@app.route('/contacto-club', methods=['GET', 'POST'])
+def contacto_club():
+    enviado = False
+    error = None
+    form = {}
+    email_enviado = ''
+    if request.method == 'POST':
+        form = request.form.to_dict()
+        club_nombre     = form.get('club_nombre', '').strip()
+        contacto_nombre = form.get('contacto_nombre', '').strip()
+        email_dest      = form.get('email', '').strip()
+        if not club_nombre or not contacto_nombre or not email_dest:
+            error = 'Completá los campos obligatorios (nombre del club, tu nombre y email).'
+        else:
+            ok = _enviar_propuesta(club_nombre, contacto_nombre, email_dest)
+            if ok:
+                enviado = True
+                email_enviado = email_dest
+            else:
+                if not MAIL_USER:
+                    error = 'El sistema de envío de emails no está configurado aún. Escribinos directamente a besparkcreativa@gmail.com'
+                else:
+                    error = 'Hubo un error al enviar el mail. Intentá de nuevo o escribinos directamente.'
+    return render_template('contacto_club.html', enviado=enviado, error=error,
+                           form=form, email_enviado=email_enviado)
 
 @app.route('/acceso-socio', methods=['GET', 'POST'])
 def acceso_socio():
