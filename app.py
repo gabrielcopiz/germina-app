@@ -481,18 +481,17 @@ def _migrate():
                  'https://images.unsplash.com/photo-1569987516701-4e74f4ac0e15?auto=format&fit=crop&w=600&q=80',1),
             ]
         )
-    # Actualizar imágenes de variedades seed con diosaplanta.com
+    # Actualizar imágenes de variedades seed con URLs verificadas
     imagenes_seed = {
-        'OG Kush':        'https://www.diosaplanta.com/img/cms/blog/og-kush-diosaplanta.jpg',
-        'Blue Dream':     'https://www.diosaplanta.com/img/cms/blog/blue-dream-diosaplanta.jpg',
-        'Northern Lights':'https://www.diosaplanta.com/img/cms/blog/northern-lights-diosaplanta.jpg',
-        'Charlotte Web':  'https://www.diosaplanta.com/img/cms/blog/charlotte-web-diosaplanta.jpg',
-        'Jack Herer':     'https://www.diosaplanta.com/img/cms/blog/jack-herer-diosaplanta.jpg',
-        'Amnesia Haze':   'https://www.diosaplanta.com/img/cms/blog/amnesia-haze-diosaplanta.jpg',
+        'OG Kush':        'https://www.royalqueenseeds.com/149-3131-large/og-kush.jpg',
+        'Blue Dream':     'https://seedsmanlive.gumlet.io/media/catalog/product/cache/c3b74a149799263175fb901c5bb6f5cb/1/6/169138_2631644_pimcore_1.jpg',
+        'Northern Lights':'https://www.royalqueenseeds.com/119-2029-large/northern-light.jpg',
+        'Charlotte Web':  'https://seedsmanlive.gumlet.io/media/catalog/product/cache/c3b74a149799263175fb901c5bb6f5cb/1/4/149283_2197226_pimcore_1_1.jpg',
+        'Jack Herer':     'https://seedsmanlive.gumlet.io/media/catalog/product/cache/a74837f66b8aa9385d5c427840507caa/1/4/148437_2580929_pimcore_1_1.jpg',
+        'Amnesia Haze':   'https://www.royalqueenseeds.com/115-2125-large/amnesia-haze.jpg',
     }
     for nombre, url in imagenes_seed.items():
-        db.execute('UPDATE variedades SET imagen_url=? WHERE nombre=? AND (imagen_url IS NULL OR imagen_url NOT LIKE ?)',
-                   (url, nombre, '%diosaplanta.com%'))
+        db.execute('UPDATE variedades SET imagen_url=? WHERE nombre=?', (url, nombre))
     db.commit()
     db.close()
 
