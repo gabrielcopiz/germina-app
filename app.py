@@ -2084,6 +2084,28 @@ Respondé SOLO con JSON válido con esta estructura exacta:
         'meta_description': data.get('meta_description', '')[:160],
     }
 
+@app.route('/api/publicar-articulo', methods=['POST'])
+def api_publicar_articulo():
+    import re, unicodedata
+    data = request.get_json(silent=True) or {}
+    if data.get('secret') != CRM_PASS:
+        return jsonify({'ok': False, 'error': 'unauthorized'}), 403
+    titulo   = (data.get('titulo') or '').strip()
+    contenido = (data.get('contenido') or '').strip()
+    if not titulo or not contenido:
+        return jsonify({'ok': False, 'error': 'missing fields'}), 400
+    slug_base = unicodedata.normalize('NFD', titulo.lower())
+    slug_base = ''.join(c for c in slug_base if unicodedata.category(c) != 'Mn')
+    slug_base = re.sub(r'[^a-z0-9]+', '-', slug_base).strip('-')[:80]
+    db = get_db()
+    db.execute(
+        'INSERT OR IGNORE INTO articulos (slug,titulo,resumen,contenido,keyword,meta_description) VALUES (?,?,?,?,?,?)',
+        (slug_base, titulo, data.get('resumen','')[:200], contenido,
+         data.get('keyword',''), data.get('meta_description','')[:160])
+    )
+    db.commit()
+    return jsonify({'ok': True, 'slug': slug_base})
+
 @app.route('/api/generar-articulo', methods=['POST'])
 def api_generar_articulo():
     secret = request.json.get('secret') if request.is_json else request.form.get('secret')
