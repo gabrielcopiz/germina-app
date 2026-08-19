@@ -647,6 +647,63 @@ def _migrate():
         automation_cost_usd REAL DEFAULT 0,
         net_value_usd REAL DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS agent_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT DEFAULT (datetime('now','localtime')),
+        club_id INTEGER DEFAULT 1,
+        agent_id TEXT NOT NULL,
+        task_type TEXT NOT NULL,
+        entity_type TEXT,
+        entity_id INTEGER,
+        level TEXT DEFAULT 'RECOMENDAR',
+        status TEXT DEFAULT 'pendiente',
+        input_data TEXT,
+        recommendation TEXT,
+        approval_status TEXT,
+        approved_by TEXT,
+        approved_at TEXT,
+        execution_result TEXT,
+        error TEXT,
+        cost_usd REAL DEFAULT 0,
+        tokens_in INTEGER DEFAULT 0,
+        tokens_out INTEGER DEFAULT 0,
+        audit_log_id INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS clubs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        pais TEXT DEFAULT 'AR',
+        jurisdiction TEXT DEFAULT 'AR',
+        email TEXT,
+        whatsapp TEXT,
+        admin_user TEXT,
+        admin_pass TEXT,
+        plan TEXT DEFAULT 'demo',
+        activo INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE TABLE IF NOT EXISTS whatsapp_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        club_id INTEGER DEFAULT 1,
+        phone_number_id TEXT,
+        business_account_id TEXT,
+        access_token TEXT,
+        webhook_verify_token TEXT,
+        activo INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE TABLE IF NOT EXISTS whatsapp_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        club_id INTEGER DEFAULT 1,
+        socio_id INTEGER,
+        direction TEXT DEFAULT 'out',
+        from_number TEXT,
+        to_number TEXT,
+        message TEXT NOT NULL,
+        status TEXT DEFAULT 'sent',
+        wa_message_id TEXT,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
     ''')
 
     # Reglas motor AR — esqueleto regulatorio (no inventamos normativa)
@@ -2831,6 +2888,662 @@ def admin_auditoria():
         total_min=round(total_min),
         total_tareas=total_tareas,
     )
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  GERMINA AI — MOTOR DE AGENTES
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _send_email_simple(to, subject, body):
+    """Envía un email simple de texto plano."""
+    msg = MIMEMultipart()
+    msg['From']    = MAIL_USER
+    msg['To']      = to
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain', 'utf-8'))
+    with smtplib.SMTP('smtp.gmail.com', 587) as s:
+        s.starttls()
+        s.login(MAIL_USER, MAIL_PASS)
+        s.send_message(msg)
+
+def _llamar_llm(prompt, max_tokens=400):
+    """Llama a Claude Haiku. Retorna (texto, tokens_in, tokens_out, cost_usd)."""
+    import urllib.request as _ur, json as _j
+    if not ANTHROPIC_KEY:
+        return ('Sin clave de IA configurada', 0, 0, 0.0)
+    body = _j.dumps({
+        'model': 'claude-haiku-4-5-20251001',
+        'max_tokens': max_tokens,
+        'messages': [{'role': 'user', 'content': prompt}]
+    }).encode()
+    req = _ur.Request('https://api.anthropic.com/v1/messages', data=body, headers={
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json'
+    })
+    resp = _j.loads(_ur.urlopen(req, timeout=25).read())
+    text = resp['content'][0]['text'].strip()
+    tin  = resp['usage']['input_tokens']
+    tout = resp['usage']['output_tokens']
+    cost = (tin * 0.00000025) + (tout * 0.00000125)
+    return (text, tin, tout, cost)
+
+def _crear_tarea_agente(db, agent_id, task_type, entity_type, entity_id,
+                        input_data, recommendation, level, club_id=1):
+    db.execute('''
+        INSERT INTO agent_tasks (club_id, agent_id, task_type, entity_type, entity_id,
+            level, input_data, recommendation)
+        VALUES (?,?,?,?,?,?,?,?)
+    ''', (club_id, agent_id, task_type, entity_type, entity_id, level,
+          json.dumps(input_data) if isinstance(input_data, dict) else str(input_data),
+          recommendation))
+    return db.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+def _agente_socios_scan(db, club_id=1):
+    """Escanea el club y genera tareas automáticas para el Agente Socios."""
+    hoy = date.today().isoformat()
+    generadas = 0
+
+    def _level(action_id):
+        r = db.execute(
+            "SELECT level FROM autopilot_config WHERE club_id=? AND agent_id='socios' AND action_id=?",
+            (club_id, action_id)).fetchone()
+        return r['level'] if r else 'RECOMENDAR'
+
+    # Solicitudes sin revisar > 24hs
+    solicitudes = db.execute('''
+        SELECT id, nombre, apellido, dni, email, created_at FROM socios
+        WHERE etapa='solicitud' AND created_at <= datetime('now','-1 day')
+        AND id NOT IN (
+            SELECT entity_id FROM agent_tasks
+            WHERE agent_id='socios' AND task_type='alta_socio' AND DATE(timestamp)=?
+        )
+    ''', (hoy,)).fetchall()
+
+    lv = _level('alta_socio')
+    for s in solicitudes:
+        prompt = (f"Sos el Agente Socios de un cannabis social club en Argentina. "
+                  f"El socio {s['nombre']} {s['apellido']} (DNI {s['dni']}) envió su solicitud el {s['created_at']} "
+                  f"y lleva más de 24hs sin revisión. Redactá una recomendación de 2 oraciones para el administrador. "
+                  f"Español, tono profesional.")
+        try:
+            rec, tin, tout, cost = _llamar_llm(prompt, 150)
+        except Exception:
+            rec = f"Solicitud de {s['nombre']} {s['apellido']} pendiente desde {s['created_at']}. Revisar documentación."
+            tin = tout = cost = 0
+        tid = _crear_tarea_agente(db, 'socios', 'alta_socio', 'socio', s['id'],
+            {'nombre': f"{s['nombre']} {s['apellido']}", 'email': s['email']}, rec, lv)
+        _log_tarea(db, 'alta_socio', actor='Agente Socios', agent_id='socios',
+                   entity_type='socio', entity_id=s['id'], result=f'Tarea #{tid}', club_id=club_id)
+        generadas += 1
+
+    # Recordatorio cuotas vencidas
+    cuotas = db.execute('''
+        SELECT s.id, s.nombre, s.apellido, s.email, q.fecha_vencimiento
+        FROM socios s
+        JOIN cuotas q ON q.socio_id = s.id
+        WHERE s.etapa='activo' AND q.tipo='mensual'
+        AND q.fecha_vencimiento < date('now') AND q.estado != 'pagada'
+        AND s.id NOT IN (
+            SELECT entity_id FROM agent_tasks
+            WHERE agent_id='socios' AND task_type='recordatorio_cuota' AND DATE(timestamp)=?
+        )
+        LIMIT 5
+    ''', (hoy,)).fetchall()
+
+    lv = _level('recordatorio_cuota')
+    for s in cuotas:
+        rec = (f"{s['nombre']} {s['apellido']} tiene una cuota mensual vencida "
+               f"(vencimiento: {s['fecha_vencimiento']}). Recordarle para regularizar.")
+        tid = _crear_tarea_agente(db, 'socios', 'recordatorio_cuota', 'socio', s['id'],
+            {'nombre': f"{s['nombre']} {s['apellido']}", 'email': s['email']}, rec, lv)
+        _log_tarea(db, 'recordatorio_cuota', actor='Agente Socios', agent_id='socios',
+                   entity_type='socio', entity_id=s['id'], result=f'Tarea #{tid}', club_id=club_id)
+        generadas += 1
+
+    # Socios inactivos > 60 días
+    inactivos = db.execute('''
+        SELECT id, nombre, apellido, email FROM socios
+        WHERE etapa='activo' AND updated_at <= datetime('now','-60 days')
+        AND id NOT IN (
+            SELECT entity_id FROM agent_tasks
+            WHERE agent_id='socios' AND task_type='seguimiento_inactivo' AND DATE(timestamp)=?
+        )
+        LIMIT 3
+    ''', (hoy,)).fetchall()
+
+    lv = _level('seguimiento_inactivo')
+    for s in inactivos:
+        rec = (f"{s['nombre']} {s['apellido']} no registra actividad hace más de 60 días. "
+               f"¿Querés contactarle para ver si sigue participando del club?")
+        tid = _crear_tarea_agente(db, 'socios', 'seguimiento_inactivo', 'socio', s['id'],
+            {'nombre': f"{s['nombre']} {s['apellido']}", 'email': s['email']}, rec, lv)
+        _log_tarea(db, 'seguimiento_inactivo', actor='Agente Socios', agent_id='socios',
+                   entity_type='socio', entity_id=s['id'], result=f'Tarea #{tid}', club_id=club_id)
+        generadas += 1
+
+    db.commit()
+    return generadas
+
+def _agente_admin_scan(db, club_id=1):
+    """Escanea el club y genera alertas/reportes para el Agente Administración."""
+    hoy = date.today().isoformat()
+    generadas = 0
+
+    def _level(action_id):
+        r = db.execute(
+            "SELECT level FROM autopilot_config WHERE club_id=? AND agent_id='administracion' AND action_id=?",
+            (club_id, action_id)).fetchone()
+        return r['level'] if r else 'RECOMENDAR'
+
+    # Alertas de stock bajo
+    for row in db.execute('''
+        SELECT cu.variedad, COALESCE(SUM(co.peso_seco_g),0) as total_g
+        FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
+        GROUP BY cu.variedad
+    ''').fetchall():
+        v = row['variedad']
+        entregado = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado='entregado'", (v,)
+        ).fetchone()[0]
+        reservado = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado IN ('pendiente','preparando','en_camino')", (v,)
+        ).fetchone()[0]
+        disp_g = round((row['total_g'] or 0) - entregado - reservado, 1)
+        if disp_g < 50:
+            ya = db.execute(
+                "SELECT id FROM agent_tasks WHERE agent_id='administracion' AND task_type='alerta_stock' AND DATE(timestamp)=? AND input_data LIKE ?",
+                (hoy, f'%{v}%')
+            ).fetchone()
+            if not ya:
+                lv = _level('alerta_stock')
+                rec = f"Stock de {v} bajo: solo {disp_g}g disponibles. Revisar cronograma de cosechas."
+                _crear_tarea_agente(db, 'administracion', 'alerta_stock', 'variedad', None,
+                    {'variedad': v, 'disponible_g': disp_g}, rec, lv)
+                _log_tarea(db, 'alerta_stock', actor='Agente Administración', agent_id='administracion',
+                           result=f'{v}: {disp_g}g disponibles', club_id=club_id)
+                generadas += 1
+
+    # Reporte diario (una vez por día)
+    ya_reporte = db.execute(
+        "SELECT id FROM agent_tasks WHERE agent_id='administracion' AND task_type='reporte_diario' AND DATE(timestamp)=?",
+        (hoy,)).fetchone()
+    if not ya_reporte:
+        lv = _level('reporte_diario')
+        activos = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo'").fetchone()[0]
+        d_hoy   = db.execute("SELECT COUNT(*) FROM dispensaciones WHERE fecha=?", (hoy,)).fetchone()[0]
+        p_pend  = db.execute("SELECT COUNT(*) FROM pedidos WHERE estado='pendiente'").fetchone()[0]
+        rec = f"Resumen {hoy} — Socios activos: {activos} · Dispensaciones hoy: {d_hoy} · Pedidos pendientes: {p_pend}"
+        _crear_tarea_agente(db, 'administracion', 'reporte_diario', 'club', club_id,
+            {'fecha': hoy, 'socios_activos': activos, 'dispensaciones_hoy': d_hoy, 'pedidos_pendientes': p_pend},
+            rec, lv)
+        _log_tarea(db, 'reporte_diario', actor='Agente Administración', agent_id='administracion',
+                   result=rec, club_id=club_id)
+        generadas += 1
+
+    db.commit()
+    return generadas
+
+def _ejecutar_tarea_agente(db, task):
+    """Ejecuta una tarea aprobada (nivel EJECUTAR o aprobada manualmente en PREPARAR)."""
+    task_type  = task['task_type']
+    input_data = json.loads(task['input_data']) if task['input_data'] else {}
+
+    if task_type == 'recordatorio_cuota':
+        email  = input_data.get('email', '')
+        nombre = input_data.get('nombre', '')
+        if email:
+            try:
+                _send_email_simple(
+                    email,
+                    f"Recordatorio de cuota — {CLUB_NOMBRE}",
+                    f"Hola {nombre},\n\nTe recordamos que tenés una cuota mensual pendiente en {CLUB_NOMBRE}.\n"
+                    f"Regularizá tu situación para seguir disfrutando de todos los beneficios del club.\n\n"
+                    f"Saludos,\n{CLUB_NOMBRE}"
+                )
+                return 'Email de recordatorio enviado correctamente'
+            except Exception as e:
+                return f'Error al enviar email: {e}'
+        return 'Socio sin email de contacto registrado'
+
+    if task_type == 'alta_socio':
+        return 'Revisá el socio en el panel de socios para completar el alta manualmente'
+
+    if task_type == 'seguimiento_inactivo':
+        email  = input_data.get('email', '')
+        nombre = input_data.get('nombre', '')
+        if email:
+            try:
+                _send_email_simple(
+                    email,
+                    f"Te extrañamos en {CLUB_NOMBRE}",
+                    f"Hola {nombre},\n\n¿Todo bien? Hace un tiempo que no te vemos por el club.\n"
+                    f"Si necesitás algo o querés ponerte al día, respondé este email o acercate cuando puedas.\n\n"
+                    f"Saludos,\n{CLUB_NOMBRE}"
+                )
+                return 'Email de seguimiento enviado correctamente'
+            except Exception as e:
+                return f'Error al enviar email: {e}'
+        return 'Socio sin email de contacto registrado'
+
+    return 'Acción registrada (sin automatización directa disponible para este tipo)'
+
+# ─── Agentes — panel y cola de tareas ─────────────────────────────────────────
+
+@app.route('/admin/agentes')
+@login_required
+def admin_agentes():
+    db = get_db()
+    hoy = date.today().isoformat()
+
+    stats = {}
+    for agent_id in AGENTS:
+        total = db.execute(
+            "SELECT COUNT(*) FROM agent_tasks WHERE agent_id=?", (agent_id,)
+        ).fetchone()[0]
+        hoy_cnt = db.execute(
+            "SELECT COUNT(*) FROM agent_tasks WHERE agent_id=? AND DATE(timestamp)=?",
+            (agent_id, hoy)
+        ).fetchone()[0]
+        pendientes = db.execute(
+            "SELECT COUNT(*) FROM agent_tasks WHERE agent_id=? AND status='pendiente'",
+            (agent_id,)
+        ).fetchone()[0]
+        ultimo = db.execute(
+            "SELECT timestamp FROM agent_tasks WHERE agent_id=? ORDER BY id DESC LIMIT 1",
+            (agent_id,)
+        ).fetchone()
+        stats[agent_id] = {
+            'total': total,
+            'hoy': hoy_cnt,
+            'pendientes': pendientes,
+            'ultimo': ultimo['timestamp'] if ultimo else None,
+        }
+
+    ultimo_scan = db.execute(
+        "SELECT timestamp FROM audit_log WHERE agent_id IS NOT NULL ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+
+    return render_template('admin/agentes.html',
+        agents=AGENTS,
+        agent_actions=AGENT_ACTIONS,
+        stats=stats,
+        ultimo_scan=ultimo_scan['timestamp'] if ultimo_scan else None,
+    )
+
+@app.route('/admin/tareas')
+@login_required
+def admin_tareas():
+    db  = get_db()
+    filtro = request.args.get('filtro', 'pendiente')
+    agente = request.args.get('agente', '')
+
+    q = "SELECT * FROM agent_tasks WHERE 1=1"
+    params = []
+    if filtro and filtro != 'todos':
+        q += " AND status=?"
+        params.append(filtro)
+    if agente:
+        q += " AND agent_id=?"
+        params.append(agente)
+    q += " ORDER BY id DESC LIMIT 100"
+    tareas = db.execute(q, params).fetchall()
+
+    total_pend = db.execute("SELECT COUNT(*) FROM agent_tasks WHERE status='pendiente'").fetchone()[0]
+    total_aprobadas = db.execute("SELECT COUNT(*) FROM agent_tasks WHERE approval_status='aprobado'").fetchone()[0]
+    total_rechazadas = db.execute("SELECT COUNT(*) FROM agent_tasks WHERE approval_status='rechazado'").fetchone()[0]
+
+    return render_template('admin/tareas.html',
+        tareas=tareas,
+        agents=AGENTS,
+        agent_actions=AGENT_ACTIONS,
+        autopilot_levels=AUTOPILOT_LEVELS,
+        filtro=filtro,
+        agente=agente,
+        total_pend=total_pend,
+        total_aprobadas=total_aprobadas,
+        total_rechazadas=total_rechazadas,
+    )
+
+@app.route('/admin/tareas/<int:task_id>/aprobar', methods=['POST'])
+@login_required
+def admin_tarea_aprobar(task_id):
+    db = get_db()
+    task = db.execute('SELECT * FROM agent_tasks WHERE id=?', (task_id,)).fetchone()
+    if not task:
+        flash('Tarea no encontrada')
+        return redirect(url_for('admin_tareas'))
+
+    resultado = _ejecutar_tarea_agente(db, task)
+    db.execute('''
+        UPDATE agent_tasks
+        SET approval_status='aprobado', approved_by='Admin',
+            approved_at=datetime('now','localtime'),
+            execution_result=?, status='ejecutado'
+        WHERE id=?
+    ''', (resultado, task_id))
+    _log_tarea(db, task['task_type'], actor='Admin', agent_id=task['agent_id'],
+               entity_type=task['entity_type'], entity_id=task['entity_id'],
+               result=f'Aprobado y ejecutado: {resultado}')
+    db.commit()
+    flash(f'Tarea aprobada — {resultado}')
+    return redirect(url_for('admin_tareas'))
+
+@app.route('/admin/tareas/<int:task_id>/rechazar', methods=['POST'])
+@login_required
+def admin_tarea_rechazar(task_id):
+    db = get_db()
+    task = db.execute('SELECT * FROM agent_tasks WHERE id=?', (task_id,)).fetchone()
+    if not task:
+        flash('Tarea no encontrada')
+        return redirect(url_for('admin_tareas'))
+    razon = request.form.get('razon', 'Rechazado por el administrador')
+    db.execute('''
+        UPDATE agent_tasks
+        SET approval_status='rechazado', approved_by='Admin',
+            approved_at=datetime('now','localtime'),
+            execution_result=?, status='rechazado'
+        WHERE id=?
+    ''', (razon, task_id))
+    db.commit()
+    flash('Tarea rechazada')
+    return redirect(url_for('admin_tareas'))
+
+@app.route('/api/agentes/scan', methods=['POST', 'GET'])
+def api_agentes_scan():
+    secret = request.args.get('secret') or (request.get_json(silent=True) or {}).get('secret', '')
+    if secret != CRM_PASS:
+        return jsonify({'ok': False, 'error': 'unauthorized'}), 403
+    db = get_db()
+    socios_n = _agente_socios_scan(db)
+    admin_n  = _agente_admin_scan(db)
+    return jsonify({'ok': True, 'tareas_generadas': socios_n + admin_n,
+                    'agente_socios': socios_n, 'agente_admin': admin_n})
+
+# ─── Importar socios CSV ──────────────────────────────────────────────────────
+
+COLUMNAS_SOCIO = {
+    'nombre': 'Nombre',
+    'apellido': 'Apellido',
+    'dni': 'DNI',
+    'email': 'Email',
+    'telefono': 'Teléfono',
+    'fecha_nac': 'Fecha de nacimiento',
+    'genero': 'Género',
+    'barrio': 'Barrio',
+    'provincia': 'Provincia',
+    'tipo_socio': 'Tipo de socio',
+    'diagnostico': 'Diagnóstico',
+    'medico_prescriptor': 'Médico prescriptor',
+    'como_nos_conocio': 'Cómo nos conoció',
+}
+
+@app.route('/admin/importar', methods=['GET', 'POST'])
+@login_required
+def admin_importar():
+    if request.method == 'GET':
+        return render_template('admin/importar.html', columnas=COLUMNAS_SOCIO)
+
+    archivo = request.files.get('archivo')
+    if not archivo or not archivo.filename:
+        flash('Seleccioná un archivo CSV o Excel')
+        return redirect(url_for('admin_importar'))
+
+    try:
+        contenido = archivo.read().decode('utf-8-sig', errors='replace')
+        sample = io.StringIO(contenido)
+        dialect = csv.Sniffer().sniff(sample.read(2048), delimiters=',;\t')
+        sample.seek(0)
+        reader = csv.DictReader(sample, dialect=dialect)
+        encabezados = reader.fieldnames or []
+        filas = list(reader)[:5]
+        session['_import_csv'] = contenido
+        return render_template('admin/importar.html',
+            columnas=COLUMNAS_SOCIO,
+            encabezados=encabezados,
+            filas=filas,
+            modo='mapear')
+    except Exception as e:
+        flash(f'Error al leer el archivo: {e}')
+        return redirect(url_for('admin_importar'))
+
+@app.route('/admin/importar/confirmar', methods=['POST'])
+@login_required
+def admin_importar_confirmar():
+    contenido = session.pop('_import_csv', None)
+    if not contenido:
+        flash('Sesión expirada. Subí el archivo de nuevo.')
+        return redirect(url_for('admin_importar'))
+
+    mapeo = {}
+    for col in COLUMNAS_SOCIO:
+        src = request.form.get(f'map_{col}', '').strip()
+        if src:
+            mapeo[col] = src
+
+    if 'nombre' not in mapeo:
+        flash('El campo Nombre es obligatorio para importar')
+        return redirect(url_for('admin_importar'))
+
+    try:
+        sample  = io.StringIO(contenido)
+        dialect = csv.Sniffer().sniff(sample.read(2048), delimiters=',;\t')
+        sample.seek(0)
+        reader  = csv.DictReader(sample, dialect=dialect)
+        filas   = list(reader)
+    except Exception as e:
+        flash(f'Error al procesar CSV: {e}')
+        return redirect(url_for('admin_importar'))
+
+    db = get_db()
+    importados = 0
+    duplicados = 0
+    errores = []
+
+    for i, fila in enumerate(filas, 1):
+        datos = {}
+        for col, src in mapeo.items():
+            datos[col] = (fila.get(src) or '').strip()
+
+        dni = datos.get('dni', '')
+        if dni:
+            existe = db.execute('SELECT id FROM socios WHERE dni=?', (dni,)).fetchone()
+            if existe:
+                duplicados += 1
+                continue
+
+        tok = secrets.token_urlsafe(20)
+        try:
+            db.execute('''
+                INSERT INTO socios (token, nombre, apellido, dni, email, telefono,
+                    fecha_nac, genero, barrio, provincia, tipo_socio, diagnostico,
+                    medico_prescriptor, como_nos_conocio, etapa)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'solicitud')
+            ''', (tok,
+                  datos.get('nombre',''), datos.get('apellido',''), datos.get('dni',''),
+                  datos.get('email',''), datos.get('telefono',''), datos.get('fecha_nac',''),
+                  datos.get('genero',''), datos.get('barrio',''),
+                  datos.get('provincia','Buenos Aires'),
+                  datos.get('tipo_socio','paciente'),
+                  datos.get('diagnostico',''), datos.get('medico_prescriptor',''),
+                  datos.get('como_nos_conocio','')))
+            importados += 1
+        except Exception as e:
+            errores.append(f'Fila {i}: {e}')
+
+    db.commit()
+    _log_tarea(db, 'alta_socio', actor='Admin (importación masiva)', result=f'{importados} socios importados')
+    db.commit()
+
+    flash(f'Importación completada: {importados} socios nuevos, {duplicados} duplicados omitidos'
+          + (f', {len(errores)} errores' if errores else ''))
+    return redirect(url_for('admin_socios'))
+
+# ─── Dashboard de ROI ────────────────────────────────────────────────────────
+
+@app.route('/admin/roi')
+@login_required
+def admin_roi():
+    db  = get_db()
+    hoy = date.today().isoformat()
+    mes = date.today().replace(day=1).isoformat()
+
+    total_min     = db.execute("SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks").fetchone()[0] or 0
+    total_tareas  = db.execute("SELECT COUNT(*) FROM roi_tasks").fetchone()[0]
+    min_mes       = db.execute("SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks WHERE timestamp>=?", (mes,)).fetchone()[0] or 0
+    min_hoy       = db.execute("SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks WHERE DATE(timestamp)=?", (hoy,)).fetchone()[0] or 0
+    costo_llm_total = db.execute("SELECT COALESCE(SUM(cost_usd),0) FROM agent_tasks").fetchone()[0] or 0
+
+    por_tipo = db.execute('''
+        SELECT r.task_type, COUNT(*) as cnt, COALESCE(SUM(r.human_minutes_saved),0) as minutos,
+               tt.description, tt.human_minutes as min_unitario
+        FROM roi_tasks r
+        LEFT JOIN task_type_config tt ON tt.task_type = r.task_type
+        GROUP BY r.task_type ORDER BY minutos DESC
+    ''').fetchall()
+
+    ultimos_7d = db.execute('''
+        SELECT DATE(timestamp) as dia, COALESCE(SUM(human_minutes_saved),0) as minutos, COUNT(*) as tareas
+        FROM roi_tasks
+        WHERE timestamp >= date('now','-7 days')
+        GROUP BY DATE(timestamp) ORDER BY dia ASC
+    ''').fetchall()
+
+    tareas_agente = db.execute('''
+        SELECT agent_id, COUNT(*) as cnt, COALESCE(SUM(human_minutes_saved),0) as minutos
+        FROM roi_tasks WHERE agent_id IS NOT NULL
+        GROUP BY agent_id ORDER BY minutos DESC
+    ''').fetchall()
+
+    horas_totales    = round(total_min / 60, 1)
+    valor_hora_usd   = 15
+    valor_ahorrado   = round(horas_totales * valor_hora_usd, 0)
+
+    return render_template('admin/roi.html',
+        total_min=round(total_min),
+        total_tareas=total_tareas,
+        min_mes=round(min_mes),
+        min_hoy=round(min_hoy),
+        horas_totales=horas_totales,
+        valor_ahorrado=valor_ahorrado,
+        valor_hora_usd=valor_hora_usd,
+        costo_llm_total=round(costo_llm_total, 4),
+        por_tipo=por_tipo,
+        ultimos_7d=ultimos_7d,
+        tareas_agente=tareas_agente,
+        agents=AGENTS,
+    )
+
+# ─── WhatsApp config ─────────────────────────────────────────────────────────
+
+@app.route('/admin/whatsapp', methods=['GET', 'POST'])
+@login_required
+def admin_whatsapp():
+    db = get_db()
+    cfg = db.execute("SELECT * FROM whatsapp_config WHERE club_id=1").fetchone()
+
+    if request.method == 'POST':
+        phone_number_id      = request.form.get('phone_number_id','').strip()
+        business_account_id  = request.form.get('business_account_id','').strip()
+        access_token         = request.form.get('access_token','').strip()
+        webhook_token        = request.form.get('webhook_verify_token','').strip()
+        activo               = 1 if request.form.get('activo') else 0
+
+        if cfg:
+            db.execute('''
+                UPDATE whatsapp_config SET phone_number_id=?, business_account_id=?,
+                    access_token=?, webhook_verify_token=?, activo=?
+                WHERE club_id=1
+            ''', (phone_number_id, business_account_id, access_token, webhook_token, activo))
+        else:
+            db.execute('''
+                INSERT INTO whatsapp_config (club_id, phone_number_id, business_account_id,
+                    access_token, webhook_verify_token, activo)
+                VALUES (1,?,?,?,?,?)
+            ''', (phone_number_id, business_account_id, access_token, webhook_token, activo))
+        db.commit()
+        flash('Configuración de WhatsApp guardada')
+        cfg = db.execute("SELECT * FROM whatsapp_config WHERE club_id=1").fetchone()
+
+    mensajes_recientes = db.execute(
+        "SELECT * FROM whatsapp_messages WHERE club_id=1 ORDER BY id DESC LIMIT 20"
+    ).fetchall()
+
+    return render_template('admin/whatsapp.html',
+        cfg=cfg,
+        mensajes=mensajes_recientes,
+    )
+
+@app.route('/webhook/whatsapp', methods=['GET', 'POST'])
+def webhook_whatsapp():
+    db = get_db()
+    cfg = db.execute("SELECT * FROM whatsapp_config WHERE club_id=1").fetchone()
+
+    if request.method == 'GET':
+        mode      = request.args.get('hub.mode')
+        token     = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+        if mode == 'subscribe' and cfg and token == cfg['webhook_verify_token']:
+            return challenge, 200
+        return 'Unauthorized', 403
+
+    try:
+        data = request.get_json(silent=True) or {}
+        entry = (data.get('entry') or [{}])[0]
+        changes = (entry.get('changes') or [{}])[0]
+        value = changes.get('value', {})
+        messages = value.get('messages', [])
+        for msg in messages:
+            from_num = msg.get('from', '')
+            text     = (msg.get('text') or {}).get('body', '')
+            wa_id    = msg.get('id', '')
+            if text:
+                socio = db.execute(
+                    "SELECT id FROM socios WHERE telefono LIKE ?", (f'%{from_num[-8:]}%',)
+                ).fetchone()
+                db.execute('''
+                    INSERT INTO whatsapp_messages
+                    (club_id, socio_id, direction, from_number, message, wa_message_id)
+                    VALUES (1,?,?,?,?,?)
+                ''', (socio['id'] if socio else None, 'in', from_num, text, wa_id))
+                _emit_event(db, 'WHATSAPP_RECEIVED',
+                    entity_type='socio', entity_id=socio['id'] if socio else None,
+                    payload={'from': from_num, 'message': text})
+        db.commit()
+    except Exception as e:
+        print(f'[WEBHOOK WA] {e}')
+    return jsonify({'status': 'ok'})
+
+# ─── Onboarding self-service ──────────────────────────────────────────────────
+
+@app.route('/nuevo-club', methods=['GET', 'POST'])
+def nuevo_club():
+    if request.method == 'GET':
+        return render_template('nuevo_club.html')
+
+    nombre    = request.form.get('nombre','').strip()
+    email     = request.form.get('email','').strip()
+    whatsapp  = request.form.get('whatsapp','').strip()
+    pais      = request.form.get('pais','AR')
+
+    if not nombre or not email:
+        flash('Nombre del club y email son obligatorios')
+        return render_template('nuevo_club.html', error=True)
+
+    db = get_db()
+    try:
+        db.execute('''
+            INSERT INTO clubs (nombre, pais, jurisdiction, email, whatsapp, plan)
+            VALUES (?,?,?,?,?,'demo')
+        ''', (nombre, pais, pais, email, whatsapp))
+        db.commit()
+    except Exception:
+        pass
+
+    _lead_to_email({'club': nombre, 'nombre': nombre, 'email': email,
+                    'whatsapp': whatsapp, 'pais': pais, 'socios': '?'})
+    db.execute("INSERT OR REPLACE INTO config (key,value) VALUES ('demo_club_nombre',?)", (nombre,))
+    db.commit()
+    return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     init_db()

@@ -1,0 +1,150 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}WhatsApp — Germina{% endblock %}
+{% block topbar_title %}💬 WhatsApp Business{% endblock %}
+
+{% block content %}
+<div style="max-width:700px;">
+  <div style="margin-bottom:1.5rem;">
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--green-deep);">Conectar WhatsApp Business</h2>
+    <p class="text-sm text-muted" style="margin-top:0.3rem;">
+      Cuando conectés tu número de WhatsApp Business, el Agente WhatsApp podrá responder consultas de socios, enviar recordatorios y derivar conversaciones al administrador automáticamente.
+    </p>
+  </div>
+
+  <!-- Estado actual -->
+  <div class="card" style="margin-bottom:1.2rem;">
+    <div class="card-body">
+      {% if cfg and cfg.activo %}
+      <div style="display:flex;align-items:center;gap:0.8rem;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#2D9E5B;"></div>
+        <div>
+          <div style="font-weight:600;font-size:0.9rem;color:var(--green-deep);">WhatsApp conectado y activo</div>
+          <div class="text-xs text-muted">Phone Number ID: {{ cfg.phone_number_id or '—' }}</div>
+        </div>
+      </div>
+      {% elif cfg %}
+      <div style="display:flex;align-items:center;gap:0.8rem;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#C8A44A;"></div>
+        <div>
+          <div style="font-weight:600;font-size:0.9rem;color:#7A5C00;">Configurado pero inactivo</div>
+          <div class="text-xs text-muted">Completá los datos y activalo para empezar a recibir mensajes</div>
+        </div>
+      </div>
+      {% else %}
+      <div style="display:flex;align-items:center;gap:0.8rem;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#ccc;"></div>
+        <div>
+          <div style="font-weight:600;font-size:0.9rem;color:var(--muted);">Sin configurar</div>
+          <div class="text-xs text-muted">Completá el formulario para activar el canal de WhatsApp</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header"><div class="card-title">Configuración — Meta Business API</div></div>
+    <div class="card-body">
+      <form method="post">
+        <div class="form-group-a">
+          <label>Phone Number ID</label>
+          <input type="text" name="phone_number_id" class="form-control-a"
+            value="{{ cfg.phone_number_id if cfg else '' }}"
+            placeholder="Ej: 123456789012345">
+          <span class="text-xs text-muted">Se encuentra en Meta Business Suite → WhatsApp → Tu número</span>
+        </div>
+        <div class="form-group-a">
+          <label>Business Account ID</label>
+          <input type="text" name="business_account_id" class="form-control-a"
+            value="{{ cfg.business_account_id if cfg else '' }}"
+            placeholder="Ej: 987654321098765">
+        </div>
+        <div class="form-group-a">
+          <label>Access Token (permanente)</label>
+          <input type="password" name="access_token" class="form-control-a"
+            value="{{ cfg.access_token if cfg else '' }}"
+            placeholder="EAA...">
+          <span class="text-xs text-muted">Token de larga duración desde Meta Business → Configuración del sistema</span>
+        </div>
+        <div class="form-group-a">
+          <label>Token de verificación del webhook</label>
+          <input type="text" name="webhook_verify_token" class="form-control-a"
+            value="{{ cfg.webhook_verify_token if cfg else 'germina_webhook_2026' }}"
+            placeholder="germina_webhook_2026">
+          <span class="text-xs text-muted">Cualquier palabra o frase que uses también en Meta para verificar el webhook</span>
+        </div>
+        <div class="form-group-a">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+            <input type="checkbox" name="activo" value="1" {% if cfg and cfg.activo %}checked{% endif %}>
+            Activar WhatsApp (empezar a recibir y enviar mensajes)
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar configuración</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- WEBHOOK URL -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header"><div class="card-title">URL de Webhook para Meta</div></div>
+    <div class="card-body">
+      <p class="text-sm text-muted" style="margin-bottom:0.8rem;">
+        Pegá esta URL en Meta Business Suite → WhatsApp → Configuración → Webhook:
+      </p>
+      <div style="background:var(--cream);border-radius:8px;padding:0.8rem 1rem;font-family:monospace;font-size:0.84rem;color:var(--green-deep);word-break:break-all;">
+        https://germina-app.onrender.com/webhook/whatsapp
+      </div>
+      <p class="text-xs text-muted" style="margin-top:0.6rem;">
+        En "Suscribirse a campos" activá: <strong>messages</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- MENSAJES RECIENTES -->
+  {% if mensajes %}
+  <div class="card">
+    <div class="card-header"><div class="card-title">Mensajes recientes</div></div>
+    <div class="card-body" style="padding:0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Dirección</th>
+              <th>Número</th>
+              <th>Mensaje</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in mensajes %}
+            <tr>
+              <td>
+                {% if m.direction == 'in' %}
+                <span style="color:var(--green-mid);">← Recibido</span>
+                {% else %}
+                <span style="color:var(--gold);">→ Enviado</span>
+                {% endif %}
+              </td>
+              <td class="text-sm">{{ m.from_number or m.to_number }}</td>
+              <td class="text-sm" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.message }}</td>
+              <td><span class="badge badge-en_revision">{{ m.status }}</span></td>
+              <td class="text-xs text-muted">{{ m.created_at[:16] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body" style="text-align:center;padding:2rem;">
+      <div style="font-size:2rem;margin-bottom:0.5rem;">💬</div>
+      <p class="text-sm text-muted">Los mensajes aparecerán aquí cuando el canal esté activo.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

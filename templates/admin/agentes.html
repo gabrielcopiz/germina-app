@@ -1,0 +1,194 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Agentes IA — Germina{% endblock %}
+{% block topbar_title %}🧠 Agentes de Inteligencia{% endblock %}
+
+{% block extra_head %}
+<style>
+.agent-card {
+  background: var(--white); border-radius: 14px; border: 1px solid var(--border);
+  overflow: hidden; transition: box-shadow 0.2s;
+}
+.agent-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+.agent-header {
+  padding: 1.2rem 1.4rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem;
+}
+.agent-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; flex-shrink: 0;
+}
+.agent-body { padding: 1.2rem 1.4rem; }
+.stat-item { display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0; border-bottom: 1px solid var(--cream-dark); }
+.stat-item:last-child { border-bottom: none; }
+.badge-nivel {
+  display: inline-block; padding: 0.18rem 0.6rem; border-radius: 100px;
+  font-size: 0.64rem; font-weight: 700; letter-spacing: 0.03em;
+}
+.nivel-recomendar { background: var(--cream-dark); color: var(--muted); }
+.nivel-preparar   { background: var(--gold-light); color: #7A5C00; }
+.nivel-ejecutar   { background: var(--green-pale); color: var(--green-mid); }
+.actions-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.6rem; }
+.actions-table th { text-align: left; font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted); padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+.actions-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--cream-dark); vertical-align: middle; }
+.actions-table tr:last-child td { border-bottom: none; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 0.3rem; }
+.dot-active { background: #2D9E5B; }
+.dot-idle   { background: #C8A44A; }
+.dot-off    { background: #ccc; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1.5rem;">
+  <div class="flex-between" style="margin-bottom:0.4rem;">
+    <div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--green-deep);">Agentes de Inteligencia</h2>
+      <p class="text-sm text-muted" style="margin-top:0.2rem;">Cada agente trabaja en segundo plano, detecta situaciones y genera recomendaciones automáticas.</p>
+    </div>
+    <form action="/api/agentes/scan" method="post" style="display:inline;">
+      <input type="hidden" name="secret" value="spark2026">
+      <button type="submit" class="btn btn-primary" style="gap:0.5rem;">
+        ▶ Ejecutar escaneo ahora
+      </button>
+    </form>
+  </div>
+  {% if ultimo_scan %}
+  <p class="text-xs text-muted">Último escaneo: {{ ultimo_scan }}</p>
+  {% else %}
+  <p class="text-xs text-muted">Todavía no se ejecutó ningún escaneo. Hacé clic en "Ejecutar escaneo ahora" para empezar.</p>
+  {% endif %}
+</div>
+
+<!-- CARDS -->
+<div class="grid-3" style="margin-bottom:2rem;">
+
+  {# Agente Socios #}
+  <div class="agent-card">
+    <div class="agent-header">
+      <div class="agent-icon" style="background:rgba(45,92,56,0.12);">🌿</div>
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;color:var(--green-deep);">Agente Socios</div>
+        <div class="text-xs text-muted">Detecta solicitudes, cuotas y socios inactivos</div>
+      </div>
+      <div class="status-dot dot-active" style="margin-left:auto;" title="Activo"></div>
+    </div>
+    <div class="agent-body">
+      <div class="stat-item">
+        <span class="text-sm text-muted">Tareas generadas hoy</span>
+        <span class="fw-600" style="color:var(--green-deep);">{{ stats.socios.hoy }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="text-sm text-muted">Pendientes de revisión</span>
+        <span class="fw-600" style="color:{{ '#E07B30' if stats.socios.pendientes > 0 else 'var(--muted)' }};">{{ stats.socios.pendientes }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="text-sm text-muted">Total histórico</span>
+        <span class="fw-600">{{ stats.socios.total }}</span>
+      </div>
+    </div>
+    <div style="padding:0.2rem 1.4rem 1.2rem;">
+      <table class="actions-table">
+        <thead><tr><th>Acción</th><th>Nivel</th></tr></thead>
+        <tbody>
+        {% for action_id, action_label in agent_actions.socios %}
+          <tr>
+            <td>{{ action_label }}</td>
+            <td><span class="badge-nivel nivel-recomendar">RECOMENDAR</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Agente Administración #}
+  <div class="agent-card">
+    <div class="agent-header">
+      <div class="agent-icon" style="background:rgba(200,164,74,0.12);">📊</div>
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;color:var(--green-deep);">Agente Administración</div>
+        <div class="text-xs text-muted">Stock, reportes diarios y cuotas vencidas</div>
+      </div>
+      <div class="status-dot dot-active" style="margin-left:auto;" title="Activo"></div>
+    </div>
+    <div class="agent-body">
+      <div class="stat-item">
+        <span class="text-sm text-muted">Tareas generadas hoy</span>
+        <span class="fw-600" style="color:var(--green-deep);">{{ stats.administracion.hoy }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="text-sm text-muted">Pendientes de revisión</span>
+        <span class="fw-600" style="color:{{ '#E07B30' if stats.administracion.pendientes > 0 else 'var(--muted)' }};">{{ stats.administracion.pendientes }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="text-sm text-muted">Total histórico</span>
+        <span class="fw-600">{{ stats.administracion.total }}</span>
+      </div>
+    </div>
+    <div style="padding:0.2rem 1.4rem 1.2rem;">
+      <table class="actions-table">
+        <thead><tr><th>Acción</th><th>Nivel</th></tr></thead>
+        <tbody>
+        {% for action_id, action_label in agent_actions.administracion %}
+          <tr>
+            <td>{{ action_label }}</td>
+            <td><span class="badge-nivel nivel-recomendar">RECOMENDAR</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Agente WhatsApp #}
+  <div class="agent-card" style="opacity:0.7;">
+    <div class="agent-header">
+      <div class="agent-icon" style="background:rgba(37,211,102,0.12);">💬</div>
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;color:var(--green-deep);">Agente WhatsApp</div>
+        <div class="text-xs text-muted">Responde consultas y envía recordatorios</div>
+      </div>
+      <div class="status-dot dot-off" style="margin-left:auto;" title="Requiere configuración"></div>
+    </div>
+    <div class="agent-body">
+      <div style="background:var(--cream);border-radius:8px;padding:1rem;text-align:center;">
+        <div style="font-size:1.5rem;margin-bottom:0.4rem;">💬</div>
+        <p class="text-sm text-muted" style="margin-bottom:0.8rem;">Requiere conectar Meta Business API para activarse.</p>
+        <a href="{{ url_for('admin_whatsapp') }}" class="btn btn-outline btn-sm">Configurar WhatsApp →</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CÓMO FUNCIONAN -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">¿Cómo funcionan los agentes?</div>
+  </div>
+  <div class="card-body">
+    <div class="grid-3">
+      <div style="padding:0.8rem;background:var(--cream);border-radius:10px;">
+        <div style="font-size:1.2rem;margin-bottom:0.4rem;">👀</div>
+        <div style="font-weight:600;font-size:0.85rem;color:var(--green-deep);margin-bottom:0.3rem;">Escanean el club</div>
+        <p class="text-xs text-muted">Cada agente revisa automáticamente los datos del club: socios, stock, cuotas, cultivos. Detectan situaciones que requieren atención.</p>
+      </div>
+      <div style="padding:0.8rem;background:var(--cream);border-radius:10px;">
+        <div style="font-size:1.2rem;margin-bottom:0.4rem;">💡</div>
+        <div style="font-weight:600;font-size:0.85rem;color:var(--green-deep);margin-bottom:0.3rem;">Generan recomendaciones</div>
+        <p class="text-xs text-muted">Para cada situación detectada, la IA analiza el contexto y escribe una recomendación concreta. Vos decidís qué hacer.</p>
+      </div>
+      <div style="padding:0.8rem;background:var(--cream);border-radius:10px;">
+        <div style="font-size:1.2rem;margin-bottom:0.4rem;">✅</div>
+        <div style="font-weight:600;font-size:0.85rem;color:var(--green-deep);margin-bottom:0.3rem;">Vos aprobás o ignorás</div>
+        <p class="text-xs text-muted">Todas las tareas pasan por tu aprobación (modo PREPARAR). Si confiás en un agente, podés dejarlo en modo EJECUTAR para que actúe solo.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

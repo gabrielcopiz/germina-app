@@ -219,8 +219,17 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_centro_control') }}" class="nav-item {% if request.endpoint == 'admin_centro_control' %}active{% endif %}" style="background:rgba(200,164,74,0.08);border:1px solid rgba(200,164,74,0.2);margin-bottom:0.3rem;">
       <span class="nav-icon">⚡</span> <span style="color:var(--gold);">Centro de Control</span>
     </a>
+    <a href="{{ url_for('admin_agentes') }}" class="nav-item {% if request.endpoint == 'admin_agentes' %}active{% endif %}">
+      <span class="nav-icon">🧠</span> Agentes IA
+    </a>
+    <a href="{{ url_for('admin_tareas') }}" class="nav-item {% if request.endpoint in ['admin_tareas','admin_tarea_aprobar','admin_tarea_rechazar'] %}active{% endif %}">
+      <span class="nav-icon">✅</span> Tareas
+    </a>
     <a href="{{ url_for('admin_autopilot') }}" class="nav-item {% if request.endpoint in ['admin_autopilot','admin_autopilot_update'] %}active{% endif %}">
       <span class="nav-icon">🤖</span> Autopilot
+    </a>
+    <a href="{{ url_for('admin_roi') }}" class="nav-item {% if request.endpoint == 'admin_roi' %}active{% endif %}">
+      <span class="nav-icon">📈</span> ROI
     </a>
     <a href="{{ url_for('admin_auditoria') }}" class="nav-item {% if request.endpoint == 'admin_auditoria' %}active{% endif %}">
       <span class="nav-icon">📋</span> Registro
@@ -255,6 +264,12 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     </a>
     <a href="{{ url_for('admin_informe') }}" class="nav-item {% if request.endpoint == 'admin_informe' %}active{% endif %}">
       <span class="nav-icon">📊</span> Informe del día
+    </a>
+    <a href="{{ url_for('admin_importar') }}" class="nav-item {% if request.endpoint in ['admin_importar','admin_importar_confirmar'] %}active{% endif %}">
+      <span class="nav-icon">⬆️</span> Importar Socios
+    </a>
+    <a href="{{ url_for('admin_whatsapp') }}" class="nav-item {% if request.endpoint == 'admin_whatsapp' %}active{% endif %}">
+      <span class="nav-icon">💬</span> WhatsApp
     </a>
     <div class="nav-section-label" style="margin-top:0.5rem;">Exportar</div>
     <a href="{{ url_for('admin_exportar') }}" class="nav-item">

@@ -1,0 +1,170 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}ROI — Germina{% endblock %}
+{% block topbar_title %}📈 Dashboard de ROI{% endblock %}
+
+{% block extra_head %}
+<style>
+.roi-hero {
+  background: linear-gradient(135deg, var(--green-deep) 0%, var(--green-mid) 100%);
+  border-radius: 16px; padding: 2rem; color: var(--cream); margin-bottom: 1.5rem;
+}
+.roi-big { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 500;
+  color: var(--gold); line-height: 1; }
+.roi-label { font-size: 0.78rem; opacity: 0.7; margin-top: 0.3rem; }
+.bar-wrap { background: var(--cream-dark); border-radius: 4px; height: 10px; overflow: hidden; margin-top: 0.4rem; }
+.bar-fill { height: 100%; border-radius: 4px; background: var(--green-mid); }
+.tipo-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid var(--cream-dark); }
+.tipo-row:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<div class="roi-hero">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;">
+    <div>
+      <div class="roi-big">{{ horas_totales }}hs</div>
+      <div class="roi-label">Tiempo total ahorrado</div>
+    </div>
+    <div>
+      <div class="roi-big" style="font-size:2.2rem;">${{ "{:,.0f}".format(valor_ahorrado) }}</div>
+      <div class="roi-label">Valor económico (USD {{ valor_hora_usd }}/hora)</div>
+    </div>
+    <div>
+      <div class="roi-big" style="font-size:2rem;">{{ total_tareas }}</div>
+      <div class="roi-label">Acciones automatizadas</div>
+    </div>
+    <div>
+      <div class="roi-big" style="font-size:1.8rem;">${{ costo_llm_total }}</div>
+      <div class="roi-label">Costo de IA invertido</div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI MES / HOY -->
+<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card" style="border-top-color:var(--green-mid);">
+    <div class="kpi-value" style="color:var(--green-mid);">{{ min_hoy }}'</div>
+    <div class="kpi-label">Minutos ahorrados hoy</div>
+    <div class="kpi-sub">≈ {{ (min_hoy//60) }}hs {{ min_hoy%60 }}min</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--gold);">
+    <div class="kpi-value" style="color:var(--gold);">{{ min_mes }}'</div>
+    <div class="kpi-label">Minutos ahorrados este mes</div>
+    <div class="kpi-sub">≈ {{ "%.1f"|format(min_mes/60) }} horas</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--green-deep);">
+    <div class="kpi-value">{{ total_min }}'</div>
+    <div class="kpi-label">Minutos totales ahorrados</div>
+    <div class="kpi-sub">≈ {{ horas_totales }} horas acumuladas</div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:1.5rem;">
+  <!-- POR TIPO DE TAREA -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Ahorro por tipo de tarea</div></div>
+    <div class="card-body">
+      {% if por_tipo %}
+        {% set max_min = por_tipo[0].minutos if por_tipo else 1 %}
+        {% for tt in por_tipo %}
+        <div class="tipo-row">
+          <div style="flex:1;">
+            <div style="font-size:0.82rem;font-weight:600;color:var(--green-deep);">{{ tt.task_type.replace('_',' ').title() }}</div>
+            {% if tt.description %}
+            <div class="text-xs text-muted">{{ tt.description }}</div>
+            {% endif %}
+            <div class="bar-wrap">
+              <div class="bar-fill" style="width:{{ [((tt.minutos / max_min) * 100 if max_min > 0 else 0), 2]|max|int }}%"></div>
+            </div>
+          </div>
+          <div style="text-align:right;min-width:60px;">
+            <div style="font-weight:700;font-size:0.9rem;color:var(--green-deep);">{{ tt.minutos|int }}'</div>
+            <div class="text-xs text-muted">{{ tt.cnt }} veces</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-sm text-muted" style="text-align:center;padding:1.5rem;">Todavía no hay tareas registradas. El ROI empieza a acumularse con el primer escaneo.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- POR AGENTE -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Ahorro por agente</div></div>
+    <div class="card-body">
+      {% if tareas_agente %}
+        {% for ta in tareas_agente %}
+        <div class="tipo-row">
+          <div style="flex:1;">
+            <div style="font-size:0.85rem;font-weight:600;color:var(--green-deep);">
+              {{ agents[ta.agent_id] if ta.agent_id in agents else ta.agent_id }}
+            </div>
+            <div class="bar-wrap">
+              {% set total_min_agentes = tareas_agente|sum(attribute='minutos') %}
+              <div class="bar-fill" style="width:{{ [((ta.minutos / total_min_agentes) * 100 if total_min_agentes > 0 else 0), 2]|max|int }}%"></div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;font-size:0.9rem;">{{ ta.minutos|int }}'</div>
+            <div class="text-xs text-muted">{{ ta.cnt }} tareas</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-sm text-muted" style="text-align:center;padding:1.5rem;">Los agentes registrarán su impacto al empezar a operar.</p>
+      {% endif %}
+
+      <div style="margin-top:1.5rem;padding:1rem;background:var(--cream);border-radius:10px;">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">¿Cómo se calcula el ROI?</div>
+        <p class="text-xs text-muted">
+          Cada tipo de tarea tiene un tiempo estimado de trabajo manual asignado (por ejemplo: responder una consulta = 3 minutos, dar de alta un socio = 15 minutos). Cuando Germina automatiza o prepara esa tarea, ese tiempo se suma al ahorro acumulado.
+        </p>
+        <p class="text-xs text-muted" style="margin-top:0.4rem;">
+          El valor económico se calcula usando un costo de referencia de <strong>USD {{ valor_hora_usd }}/hora</strong> de trabajo administrativo.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ÚLTIMOS 7 DÍAS -->
+{% if ultimos_7d %}
+<div class="card">
+  <div class="card-header"><div class="card-title">Actividad — últimos 7 días</div></div>
+  <div class="card-body">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tareas</th>
+            <th>Minutos ahorrados</th>
+            <th>Equivalente</th>
+            <th>Gráfico</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set max_min_7d = (ultimos_7d|map(attribute='minutos')|list)|max if ultimos_7d else 1 %}
+          {% for d in ultimos_7d %}
+          <tr>
+            <td>{{ d.dia }}</td>
+            <td>{{ d.tareas }}</td>
+            <td>{{ d.minutos|int }}'</td>
+            <td class="text-muted">{{ (d.minutos // 60)|int }}hs {{ (d.minutos % 60)|int }}min</td>
+            <td style="width:200px;">
+              <div class="mini-bar">
+                <div class="mini-bar-fill" style="width:{{ [((d.minutos / max_min_7d) * 100 if max_min_7d > 0 else 0), 2]|max|int }}%;background:var(--green-mid);"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
