@@ -1972,8 +1972,38 @@ def crm_logout():
 def crm_prospectos():
     if not session.get('crm_ok'):
         return redirect(url_for('crm_login'))
-    db = get_db()
-    prospectos = db.execute('SELECT * FROM prospectos ORDER BY id DESC').fetchall()
+    import urllib.request, json as _json
+    NETLIFY_TOKEN   = os.environ.get('NETLIFY_TOKEN', 'nfc_CM3yuFVJfAHzieYkNH8uNDh3erqwsfpBf3ea')
+    NETLIFY_SITE_ID = os.environ.get('NETLIFY_SITE_ID', 'f3163f10-03a2-489c-8e26-8efcb268a967')
+    prospectos = []
+    try:
+        # Buscar el form por nombre
+        req = urllib.request.Request(
+            f'https://api.netlify.com/api/v1/sites/{NETLIFY_SITE_ID}/forms',
+            headers={'Authorization': f'Bearer {NETLIFY_TOKEN}'}
+        )
+        forms = _json.loads(urllib.request.urlopen(req, timeout=8).read())
+        form_id = next((f['id'] for f in forms if f.get('name') == 'germina-contacto'), None)
+        if form_id:
+            req2 = urllib.request.Request(
+                f'https://api.netlify.com/api/v1/forms/{form_id}/submissions?per_page=100',
+                headers={'Authorization': f'Bearer {NETLIFY_TOKEN}'}
+            )
+            subs = _json.loads(urllib.request.urlopen(req2, timeout=8).read())
+            for s in subs:
+                d = s.get('data', {})
+                prospectos.append({
+                    'created_at': s.get('created_at', '')[:16].replace('T', ' '),
+                    'club':       d.get('club_name') or d.get('club', ''),
+                    'nombre':     d.get('nombre', ''),
+                    'email':      d.get('email', ''),
+                    'whatsapp':   d.get('whatsapp', ''),
+                    'pais':       d.get('pais', ''),
+                    'socios':     d.get('socios', ''),
+                    'mensaje':    d.get('mensaje', ''),
+                })
+    except Exception:
+        pass
     return render_template('crm_prospectos.html', prospectos=prospectos)
 
 if __name__ == '__main__':
