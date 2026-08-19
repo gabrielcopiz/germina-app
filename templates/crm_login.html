@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Germina CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#0f1a11;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.box{background:#1A3520;border:1px solid rgba(200,164,74,0.2);border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:360px;}
+.logo{font-family:'Playfair Display',serif;font-size:1.8rem;color:#F5F0E8;text-align:center;margin-bottom:0.3rem;}
+.logo span{color:#C8A44A;}
+.sub{text-align:center;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.3);margin-bottom:2rem;}
+label{display:block;font-size:0.72rem;font-weight:600;color:rgba(245,240,232,0.5);margin-bottom:0.4rem;letter-spacing:0.05em;}
+input{width:100%;padding:0.75rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#F5F0E8;font-size:0.9rem;font-family:'Inter',sans-serif;margin-bottom:1rem;outline:none;}
+input:focus{border-color:#C8A44A;}
+button{width:100%;padding:0.85rem;background:#C8A44A;color:#1A3520;font-weight:700;font-size:0.95rem;border:none;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;margin-top:0.5rem;}
+button:hover{background:#E8C97A;}
+.error{background:rgba(255,100,100,0.12);border:1px solid rgba(255,100,100,0.3);color:#FF9090;font-size:0.8rem;padding:0.6rem 1rem;border-radius:8px;margin-bottom:1rem;text-align:center;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">Germi<span>na</span></div>
+  <div class="sub">CRM Interno</div>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <label>Usuario</label>
+    <input type="text" name="u" autocomplete="username" required>
+    <label>Contraseña</label>
+    <input type="password" name="p" autocomplete="current-password" required>
+    <button type="submit">Entrar</button>
+  </form>
+</div>
+</body>
+</html>

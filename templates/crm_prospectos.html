@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prospectos — Germina CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#0f1a11;color:#F5F0E8;min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+
+.topbar{background:#1A3520;border-bottom:1px solid rgba(200,164,74,0.15);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;}
+.logo{font-family:'Playfair Display',serif;font-size:1.3rem;color:#F5F0E8;}
+.logo span{color:#C8A44A;}
+.top-right{display:flex;align-items:center;gap:1.2rem;}
+.badge-total{background:rgba(200,164,74,0.15);border:1px solid rgba(200,164,74,0.3);color:#C8A44A;font-size:0.78rem;font-weight:700;padding:0.3rem 0.9rem;border-radius:100px;}
+.logout{font-size:0.78rem;color:rgba(245,240,232,0.4);transition:color 0.2s;}
+.logout:hover{color:#C8A44A;}
+
+.content{padding:2rem;}
+
+.header{margin-bottom:1.8rem;}
+.header h1{font-family:'Playfair Display',serif;font-size:1.8rem;color:#F5F0E8;margin-bottom:0.3rem;}
+.header p{font-size:0.82rem;color:rgba(245,240,232,0.4);}
+
+.table-wrap{background:#1A3520;border:1px solid rgba(200,164,74,0.12);border-radius:14px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead th{text-align:left;font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(200,164,74,0.7);padding:0.9rem 1.2rem;background:rgba(0,0,0,0.2);border-bottom:1px solid rgba(200,164,74,0.1);}
+tbody td{padding:0.95rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;font-size:0.85rem;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:rgba(255,255,255,0.03);}
+
+.club-name{font-weight:700;color:#F5F0E8;font-size:0.9rem;}
+.muted{color:rgba(245,240,232,0.4);font-size:0.78rem;}
+.link{color:#C8A44A;}
+.link:hover{text-decoration:underline;}
+.wa-btn{display:inline-flex;align-items:center;gap:0.4rem;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.25);color:#25D166;padding:0.3rem 0.8rem;border-radius:6px;font-size:0.75rem;font-weight:600;transition:all 0.15s;}
+.wa-btn:hover{background:rgba(37,211,102,0.2);}
+.fecha{font-size:0.75rem;color:rgba(245,240,232,0.35);white-space:nowrap;}
+.pais-badge{background:rgba(255,255,255,0.07);color:rgba(245,240,232,0.6);font-size:0.72rem;padding:0.2rem 0.6rem;border-radius:100px;}
+.socios-badge{background:rgba(200,164,74,0.1);color:#C8A44A;font-size:0.72rem;padding:0.2rem 0.6rem;border-radius:100px;font-weight:600;}
+.msg{color:rgba(245,240,232,0.45);font-size:0.78rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+.empty{text-align:center;padding:5rem 2rem;}
+.empty-icon{font-size:3rem;margin-bottom:1rem;opacity:0.4;}
+.empty-title{font-family:'Playfair Display',serif;font-size:1.2rem;color:rgba(245,240,232,0.5);margin-bottom:0.4rem;}
+.empty-sub{font-size:0.82rem;color:rgba(245,240,232,0.25);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Germi<span>na</span> <span style="font-family:'Inter',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.3);margin-left:0.5rem;">CRM</span></div>
+  <div class="top-right">
+    <span class="badge-total">{{ prospectos|length }} prospecto{% if prospectos|length != 1 %}s{% endif %}</span>
+    <a href="/crm/logout" class="logout">Salir →</a>
+  </div>
+</div>
+
+<div class="content">
+  <div class="header">
+    <h1>Clubes interesados</h1>
+    <p>Cada club que completó el formulario de demo en germina-clubs.netlify.app</p>
+  </div>
+
+  {% if prospectos %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Club</th>
+          <th>Contacto</th>
+          <th>Email</th>
+          <th>WhatsApp</th>
+          <th>País</th>
+          <th>Socios</th>
+          <th>Mensaje</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in prospectos %}
+        <tr>
+          <td class="fecha">{{ p.created_at[:16] if p.created_at else '—' }}</td>
+          <td><div class="club-name">{{ p.club or '—' }}</div></td>
+          <td>{{ p.nombre or '—' }}</td>
+          <td>
+            {% if p.email %}
+            <a href="mailto:{{ p.email }}" class="link">{{ p.email }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if p.whatsapp %}
+            <a href="https://wa.me/{{ p.whatsapp|replace('+','')|replace(' ','')|replace('-','') }}" target="_blank" class="wa-btn">
+              💬 {{ p.whatsapp }}
+            </a>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="pais-badge">{{ p.pais or '—' }}</span></td>
+          <td><span class="socios-badge">{{ p.socios or '—' }}</span></td>
+          <td><span class="msg" title="{{ p.mensaje or '' }}">{{ p.mensaje or '—' }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="table-wrap">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Todavía no hay prospectos</div>
+      <div class="empty-sub">Cuando un club complete el formulario de la landing, aparece aquí automáticamente.</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+</body>
+</html>

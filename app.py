@@ -17,6 +17,8 @@ MAIL_USER  = os.environ.get('MAIL_USER', 'besparkcreativa@gmail.com')
 MAIL_PASS  = os.environ.get('MAIL_PASS', 'gihojbmsgweclmwu')
 RENDER_URL = os.environ.get('RENDER_URL', 'https://germina-app.onrender.com')
 CLUB_NOMBRE = os.environ.get('CW_CLUB_NOMBRE', 'Cannawaka')
+CRM_USER   = os.environ.get('CRM_USER', 'germina')
+CRM_PASS   = os.environ.get('CRM_PASS', 'spark2026')
 
 # ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -1431,13 +1433,6 @@ def admin_agregar_doc(sid):
         get_db().commit()
     return redirect(url_for('admin_socio', sid=sid))
 
-@app.route('/admin/prospectos')
-@login_required
-def admin_prospectos():
-    db = get_db()
-    prospectos = db.execute('SELECT * FROM prospectos ORDER BY id DESC').fetchall()
-    return render_template('admin/prospectos.html', prospectos=prospectos)
-
 @app.route('/admin/exportar')
 @login_required
 def admin_exportar():
@@ -1954,6 +1949,32 @@ def delivery_confirmar(token):
 # ═══════════════════════════════════════════════════════════════════════════
 
 _register_globals()
+
+# ─── CRM INTERNO GERMINA ───────────────────────────────────────────────────
+
+@app.route('/crm/login', methods=['GET', 'POST'])
+def crm_login():
+    error = None
+    if request.method == 'POST':
+        if request.form.get('u') == CRM_USER and request.form.get('p') == CRM_PASS:
+            session['crm_ok'] = True
+            return redirect(url_for('crm_prospectos'))
+        error = 'Credenciales incorrectas'
+    return render_template('crm_login.html', error=error)
+
+@app.route('/crm/logout')
+def crm_logout():
+    session.pop('crm_ok', None)
+    return redirect(url_for('crm_login'))
+
+@app.route('/crm')
+@app.route('/crm/prospectos')
+def crm_prospectos():
+    if not session.get('crm_ok'):
+        return redirect(url_for('crm_login'))
+    db = get_db()
+    prospectos = db.execute('SELECT * FROM prospectos ORDER BY id DESC').fetchall()
+    return render_template('crm_prospectos.html', prospectos=prospectos)
 
 if __name__ == '__main__':
     init_db()
