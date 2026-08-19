@@ -368,7 +368,30 @@ def init_db():
     );
     ''')
     db.commit()
+    # Seed de artículos publicados (persisten aunque el contenedor se reinicie)
+    _seed_articulos(db)
     db.close()
+
+# Artículos publicados como seed — se insertan en cada deploy si no existen
+_ARTICULOS_SEED = [
+    {
+        "slug": "como-legalizar-un-club-cannabico-en-argentina-la-guia-que-nadie-te-da",
+        "titulo": "Cómo legalizar un club cannábico en Argentina: la guía que nadie te da",
+        "resumen": "Marco legal, pasos concretos y errores que evitar para legalizar tu cannabis social club en Argentina.",
+        "keyword": "cómo legalizar un club cannábico en Argentina",
+        "meta_description": "Guía completa para legalizar un cannabis social club en Argentina: estatuto, IGJ, REPROCANN y cómo gestionar el cumplimiento desde el día 1.",
+        "contenido": '<img class="art-img-hero" src="https://images.pexels.com/photos/7667721/pexels-photo-7667721.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Técnico con guantes inspeccionando planta de cannabis medicinal" loading="lazy"><div class="art-hook"><p>Más de 200 cannabis social clubs operan hoy en Argentina. La mayoría comparte un secreto incómodo: están en una zona legal gris que expone personalmente a sus directivos cada vez que abren las puertas. No por falta de voluntad, sino por falta de información concreta sobre cómo dar el paso que los protege.</p></div><div class="art-stat"><span class="stat-num">8 de cada 10</span><span class="stat-label">clubs cannábicos en Argentina operan sin personería jurídica — y sus fundadores responden con su patrimonio personal ante cualquier reclamo.</span></div><p>En este artículo vas a encontrar exactamente lo que necesitás: el marco legal real, los pasos en orden y los errores que cometen los clubs que intentan hacerlo solos.</p><h2>¿Qué dice la ley argentina sobre los cannabis social clubs?</h2><p>Argentina no tiene una ley específica que regule los cannabis social clubs como figura jurídica. Lo que sí existe es un marco que los sostiene indirectamente: la <strong>Ley 27.350 de Uso Medicinal del Cannabis</strong> y su decreto reglamentario 883/2020, que reconocen el autocultivo y el cultivo solidario para fines medicinales.</p><p>Esto significa que los clubs no están en un vacío legal, pero tampoco tienen un paraguas explícito. La estrategia más sólida que encontró el sector es operar como <strong>asociación civil sin fines de lucro</strong>, amparada en los artículos 168 a 186 del Código Civil y Comercial de la Nación. Es el camino que usan los clubs más consolidados y el que recomiendan los abogados especializados.</p><div class="art-callout art-tip"><strong>Lo que no te dicen</strong>Algunas provincias como CABA, Córdoba y Santa Fe tienen criterios más flexibles al otorgar personería a asociaciones con objetos relacionados al cannabis medicinal. Empezar en una jurisdicción favorable puede reducir los tiempos a la mitad.</div><h2>Los 5 pasos reales para legalizar tu club</h2><h3>1. Redactar el estatuto social</h3><p>El estatuto es el documento fundacional. Debe incluir: nombre de la entidad, objeto social, domicilio legal, composición de la comisión directiva, condiciones de ingreso y egreso de socios, y régimen de cuotas. Un error en el objeto social puede hacer que la IGJ rechace la solicitud. Invertir en un abogado especializado en este paso vale cada peso.</p><h3>2. Asamblea constitutiva ante escribano</h3><p>Se necesitan mínimo tres socios fundadores. En la asamblea se aprueba el estatuto, se designa la primera comisión directiva y se labra el acta con firmas certificadas ante escribano público.</p><h3>3. Tramitar personería en la IGJ o equivalente provincial</h3><p>Con el estatuto y el acta, se presenta la solicitud ante la <strong>Inspección General de Justicia (IGJ)</strong> en CABA, o ante el organismo provincial correspondiente. El trámite incluye una tasa administrativa y un período de revisión de entre 30 y 90 días hábiles.</p><h3>4. CUIT de la asociación ante AFIP</h3><p>Una vez aprobada la personería, la asociación tramita su CUIT propio. Sin este número es imposible abrir una cuenta bancaria institucional, emitir recibos o firmar contratos como entidad.</p><h3>5. Inscripción en REPROCANN</h3><p>El Registro del Programa de Cannabis del Ministerio de Salud permite inscribir a los socios como cultivadores medicinales. Que el club pueda acreditar que sus socios están en el registro fortalece el marco de legitimidad ante cualquier control.</p><div class="art-callout art-warning"><strong>Error frecuente</strong>Varios clubs redactan el estatuto con un objeto social demasiado amplio o ambiguo respecto al cannabis, pensando que así evitan problemas. El resultado es el opuesto: la IGJ lo observa o rechaza, y el trámite se demora meses. El objeto debe ser específico, claro y coherente con la normativa de autocultivo medicinal.</div><blockquote class="art-quote">La personería jurídica no es un trámite burocrático. Es lo único que separa a los fundadores de un club de responder con su patrimonio personal si algo sale mal.</blockquote><h2>¿Qué pasa después de obtener la personería?</h2><img class="art-img-inline" src="https://images.pexels.com/photos/9259933/pexels-photo-9259933.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Cannabis medicinal en tubo de laboratorio sobre balanza de precisión" loading="lazy"><p class="art-img-caption">El cumplimiento documental es tan importante como la constitución legal del club.</p><p>Legalizar el club es el primer paso, no el último. Una vez constituido, el cumplimiento operativo es continuo: mantener el padrón de socios actualizado, documentar cada dispensación, llevar los libros contables al día, hacer las asambleas anuales y presentar la memoria y balance ante el organismo de contralor.</p><p>Muchos clubs empiezan con cuadernos y planillas de Excel. A medida que suman socios y volumen, ese sistema colapsa: datos perdidos, registros inconsistentes, información inaccesible cuando más se necesita.</p><div class="art-cta-mid"><div><strong>¿Tu club ya tiene sistema de gestión digital?</strong><p>Germina centraliza el padrón de socios, las dispensaciones, el stock y los registros de cultivo. Todo con trazabilidad completa y accesible desde cualquier dispositivo.</p></div><a href="https://germina-clubs.netlify.app#contacto">Ver demo gratuita →</a></div><h2>La gestión digital como parte del cumplimiento</h2><p>Los organismos de contralor no evalúan solo si tenés personería: evalúan si podés demostrar cómo operás. Un club con registros ordenados, trazabilidad de dispensaciones y padrón actualizado tiene una posición infinitamente mejor ante cualquier requerimiento que uno que opera con Excel y buena voluntad.</p><p><strong>Germina</strong> es la plataforma diseñada para este escenario: gestión del padrón de socios con historial completo, registro de dispensaciones con fecha y cantidad, control de stock por variedad y portal personalizado para cada socio. Lo que antes requería horas de administración manual, Germina lo automatiza desde el primer día.</p><p>La legalización es el inicio del camino. Lo que viene después —el cumplimiento sostenido, la gestión ordenada, la capacidad de escalar sin caos— es lo que diferencia a los clubs que duran de los que no.</p><p><strong>Probá Germina gratis en germina-clubs.netlify.app — primer mes sin costo, sin tarjeta.</strong></p>',
+    },
+]
+
+def _seed_articulos(db):
+    for art in _ARTICULOS_SEED:
+        db.execute(
+            'INSERT OR IGNORE INTO articulos (slug,titulo,resumen,contenido,keyword,meta_description) VALUES (?,?,?,?,?,?)',
+            (art['slug'], art['titulo'], art.get('resumen',''), art['contenido'],
+             art.get('keyword',''), art.get('meta_description',''))
+        )
+    db.commit()
 
 def _migrate():
     db = sqlite3.connect(DB_PATH)
@@ -2072,6 +2095,63 @@ KEYWORDS_SEO = [
 # Orden en que se cubren los clusters (primero los que más tráfico traen)
 _CLUSTER_ORDER = ["legal", "gestion", "tecnologia", "mercado", "conversion"]
 
+# ─── SEO IMAGE POOL (5 fotos Pexels por cluster, rotación automática) ────────
+_IMAGES_SEO = {
+    "legal": [
+        {"id": "7667721",  "alt": "Técnico con guantes inspeccionando planta de cannabis medicinal"},
+        {"id": "5411141",  "alt": "Primer plano de planta de cannabis en entorno profesional"},
+        {"id": "29359795", "alt": "Planta de cannabis sativa saludable al aire libre"},
+        {"id": "8849944",  "alt": "Vista superior de planta de cannabis en etapa de crecimiento"},
+        {"id": "9259989",  "alt": "Pinzas sobre planta de cannabis en proceso de control de calidad"},
+    ],
+    "gestion": [
+        {"id": "33965725", "alt": "Trabajador concentrado en cultivo indoor de cannabis medicinal"},
+        {"id": "9260000",  "alt": "Persona manejando cannabis con pinzas en entorno profesional"},
+        {"id": "7667885",  "alt": "Cultivador sosteniendo planta de cannabis verde en invernadero"},
+        {"id": "28862111", "alt": "Flor de cannabis en invernadero profesional de cultivo medicinal"},
+        {"id": "18512077", "alt": "Detalle de planta de cannabis en sistema de gestión de cultivo"},
+    ],
+    "tecnologia": [
+        {"id": "9259933",  "alt": "Cannabis medicinal en tubo de laboratorio sobre balanza de precisión"},
+        {"id": "9259936",  "alt": "Cannabis en frasco de tubo para análisis de laboratorio"},
+        {"id": "33930123", "alt": "Marihuana medicinal en frasco de prescripción sobre fondo blanco"},
+        {"id": "9259854",  "alt": "Macro fotografía de cannabis medicinal para análisis de trazabilidad"},
+        {"id": "3047447",  "alt": "Fotografía macro de cogollo de cannabis para trazabilidad digital"},
+    ],
+    "mercado": [
+        {"id": "33325757", "alt": "Campo de cannabis medicinal bajo cielo azul en plantación profesional"},
+        {"id": "33326126", "alt": "Vista aérea de campo de cáñamo en cosecha industrial"},
+        {"id": "8658545",  "alt": "Planta de cannabis al aire libre en cultivo de mercado emergente"},
+        {"id": "9550945",  "alt": "Hojas verdes de cannabis en producción medicinal de escala"},
+        {"id": "33314138", "alt": "Planta de cannabis exuberante representando la industria cannábica Argentina"},
+    ],
+    "conversion": [
+        {"id": "8140284",  "alt": "Cannabis en frasco de vidrio transparente — gestión profesional de stock"},
+        {"id": "4173868",  "alt": "Señalización de cannabis social club en fachada de local"},
+        {"id": "11251682", "alt": "Cartel institucional de cannabis social club en pared verde"},
+        {"id": "4618418",  "alt": "Plantas organizadas en espacio profesional de gestión cannábica"},
+        {"id": "9058867",  "alt": "Planta de cannabis en maceta en club cannábico profesional"},
+    ],
+}
+_PEXELS_URL = "https://images.pexels.com/photos/{id}/pexels-photo-{id}.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+
+def _elegir_imagen(cluster, db):
+    """Retorna (hero_url, hero_alt, inline_url, inline_alt) del pool del cluster.
+    El índice se avanza en config SOLO al publicar (llamar desde /api/publicar-articulo)."""
+    pool = _IMAGES_SEO.get(cluster, _IMAGES_SEO["legal"])
+    n = len(pool)
+    key = f"img_idx_{cluster}"
+    row = db.execute("SELECT value FROM config WHERE key=?", (key,)).fetchone()
+    idx = int(row[0]) if row else 0
+    hero   = pool[idx % n]
+    inline = pool[(idx + 1) % n]
+    next_idx = (idx + 1) % n
+    db.execute("INSERT OR REPLACE INTO config (key,value) VALUES (?,?)", (key, str(next_idx)))
+    return (
+        _PEXELS_URL.format(id=hero["id"]),   hero["alt"],
+        _PEXELS_URL.format(id=inline["id"]), inline["alt"],
+    )
+
 def _elegir_keyword(db):
     """Selección estratégica de keyword:
     1. Cubre clusters vacíos en orden antes de repetir cualquier cluster.
@@ -2202,14 +2282,30 @@ def api_publicar_articulo():
     data = request.get_json(silent=True) or {}
     if data.get('secret') != CRM_PASS:
         return jsonify({'ok': False, 'error': 'unauthorized'}), 403
-    titulo   = (data.get('titulo') or '').strip()
+    titulo    = (data.get('titulo') or '').strip()
     contenido = (data.get('contenido') or '').strip()
     if not titulo or not contenido:
         return jsonify({'ok': False, 'error': 'missing fields'}), 400
+
+    db = get_db()
+
+    # Asignar imágenes automáticamente desde el pool del cluster
+    cluster = data.get('cluster', 'legal')
+    hero_url, hero_alt, inline_url, inline_alt = _elegir_imagen(cluster, db)
+
+    # Inyectar hero al inicio del contenido
+    hero_html = f'<img class="art-img-hero" src="{hero_url}" alt="{hero_alt}" loading="lazy">'
+    contenido = hero_html + contenido
+
+    # Inyectar inline justo antes del CTA central
+    inline_html = f'<img class="art-img-inline" src="{inline_url}" alt="{inline_alt}" loading="lazy"><p class="art-img-caption">{inline_alt}.</p>'
+    if '<div class="art-cta-mid">' in contenido:
+        contenido = contenido.replace('<div class="art-cta-mid">', inline_html + '<div class="art-cta-mid">', 1)
+
     slug_base = unicodedata.normalize('NFD', titulo.lower())
     slug_base = ''.join(c for c in slug_base if unicodedata.category(c) != 'Mn')
     slug_base = re.sub(r'[^a-z0-9]+', '-', slug_base).strip('-')[:80]
-    db = get_db()
+
     db.execute(
         'INSERT OR IGNORE INTO articulos (slug,titulo,resumen,contenido,keyword,meta_description) VALUES (?,?,?,?,?,?)',
         (slug_base, titulo, data.get('resumen','')[:200], contenido,
