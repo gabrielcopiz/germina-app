@@ -1,0 +1,105 @@
+name: Artículo SEO diario — Germina
+
+on:
+  schedule:
+    - cron: '3 12 * * *'   # 9:03am Argentina (UTC-3) todos los días
+  workflow_dispatch:        # permite disparo manual desde GitHub
+
+jobs:
+  publicar-articulo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generar y publicar artículo SEO
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python3 << 'PYEOF'
+          import os, json, urllib.request, re, unicodedata
+
+          BASE = "https://germina-app.onrender.com"
+          SECRET = "spark2026"
+          API_KEY = os.environ["ANTHROPIC_API_KEY"]
+
+          # ── PASO 1: obtener keyword estratégica del día ──────────────────────
+          req = urllib.request.Request(f"{BASE}/api/next-keyword?secret={SECRET}")
+          resp = json.loads(urllib.request.urlopen(req, timeout=90).read())
+          if not resp.get("ok"):
+              raise Exception(f"Error al obtener keyword: {resp}")
+          keyword = resp["keyword"]
+          cluster = resp["cluster"]
+          intent  = resp["intent"]
+          print(f"Keyword: {keyword} | Cluster: {cluster} | Intent: {intent}")
+
+          # ── PASO 2: generar artículo con Claude ──────────────────────────────
+          intent_instruccion = {
+              "informational": "Tono educativo. Respondé la pregunta del lector en profundidad con datos concretos.",
+              "commercial":    "Tono comparativo. Mostrá por qué digitalizar es superior a Excel/papel, con ejemplos reales.",
+              "transactional": "Tono persuasivo. Urgencia real, primer mes gratis sin tarjeta, beneficios concretos desde el día 1.",
+          }.get(intent, "")
+
+          prompt = f"""Sos redactor senior de contenidos SEO especializado en cannabis medicinal y SaaS para Argentina y LATAM.
+Escribí un artículo editorial de 950-1100 palabras sobre: "{keyword}"
+Intención: {intent} — {intent_instruccion}
+
+ESTRUCTURA OBLIGATORIA — usá exactamente estas clases CSS en el HTML:
+
+1. HOOK: <div class="art-hook"><p>párrafo impactante al inicio</p></div>
+2. ESTADÍSTICA: <div class="art-stat"><span class="stat-num">XX%</span><span class="stat-label">texto</span></div>
+3. CUERPO: 4-5 secciones con <h2> descriptivos. Usá <p>, <ul>, <li>, <strong>.
+4. CALLOUT TIP: <div class="art-callout art-tip"><strong>Lo que no te dicen:</strong> consejo concreto</div>
+5. CALLOUT WARNING: <div class="art-callout art-warning"><strong>Error frecuente:</strong> descripción del error</div>
+6. PULL QUOTE: <blockquote class="art-quote">frase memorable</blockquote>
+7. CTA INLINE: <div class="art-cta-mid"><div><strong>título</strong><p>descripción</p></div><a href="https://germina-clubs.netlify.app#contacto">Ver demo gratuita →</a></div>
+8. CIERRE: párrafo final que retoma el hook y menciona Germina naturalmente.
+
+REGLAS:
+- NO incluyas imágenes (se agregan automáticamente)
+- NO uses markdown ni CSS inline
+- El H1 debe incluir la keyword de forma natural
+- Germina se menciona máximo 3 veces
+- Tono: profesional pero humano, como un asesor que conoce el sector
+
+Respondé SOLO con JSON válido sin texto extra:
+{{"titulo": "...", "resumen": "...(100-140 chars)", "meta_description": "...(120-155 chars)", "contenido": "...(HTML completo en una sola línea)"}}"""
+
+          body = json.dumps({
+              "model": "claude-haiku-4-5-20251001",
+              "max_tokens": 3000,
+              "messages": [{"role": "user", "content": prompt}]
+          }).encode()
+          req = urllib.request.Request(
+              "https://api.anthropic.com/v1/messages",
+              data=body,
+              headers={
+                  "x-api-key": API_KEY,
+                  "anthropic-version": "2023-06-01",
+                  "content-type": "application/json"
+              }
+          )
+          resp_ia = json.loads(urllib.request.urlopen(req, timeout=60).read())
+          text = resp_ia["content"][0]["text"].strip()
+          m = re.search(r'\{[\s\S]+\}', text)
+          data = json.loads(m.group(0)) if m else json.loads(text)
+          print(f"Artículo generado: {data['titulo']}")
+
+          # ── PASO 3: publicar en Render ───────────────────────────────────────
+          payload = json.dumps({
+              "secret":           SECRET,
+              "cluster":          cluster,
+              "keyword":          keyword,
+              "titulo":           data["titulo"],
+              "resumen":          data.get("resumen", ""),
+              "contenido":        data["contenido"],
+              "meta_description": data.get("meta_description", ""),
+          }).encode()
+          req = urllib.request.Request(
+              f"{BASE}/api/publicar-articulo",
+              data=payload,
+              headers={"content-type": "application/json"}
+          )
+          resp_pub = json.loads(urllib.request.urlopen(req, timeout=90).read())
+          if resp_pub.get("ok"):
+              print(f"✅ Publicado: {BASE}/blog/{resp_pub['slug']}")
+          else:
+              raise Exception(f"Error al publicar: {resp_pub}")
+          PYEOF
