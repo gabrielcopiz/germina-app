@@ -648,6 +648,73 @@ def _enviar_propuesta(club_nombre, contacto_nombre, email_dest):
         print(f'[EMAIL ERROR] {e}')
         return False
 
+def _lead_to_email(data):
+    try:
+        msg = MIMEMultipart()
+        msg['From']    = MAIL_USER
+        msg['To']      = MAIL_USER
+        msg['Subject'] = (f"GLEAD|{data.get('club','')}|{data.get('nombre','')}|"
+                          f"{data.get('email','')}|{data.get('whatsapp','')}|"
+                          f"{data.get('pais','')}|{data.get('socios','')}")
+        msg.attach(MIMEText(data.get('mensaje','') or '', 'plain'))
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
+            s.login(MAIL_USER, MAIL_PASS)
+            s.send_message(msg)
+    except Exception as e:
+        print(f'[LEAD EMAIL ERROR] {e}')
+
+def _get_prospectos_imap():
+    import imaplib, email as _elib, re
+    prospectos = []
+    try:
+        M = imaplib.IMAP4_SSL('imap.gmail.com')
+        M.login(MAIL_USER, MAIL_PASS)
+        M.select('INBOX')
+        # Nuevos (formato GLEAD)
+        _, nums = M.search(None, 'SUBJECT "GLEAD|"')
+        for n in reversed(nums[0].split()):
+            _, raw = M.fetch(n, '(RFC822)')
+            msg = _elib.message_from_bytes(raw[0][1])
+            parts = (msg['subject'] or '').split('|')
+            if len(parts) >= 7:
+                prospectos.append({
+                    'created_at': str(msg['date'])[:20],
+                    'club': parts[1], 'nombre': parts[2], 'email': parts[3],
+                    'whatsapp': parts[4], 'pais': parts[5], 'socios': parts[6],
+                    'mensaje': msg.get_payload() or '',
+                })
+        # Existentes (formato formsubmit.co "Tu propuesta Germina")
+        _, nums2 = M.search(None, 'SUBJECT "Tu propuesta Germina"')
+        for n in reversed(nums2[0].split()):
+            _, raw = M.fetch(n, '(RFC822)')
+            msg = _elib.message_from_bytes(raw[0][1])
+            subj = msg['subject'] or ''
+            club = re.sub(r'.*Tu propuesta Germina.*?—\s*', '', subj).strip()
+            body = ''
+            if msg.is_multipart():
+                for part in msg.walk():
+                    if part.get_content_type() == 'text/plain':
+                        body = part.get_payload(decode=True).decode('utf-8','ignore'); break
+            else:
+                body = msg.get_payload(decode=True).decode('utf-8','ignore') if msg.get_payload(decode=True) else ''
+            def _extract(tag, text):
+                m = re.search(rf'{tag}\s*[:\|]\s*([^\n\r<]+)', text, re.IGNORECASE)
+                return m.group(1).strip() if m else ''
+            prospectos.append({
+                'created_at': str(msg['date'])[:20],
+                'club': club,
+                'nombre':   _extract('Nombre', body),
+                'email':    _extract('email', body),
+                'whatsapp': _extract('WhatsApp', body),
+                'pais':     _extract('Pa.s', body),
+                'socios':   _extract('Socios', body),
+                'mensaje':  _extract('Mensaje', body),
+            })
+        M.logout()
+    except Exception as e:
+        print(f'[IMAP ERROR] {e}')
+    return prospectos
+
 @app.route('/api/lead', methods=['POST', 'OPTIONS'])
 def api_lead():
     if request.method == 'OPTIONS':
@@ -657,20 +724,7 @@ def api_lead():
         r.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         return r
     data = request.get_json(silent=True) or {}
-    db = get_db()
-    db.execute(
-        'INSERT INTO prospectos (nombre,email,whatsapp,club,pais,socios,mensaje) VALUES (?,?,?,?,?,?,?)',
-        (
-            (data.get('nombre') or '')[:120],
-            (data.get('email')  or '')[:120],
-            (data.get('whatsapp') or '')[:60],
-            (data.get('club')   or '')[:120],
-            (data.get('pais')   or '')[:80],
-            (data.get('socios') or '')[:80],
-            (data.get('mensaje') or '')[:500],
-        )
-    )
-    db.commit()
+    _lead_to_email(data)
     r = jsonify({'ok': True})
     r.headers['Access-Control-Allow-Origin'] = '*'
     return r
@@ -1972,38 +2026,7 @@ def crm_logout():
 def crm_prospectos():
     if not session.get('crm_ok'):
         return redirect(url_for('crm_login'))
-    import urllib.request, json as _json
-    NETLIFY_TOKEN   = os.environ.get('NETLIFY_TOKEN', 'nfc_CM3yuFVJfAHzieYkNH8uNDh3erqwsfpBf3ea')
-    NETLIFY_SITE_ID = os.environ.get('NETLIFY_SITE_ID', 'f3163f10-03a2-489c-8e26-8efcb268a967')
-    prospectos = []
-    try:
-        # Buscar el form por nombre
-        req = urllib.request.Request(
-            f'https://api.netlify.com/api/v1/sites/{NETLIFY_SITE_ID}/forms',
-            headers={'Authorization': f'Bearer {NETLIFY_TOKEN}'}
-        )
-        forms = _json.loads(urllib.request.urlopen(req, timeout=8).read())
-        form_id = next((f['id'] for f in forms if f.get('name') == 'germina-contacto'), None)
-        if form_id:
-            req2 = urllib.request.Request(
-                f'https://api.netlify.com/api/v1/forms/{form_id}/submissions?per_page=100',
-                headers={'Authorization': f'Bearer {NETLIFY_TOKEN}'}
-            )
-            subs = _json.loads(urllib.request.urlopen(req2, timeout=8).read())
-            for s in subs:
-                d = s.get('data', {})
-                prospectos.append({
-                    'created_at': s.get('created_at', '')[:16].replace('T', ' '),
-                    'club':       d.get('club_name') or d.get('club', ''),
-                    'nombre':     d.get('nombre', ''),
-                    'email':      d.get('email', ''),
-                    'whatsapp':   d.get('whatsapp', ''),
-                    'pais':       d.get('pais', ''),
-                    'socios':     d.get('socios', ''),
-                    'mensaje':    d.get('mensaje', ''),
-                })
-    except Exception:
-        pass
+    prospectos = _get_prospectos_imap()
     return render_template('crm_prospectos.html', prospectos=prospectos)
 
 if __name__ == '__main__':
