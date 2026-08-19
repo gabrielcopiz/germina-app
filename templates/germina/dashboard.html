@@ -1,0 +1,169 @@
+{% extends "germina/base_germina.html" %}
+{% block title %}Germina HQ — Todos los clubes{% endblock %}
+{% block topbar_title %}🏢 Panel de control — Todos los clubes{% endblock %}
+
+{% block extra_style %}
+.clubs-header {
+  display:flex; align-items:flex-end; justify-content:space-between;
+  margin-bottom:1.5rem;
+}
+.plan-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:0.4rem; }
+.churn-dot { width:7px; height:7px; border-radius:50%; background:var(--red); display:inline-block; margin-right:0.3rem; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.activity-bar-row { display:flex; gap:2px; align-items:flex-end; height:24px; }
+.activity-bar { width:6px; border-radius:2px; background:var(--green); opacity:0.7; min-height:2px; }
+{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);">
+  <div class="kpi-card">
+    <div class="kpi-val">{{ total_clubs }}</div>
+    <div class="kpi-label">Clubes registrados</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--green);">
+    <div class="kpi-val" style="color:var(--green);">{{ clubs_activos_n }}</div>
+    <div class="kpi-label">Con actividad este mes</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ total_socios_g }}</div>
+    <div class="kpi-label">Socios totales en plataforma</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ total_disp_g }}</div>
+    <div class="kpi-label">Dispensaciones este mes</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--red);">
+    <div class="kpi-val" style="color:var(--red);">{{ en_riesgo_n }}</div>
+    <div class="kpi-label">En riesgo de churn</div>
+  </div>
+</div>
+
+{% if en_riesgo_n > 0 %}
+<div class="alert alert-danger" style="margin-bottom:1.5rem;">
+  <span>⚠️</span>
+  <span>
+    <strong>{{ en_riesgo_n }} club{{ 'es' if en_riesgo_n != 1 else '' }} sin actividad hace 7+ días.</strong>
+    Revisá la columna "Último acceso" y contactalos antes de que cancelen.
+  </span>
+</div>
+{% endif %}
+
+<!-- TABLA DE CLUBES -->
+<div class="clubs-header">
+  <div>
+    <div class="section-title">Clubes en la plataforma</div>
+    <div class="section-sub">Hacé clic en cualquier club para ver su ficha completa</div>
+  </div>
+</div>
+
+{% if not clubs_data %}
+<div style="text-align:center;padding:4rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+  <div style="font-size:2.5rem;margin-bottom:0.8rem;">🌿</div>
+  <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text);margin-bottom:0.4rem;">Sin clubes todavía</div>
+  <p style="color:var(--muted);font-size:0.85rem;">Cuando los clubes se registren van a aparecer acá automáticamente.</p>
+</div>
+{% else %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Club</th>
+        <th>País</th>
+        <th>Plan</th>
+        <th>Estado</th>
+        <th>Socios</th>
+        <th>Activos</th>
+        <th>Disp. mes</th>
+        <th>Actividad</th>
+        <th>Último acceso</th>
+        <th>Días</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for d in clubs_data %}
+    {% set c = d.club %}
+    <tr>
+      <td style="color:var(--muted);font-size:0.72rem;">#{{ c.id }}</td>
+      <td>
+        {% if d.churn_riesgo %}<span class="churn-dot" title="Sin actividad 7+ días"></span>{% endif %}
+        <a href="{{ url_for('germina_club', club_id=c.id) }}"
+           style="font-weight:600;color:var(--text);">{{ c.nombre }}</a>
+        {% if c.contacto_nombre %}
+        <div style="font-size:0.7rem;color:var(--muted);">{{ c.contacto_nombre }}</div>
+        {% endif %}
+      </td>
+      <td style="font-size:0.78rem;color:var(--muted);">{{ c.pais or '—' }}</td>
+      <td>
+        {% set plan_info = planes.get(c.plan or 'demo', planes.demo) %}
+        <span class="badge badge-{{ c.plan or 'demo' }}"
+              style="background:rgba(0,0,0,0.3);color:{{ plan_info.color }};">
+          {{ plan_info.label }}
+        </span>
+        {% if c.plan_vence %}
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:0.2rem;">Vence: {{ c.plan_vence[:10] }}</div>
+        {% endif %}
+      </td>
+      <td>
+        {% if c.activo %}
+        <span class="badge badge-activo">● Activo</span>
+        {% else %}
+        <span class="badge badge-inactivo">● Inactivo</span>
+        {% endif %}
+      </td>
+      <td style="font-weight:600;">{{ d.total_socios }}</td>
+      <td style="color:var(--green);font-weight:600;">{{ d.activos }}</td>
+      <td>{{ d.disp_mes }}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <div class="score-bar">
+            <div class="score-fill" style="width:{{ d.score }}%;background:{% if d.score > 60 %}var(--green){% elif d.score > 20 %}var(--yellow){% else %}var(--red){% endif %};"></div>
+          </div>
+          <span style="font-size:0.7rem;color:var(--muted);">{{ d.score }}</span>
+        </div>
+      </td>
+      <td style="font-size:0.78rem;">
+        {% if d.ultimo %}
+          {% if d.dias_sin_acceso == 0 %}
+            <span style="color:var(--green);">Hoy</span>
+          {% elif d.dias_sin_acceso == 1 %}
+            <span style="color:var(--green);">Ayer</span>
+          {% elif d.dias_sin_acceso is not none and d.dias_sin_acceso < 7 %}
+            <span style="color:var(--yellow);">Hace {{ d.dias_sin_acceso }} días</span>
+          {% elif d.dias_sin_acceso is not none %}
+            <span style="color:var(--red);">Hace {{ d.dias_sin_acceso }} días</span>
+          {% else %}
+            <span style="color:var(--muted);">{{ d.ultimo[:10] }}</span>
+          {% endif %}
+        {% else %}
+          <span style="color:var(--muted);">Nunca</span>
+        {% endif %}
+      </td>
+      <td style="font-size:0.72rem;color:var(--muted);">
+        {{ d.dias }}d
+      </td>
+      <td>
+        <a href="{{ url_for('germina_club', club_id=c.id) }}" class="btn btn-outline btn-sm">Ver →</a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- LEYENDA DE PLANES -->
+<div style="margin-top:2rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+  <span style="font-size:0.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Planes:</span>
+  {% for key, info in planes.items() %}
+  <span style="font-size:0.72rem;color:var(--muted);">
+    <span style="color:{{ info.color }};font-weight:700;">●</span> {{ info.label }}
+  </span>
+  {% endfor %}
+  <span style="font-size:0.72rem;color:var(--muted);margin-left:auto;">
+    Actividad 0–100 según socios activos + dispensaciones del mes + uso de IA
+  </span>
+</div>
+{% endblock %}

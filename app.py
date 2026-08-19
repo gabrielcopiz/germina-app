@@ -33,8 +33,16 @@ MAIL_USER  = os.environ.get('MAIL_USER', 'besparkcreativa@gmail.com')
 MAIL_PASS  = os.environ.get('MAIL_PASS', 'gihojbmsgweclmwu')
 RENDER_URL = os.environ.get('RENDER_URL', 'https://germina-app.onrender.com')
 CLUB_NOMBRE = os.environ.get('CW_CLUB_NOMBRE', 'Cannawaka')
-CRM_USER   = os.environ.get('CRM_USER', 'germina')
-CRM_PASS   = os.environ.get('CRM_PASS', 'spark2026')
+CRM_USER      = os.environ.get('CRM_USER', 'germina')
+CRM_PASS      = os.environ.get('CRM_PASS', 'spark2026')
+GERMINA_PASS  = os.environ.get('GERMINA_PASS', 'germina-hq-2026')
+
+PLANES = {
+    'demo':       {'label': 'Demo',       'color': '#999',    'dias_max': 14},
+    'basico':     {'label': 'Básico',     'color': '#B8860B', 'dias_max': None},
+    'pro':        {'label': 'Pro',        'color': '#2D6A4F', 'dias_max': None},
+    'enterprise': {'label': 'Enterprise', 'color': '#1A3520', 'dias_max': None},
+}
 
 # ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -832,6 +840,24 @@ def _migrate():
         )
     ''')
 
+    # ── Columnas extra en clubs (no-destructivo) ─────────────────────────────
+    for col_def in [
+        "ALTER TABLE clubs ADD COLUMN plan_vence TEXT",
+        "ALTER TABLE clubs ADD COLUMN notas_internas TEXT",
+        "ALTER TABLE clubs ADD COLUMN contacto_nombre TEXT",
+        "ALTER TABLE clubs ADD COLUMN ultimo_acceso TEXT",
+    ]:
+        try:
+            db.execute(col_def)
+        except Exception:
+            pass
+
+    # Seed club_id=1 si no existe
+    db.execute("""
+        INSERT OR IGNORE INTO clubs (id, nombre, pais, jurisdiction, email, plan, activo)
+        VALUES (1, ?, 'AR', 'AR', ?, 'pro', 1)
+    """, (CLUB_NOMBRE, MAIL_USER))
+
     # Actualizar imágenes de variedades seed con URLs verificadas
     imagenes_seed = {
         'OG Kush':        'https://www.royalqueenseeds.com/149-3131-large/og-kush.jpg',
@@ -1283,6 +1309,13 @@ def admin_login():
             session['user_nombre']= 'Administrador'
             session['user_id']    = 0
         if autenticado:
+            try:
+                db.execute(
+                    "UPDATE clubs SET ultimo_acceso=datetime('now','localtime') WHERE id=1"
+                )
+                db.commit()
+            except Exception:
+                pass
             return redirect(url_for('admin_dashboard'))
         flash('Credenciales incorrectas')
     return render_template('admin/login.html')
@@ -3850,6 +3883,234 @@ def nuevo_club():
     db.execute("INSERT OR REPLACE INTO config (key,value) VALUES ('demo_club_nombre',?)", (nombre,))
     db.commit()
     return redirect(url_for('admin_dashboard'))
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  GERMINA HQ — Panel de control interno (solo equipo Germina)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def germina_login_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not session.get('germina_admin'):
+            return redirect(url_for('germina_login'))
+        return f(*args, **kwargs)
+    return wrapped
+
+@app.route('/germina/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute; 20 per hour')
+def germina_login():
+    if session.get('germina_admin'):
+        return redirect(url_for('germina_dashboard'))
+    if request.method == 'POST':
+        pw = (request.form.get('password') or '').strip()
+        if pw == GERMINA_PASS:
+            session['germina_admin'] = True
+            return redirect(url_for('germina_dashboard'))
+        flash('Contraseña incorrecta')
+    return render_template('germina/login.html')
+
+@app.route('/germina/logout')
+def germina_logout():
+    session.pop('germina_admin', None)
+    session.pop('germina_soporte_club', None)
+    session.pop('admin', None)
+    session.pop('user_role', None)
+    session.pop('user_nombre', None)
+    return redirect(url_for('germina_login'))
+
+@app.route('/germina/')
+@germina_login_required
+def germina_index():
+    return redirect(url_for('germina_dashboard'))
+
+@app.route('/germina/dashboard')
+@germina_login_required
+def germina_dashboard():
+    db = get_db()
+    clubs_raw = db.execute("SELECT * FROM clubs ORDER BY created_at DESC").fetchall()
+
+    clubs_data = []
+    for c in clubs_raw:
+        cid = c['id']
+        total_socios = db.execute(
+            "SELECT COUNT(*) FROM socios WHERE club_id=?", (cid,)
+        ).fetchone()[0]
+        activos = db.execute(
+            "SELECT COUNT(*) FROM socios WHERE club_id=? AND etapa='activo'", (cid,)
+        ).fetchone()[0]
+        mes_inicio = date.today().replace(day=1).isoformat()
+        disp_mes = db.execute(
+            "SELECT COUNT(*) FROM dispensaciones d JOIN socios s ON s.id=d.socio_id "
+            "WHERE s.club_id=? AND d.fecha>=?", (cid, mes_inicio)
+        ).fetchone()[0]
+        tareas_mes = db.execute(
+            "SELECT COUNT(*) FROM agent_tasks WHERE club_id=? AND timestamp>=?",
+            (cid, mes_inicio)
+        ).fetchone()[0]
+        try:
+            created = datetime.strptime(c['created_at'][:10], '%Y-%m-%d')
+            dias = (datetime.now() - created).days
+        except Exception:
+            dias = 0
+
+        ultimo = c['ultimo_acceso']
+        if ultimo:
+            try:
+                ultima_dt = datetime.strptime(ultimo[:16], '%Y-%m-%d %H:%M')
+                dias_sin_acceso = (datetime.now() - ultima_dt).days
+            except Exception:
+                dias_sin_acceso = None
+        else:
+            dias_sin_acceso = None
+
+        score = min(100, activos * 4 + disp_mes * 3 + tareas_mes * 2)
+        churn_riesgo = dias_sin_acceso is not None and dias_sin_acceso >= 7
+
+        clubs_data.append({
+            'club': c,
+            'total_socios': total_socios,
+            'activos': activos,
+            'disp_mes': disp_mes,
+            'tareas_mes': tareas_mes,
+            'dias': dias,
+            'ultimo': ultimo,
+            'dias_sin_acceso': dias_sin_acceso,
+            'score': score,
+            'churn_riesgo': churn_riesgo,
+        })
+
+    total_clubs       = len(clubs_raw)
+    clubs_activos_n   = sum(1 for d in clubs_data if d['score'] > 0 and d['club']['activo'])
+    total_socios_g    = sum(d['total_socios'] for d in clubs_data)
+    total_disp_g      = sum(d['disp_mes'] for d in clubs_data)
+    en_riesgo_n       = sum(1 for d in clubs_data if d['churn_riesgo'])
+
+    return render_template('germina/dashboard.html',
+        clubs_data=clubs_data,
+        planes=PLANES,
+        total_clubs=total_clubs,
+        clubs_activos_n=clubs_activos_n,
+        total_socios_g=total_socios_g,
+        total_disp_g=total_disp_g,
+        en_riesgo_n=en_riesgo_n,
+    )
+
+@app.route('/germina/club/<int:club_id>')
+@germina_login_required
+def germina_club(club_id):
+    db = get_db()
+    club = db.execute("SELECT * FROM clubs WHERE id=?", (club_id,)).fetchone()
+    if not club:
+        flash('Club no encontrado')
+        return redirect(url_for('germina_dashboard'))
+
+    mes_inicio = date.today().replace(day=1).isoformat()
+
+    total_socios = db.execute("SELECT COUNT(*) FROM socios WHERE club_id=?", (club_id,)).fetchone()[0]
+    activos = db.execute("SELECT COUNT(*) FROM socios WHERE club_id=? AND etapa='activo'", (club_id,)).fetchone()[0]
+
+    por_etapa = {e: db.execute(
+        "SELECT COUNT(*) FROM socios WHERE club_id=? AND etapa=?", (club_id, e)
+    ).fetchone()[0] for e in ETAPAS}
+
+    row = db.execute(
+        "SELECT COUNT(*), COALESCE(SUM(d.gramos),0) FROM dispensaciones d "
+        "JOIN socios s ON s.id=d.socio_id WHERE s.club_id=? AND d.fecha>=?",
+        (club_id, mes_inicio)
+    ).fetchone()
+    disp_count, disp_g = row[0], round(row[1], 1)
+
+    cosechado_g = db.execute(
+        "SELECT COALESCE(SUM(co.peso_seco_g),0) FROM cosechas co "
+        "JOIN cultivos cu ON cu.id=co.cultivo_id WHERE cu.club_id=?", (club_id,)
+    ).fetchone()[0]
+
+    cultivos_activos = db.execute(
+        "SELECT COUNT(*) FROM cultivos WHERE club_id=? AND estado='activo'", (club_id,)
+    ).fetchone()[0]
+
+    tareas_total = db.execute("SELECT COUNT(*) FROM agent_tasks WHERE club_id=?", (club_id,)).fetchone()[0]
+    tareas_mes   = db.execute(
+        "SELECT COUNT(*) FROM agent_tasks WHERE club_id=? AND timestamp>=?",
+        (club_id, mes_inicio)
+    ).fetchone()[0]
+
+    actividad_semanal = []
+    for i in range(7, -1, -1):
+        desde = (date.today() - timedelta(weeks=i+1)).isoformat()
+        hasta = (date.today() - timedelta(weeks=i)).isoformat()
+        n = db.execute(
+            "SELECT COUNT(*) FROM dispensaciones d JOIN socios s ON s.id=d.socio_id "
+            "WHERE s.club_id=? AND d.fecha>=? AND d.fecha<?",
+            (club_id, desde, hasta)
+        ).fetchone()[0]
+        actividad_semanal.append({'semana': f"S-{i}", 'n': n})
+    max_act = max((a['n'] for a in actividad_semanal), default=1) or 1
+
+    actividades = db.execute(
+        "SELECT * FROM audit_log WHERE club_id=? ORDER BY id DESC LIMIT 25", (club_id,)
+    ).fetchall()
+
+    return render_template('germina/club.html',
+        club=club,
+        planes=PLANES,
+        total_socios=total_socios,
+        activos=activos,
+        por_etapa=por_etapa,
+        etapa_label=ETAPA_LABEL,
+        disp_count=disp_count,
+        disp_g=disp_g,
+        cosechado_g=round(cosechado_g, 1),
+        cultivos_activos=cultivos_activos,
+        tareas_total=tareas_total,
+        tareas_mes=tareas_mes,
+        actividad_semanal=actividad_semanal,
+        max_act=max_act,
+        actividades=actividades,
+    )
+
+@app.route('/germina/club/<int:club_id>/plan', methods=['POST'])
+@germina_login_required
+def germina_club_plan(club_id):
+    db = get_db()
+    plan           = request.form.get('plan', 'demo')
+    plan_vence     = request.form.get('plan_vence', '').strip() or None
+    activo         = 1 if request.form.get('activo') else 0
+    notas          = (request.form.get('notas_internas') or '').strip()
+    contacto       = (request.form.get('contacto_nombre') or '').strip()
+    db.execute(
+        "UPDATE clubs SET plan=?, plan_vence=?, activo=?, notas_internas=?, contacto_nombre=? WHERE id=?",
+        (plan, plan_vence, activo, notas, contacto, club_id)
+    )
+    db.commit()
+    flash('Club actualizado correctamente')
+    return redirect(url_for('germina_club', club_id=club_id))
+
+@app.route('/germina/club/<int:club_id>/acceder')
+@germina_login_required
+def germina_soporte_acceder(club_id):
+    db = get_db()
+    club = db.execute("SELECT * FROM clubs WHERE id=?", (club_id,)).fetchone()
+    if not club:
+        return redirect(url_for('germina_dashboard'))
+    session['germina_soporte_club'] = {'id': club_id, 'nombre': club['nombre']}
+    session['admin']      = True
+    session['user_role']  = 'admin'
+    session['user_nombre'] = f'Soporte [{club["nombre"]}]'
+    session['user_id']    = 0
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/germina/salir-soporte')
+def germina_salir_soporte():
+    session.pop('germina_soporte_club', None)
+    session.pop('admin', None)
+    session.pop('user_role', None)
+    session.pop('user_nombre', None)
+    session.pop('user_id', None)
+    if session.get('germina_admin'):
+        return redirect(url_for('germina_dashboard'))
+    return redirect(url_for('germina_login'))
+
 
 if __name__ == '__main__':
     init_db()

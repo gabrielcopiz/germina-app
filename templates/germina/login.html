@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Germina HQ — Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0D1F14;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.card {
+  background: #132318;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px;
+  padding: 2.8rem 2.4rem;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: #F0EAD6;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.2rem;
+}
+.logo span { color: #B8A060; }
+.badge {
+  display: inline-block;
+  background: rgba(184,160,96,0.15);
+  border: 1px solid rgba(184,160,96,0.3);
+  color: #B8A060;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.7rem;
+  border-radius: 100px;
+  margin-bottom: 2rem;
+}
+label {
+  display: block;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+input[type="password"] {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  color: #F0EAD6;
+  font-size: 0.95rem;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+  margin-bottom: 1.2rem;
+}
+input[type="password"]:focus { border-color: #B8A060; }
+button {
+  width: 100%;
+  background: #B8A060;
+  color: #0D1F14;
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.03em;
+  transition: background 0.15s;
+}
+button:hover { background: #D4B870; }
+.error {
+  background: rgba(180,50,50,0.2);
+  border: 1px solid rgba(180,50,50,0.4);
+  color: #FFB0B0;
+  font-size: 0.8rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+.footer {
+  margin-top: 2rem;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.2);
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Germi<span>na</span></div>
+  <div class="badge">Panel interno HQ</div>
+
+  {% with msgs = get_flashed_messages() %}
+    {% if msgs %}
+    <div class="error">{{ msgs[0] }}</div>
+    {% endif %}
+  {% endwith %}
+
+  <form method="post">
+    <label>Contraseña de acceso</label>
+    <input type="password" name="password" autofocus placeholder="••••••••••••">
+    <button type="submit">Entrar al panel →</button>
+  </form>
+  <div class="footer">Acceso restringido al equipo Germina / Spark Creativa</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,275 @@
+{% extends "germina/base_germina.html" %}
+{% block title %}{{ club.nombre }} — Germina HQ{% endblock %}
+{% block topbar_title %}🏢 Ficha de club: {{ club.nombre }}{% endblock %}
+
+{% block extra_style %}
+.detail-grid { display:grid; grid-template-columns:2fr 1fr; gap:1.5rem; }
+.etapa-row { display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid var(--border); }
+.etapa-row:last-child { border-bottom:none; }
+.bar-chart { display:flex; align-items:flex-end; gap:4px; height:60px; margin-top:0.8rem; }
+.bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.bar-fill { width:100%; border-radius:3px 3px 0 0; background:var(--green); opacity:0.75; min-height:2px; transition:height 0.3s; }
+.bar-label { font-size:0.6rem; color:var(--muted); }
+.bar-val { font-size:0.65rem; color:var(--text); font-weight:600; }
+.info-row { display:flex; justify-content:space-between; align-items:center; padding:0.55rem 0; border-bottom:1px solid var(--border); font-size:0.83rem; }
+.info-row:last-child { border-bottom:none; }
+.info-key { color:var(--muted); }
+.info-val { font-weight:600; }
+.modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.7); z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--surface2); border:1px solid var(--border); border-radius:16px; padding:1.8rem; width:460px; max-width:94vw; }
+.modal-title { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--text); margin-bottom:1.2rem; }
+{% endblock %}
+
+{% block content %}
+<!-- BREADCRUMB -->
+<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.5rem;font-size:0.78rem;color:var(--muted);">
+  <a href="{{ url_for('germina_dashboard') }}" style="color:var(--gold);">← Todos los clubes</a>
+  <span>/</span>
+  <span>{{ club.nombre }}</span>
+</div>
+
+<!-- HEADER DEL CLUB -->
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap;">
+  <div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:2rem;color:var(--text);margin-bottom:0.3rem;">{{ club.nombre }}</h1>
+    <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+      {% set plan_info = planes.get(club.plan or 'demo', planes.demo) %}
+      <span class="badge" style="background:rgba(0,0,0,0.3);color:{{ plan_info.color }};border:1px solid {{ plan_info.color }}30;">
+        {{ plan_info.label }}
+      </span>
+      {% if club.activo %}
+      <span class="badge badge-activo">● Activo</span>
+      {% else %}
+      <span class="badge badge-inactivo">● Inactivo</span>
+      {% endif %}
+      <span style="font-size:0.75rem;color:var(--muted);">{{ club.pais or '' }} · Desde {{ club.created_at[:10] if club.created_at else '—' }}</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:0.7rem;flex-wrap:wrap;">
+    <a href="{{ url_for('germina_soporte_acceder', club_id=club.id) }}" class="btn btn-outline">
+      🔧 Entrar como soporte
+    </a>
+    <button class="btn btn-gold" onclick="document.getElementById('modal-plan').classList.add('open')">
+      ✏️ Editar plan
+    </button>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-val">{{ total_socios }}</div>
+    <div class="kpi-label">Socios totales</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--green);">
+    <div class="kpi-val" style="color:var(--green);">{{ activos }}</div>
+    <div class="kpi-label">Socios activos</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ disp_count }}</div>
+    <div class="kpi-label">Dispensaciones este mes</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ disp_g }}g</div>
+    <div class="kpi-label">Gramos dispensados</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ cultivos_activos }}</div>
+    <div class="kpi-label">Cultivos activos</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--gold);">
+    <div class="kpi-val" style="color:var(--gold);">{{ tareas_mes }}</div>
+    <div class="kpi-label">Tareas IA este mes</div>
+  </div>
+</div>
+
+<!-- DETALLE -->
+<div class="detail-grid">
+  <div style="display:flex;flex-direction:column;gap:1.2rem;">
+
+    <!-- ACTIVIDAD SEMANAL -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Actividad — últimas 8 semanas</div>
+        <span style="font-size:0.72rem;color:var(--muted);">Dispensaciones por semana</span>
+      </div>
+      <div class="bar-chart">
+        {% for a in actividad_semanal %}
+        <div class="bar-col">
+          <div class="bar-val">{{ a.n if a.n > 0 else '' }}</div>
+          <div class="bar-fill" style="height:{{ ((a.n / max_act) * 48)|int if max_act > 0 else 2 }}px;"></div>
+          <div class="bar-label">{{ a.semana }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if disp_count == 0 and tareas_mes == 0 %}
+      <div style="text-align:center;padding:1rem 0 0;font-size:0.78rem;color:var(--red);">
+        ⚠️ Sin actividad este mes — contactar al club
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- SOCIOS POR ETAPA -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Socios por etapa</div>
+        <span style="font-size:0.72rem;color:var(--muted);">Total: {{ total_socios }}</span>
+      </div>
+      {% for etapa, label in etapa_label.items() %}
+      {% set n = por_etapa.get(etapa, 0) %}
+      <div class="etapa-row">
+        <span style="font-size:0.82rem;">{{ label }}</span>
+        <div style="display:flex;align-items:center;gap:0.8rem;">
+          <div style="width:80px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;">
+            <div style="width:{{ ((n/total_socios*100)|int if total_socios else 0) }}%;height:100%;background:var(--green);border-radius:3px;"></div>
+          </div>
+          <span style="font-size:0.82rem;font-weight:600;width:1.5rem;text-align:right;">{{ n }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ÚLTIMAS ACTIVIDADES -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Últimas actividades en el sistema</div>
+        <span style="font-size:0.72rem;color:var(--muted);">Últimas 25 acciones</span>
+      </div>
+      {% if not actividades %}
+      <p style="color:var(--muted);font-size:0.82rem;text-align:center;padding:1rem 0;">Sin actividades registradas todavía.</p>
+      {% else %}
+      <div style="max-height:260px;overflow-y:auto;">
+        {% for a in actividades %}
+        <div style="display:flex;align-items:flex-start;gap:0.7rem;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
+          <span style="color:var(--muted);white-space:nowrap;flex-shrink:0;">{{ a.timestamp[:16] if a.timestamp else '—' }}</span>
+          <span style="color:var(--text);">{{ a.action }}</span>
+          {% if a.actor %}
+          <span style="color:var(--muted);margin-left:auto;flex-shrink:0;">{{ a.actor }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:1.2rem;">
+
+    <!-- INFO DEL CLUB -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Información</div>
+      </div>
+      <div class="info-row"><span class="info-key">Email</span><span class="info-val" style="font-size:0.78rem;">{{ club.email or '—' }}</span></div>
+      <div class="info-row"><span class="info-key">WhatsApp</span><span class="info-val">{{ club.whatsapp or '—' }}</span></div>
+      <div class="info-row"><span class="info-key">Contacto</span><span class="info-val">{{ club.contacto_nombre or '—' }}</span></div>
+      <div class="info-row"><span class="info-key">País</span><span class="info-val">{{ club.pais or '—' }}</span></div>
+      <div class="info-row"><span class="info-key">Jurisdicción</span><span class="info-val">{{ club.jurisdiction or '—' }}</span></div>
+      <div class="info-row"><span class="info-key">Creado</span><span class="info-val">{{ club.created_at[:10] if club.created_at else '—' }}</span></div>
+      <div class="info-row"><span class="info-key">Último acceso</span>
+        <span class="info-val" style="font-size:0.78rem;">
+          {% if club.ultimo_acceso %}{{ club.ultimo_acceso[:16] }}{% else %}<span style="color:var(--red);">Nunca</span>{% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- PLAN ACTUAL -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Plan y suscripción</div>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-plan').classList.add('open')">Editar</button>
+      </div>
+      {% set plan_info = planes.get(club.plan or 'demo', planes.demo) %}
+      <div style="text-align:center;padding:0.8rem 0;">
+        <div style="font-family:'Playfair Display',serif;font-size:1.8rem;color:{{ plan_info.color }};margin-bottom:0.2rem;">
+          {{ plan_info.label }}
+        </div>
+        {% if club.plan_vence %}
+        <div style="font-size:0.75rem;color:var(--muted);">Vence: <strong>{{ club.plan_vence[:10] }}</strong></div>
+        {% else %}
+        <div style="font-size:0.75rem;color:var(--muted);">Sin fecha de vencimiento</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- NOTAS INTERNAS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Notas internas</div>
+        <span style="font-size:0.68rem;color:var(--muted);">Solo el equipo Germina las ve</span>
+      </div>
+      {% if club.notas_internas %}
+      <p style="font-size:0.83rem;color:var(--text);line-height:1.6;">{{ club.notas_internas }}</p>
+      {% else %}
+      <p style="font-size:0.82rem;color:var(--muted);">Sin notas. Podés agregar contexto sobre el cliente, sus necesidades o el estado del onboarding.</p>
+      {% endif %}
+      <button class="btn btn-outline btn-sm" style="margin-top:0.8rem;" onclick="document.getElementById('modal-plan').classList.add('open')">
+        + Agregar nota
+      </button>
+    </div>
+
+    <!-- MÉTRICAS IA -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Uso de IA</div>
+      </div>
+      <div class="info-row"><span class="info-key">Tareas generadas (total)</span><span class="info-val">{{ tareas_total }}</span></div>
+      <div class="info-row"><span class="info-key">Tareas este mes</span><span class="info-val" style="color:var(--gold);">{{ tareas_mes }}</span></div>
+      <div class="info-row"><span class="info-key">Cosechado histórico</span><span class="info-val">{{ cosechado_g }}g</span></div>
+      <div style="margin-top:0.8rem;font-size:0.72rem;color:var(--muted);">
+        {% if tareas_mes == 0 %}⚠️ Sin uso de IA este mes — oportunidad de activación{% else %}✓ Usando los agentes activamente{% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL EDITAR PLAN -->
+<div class="modal-overlay" id="modal-plan">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Editar club: {{ club.nombre }}</div>
+    <form method="post" action="{{ url_for('germina_club_plan', club_id=club.id) }}">
+      <div class="form-group">
+        <label class="form-label">Plan</label>
+        <select name="plan" class="form-control">
+          {% for key, info in planes.items() %}
+          <option value="{{ key }}" {% if club.plan == key %}selected{% endif %}>{{ info.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha de vencimiento del plan</label>
+        <input type="date" name="plan_vence" class="form-control" value="{{ club.plan_vence[:10] if club.plan_vence else '' }}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nombre del contacto principal</label>
+        <input type="text" name="contacto_nombre" class="form-control" value="{{ club.contacto_nombre or '' }}" placeholder="Ej: Juan García">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas internas (solo las ve el equipo Germina)</label>
+        <textarea name="notas_internas" class="form-control" rows="3" placeholder="Contexto del cliente, estado del onboarding, issues…">{{ club.notas_internas or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--text);">
+          <input type="checkbox" name="activo" value="1" {% if club.activo %}checked{% endif %}>
+          Club activo (puede acceder al panel)
+        </label>
+      </div>
+      <div style="display:flex;gap:0.7rem;margin-top:1.2rem;">
+        <button type="submit" class="btn btn-gold">Guardar cambios</button>
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('modal-plan').classList.remove('open')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
+{% endblock %}

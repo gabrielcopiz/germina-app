@@ -305,6 +305,12 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
 
 <!-- MAIN -->
 <div class="main">
+  {% if session.get('germina_soporte_club') %}
+  <div style="background:#7A1E1E;color:#FFD0D0;padding:0.55rem 1.5rem;font-size:0.8rem;font-weight:600;display:flex;align-items:center;justify-content:space-between;">
+    <span>🔧 Modo soporte Germina — estás viendo el panel de <strong>{{ session.germina_soporte_club.nombre }}</strong></span>
+    <a href="{{ url_for('germina_salir_soporte') }}" style="color:#FFD0D0;text-decoration:underline;font-size:0.75rem;">← Salir del modo soporte</a>
+  </div>
+  {% endif %}
   <div class="topbar">
     <div class="topbar-title">{% block topbar_title %}Admin{% endblock %}</div>
     <div class="topbar-right">
