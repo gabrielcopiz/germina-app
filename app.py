@@ -2126,26 +2126,41 @@ def _generar_articulo_ia(keyword, intent='informational'):
     import urllib.request, json as _json, re, unicodedata
 
     intent_instruccion = {
-        'informational': "El tono es educativo y práctico. El objetivo es responder la pregunta del lector completamente.",
-        'commercial':    "El tono compara opciones y destaca ventajas de Germina frente a soluciones manuales (Excel, papel).",
-        'transactional': "El tono es persuasivo y orientado a la acción. Enfatiza que el primer mes de Germina es gratis, sin tarjeta.",
+        'informational': "Tono educativo. Respondé la pregunta del lector en profundidad con datos concretos.",
+        'commercial':    "Tono comparativo. Mostrá por qué digitalizar es superior a Excel/papel, con ejemplos reales.",
+        'transactional': "Tono persuasivo. Urgencia real, primer mes gratis sin tarjeta, beneficios concretos desde el día 1.",
     }.get(intent, '')
 
-    prompt = f"""Sos un experto en cannabis medicinal y gestión de clubes cannábicos en Argentina y LATAM.
-Escribí un artículo SEO en español de 900-1100 palabras sobre: "{keyword}"
+    prompt = f"""Sos redactor senior de contenidos SEO especializado en cannabis medicinal y SaaS para Argentina y LATAM.
+Escribí un artículo editorial de 950-1100 palabras sobre: "{keyword}"
+Intención: {intent} — {intent_instruccion}
 
-Intención de búsqueda: {intent} — {intent_instruccion}
+ESTRUCTURA OBLIGATORIA — usá exactamente estas clases CSS en el HTML:
 
-El artículo debe:
-- Título H1 atractivo que incluya la keyword de forma natural
-- 4 a 6 secciones con subtítulos H2 claros
-- Ser útil y concreto para directivos de clubes cannábicos
-- Mencionar Germina (germina-clubs.netlify.app) como solución en 2 o 3 párrafos de forma natural, no forzada
-- Cerrar con un CTA: "Probá Germina gratis en germina-clubs.netlify.app — primer mes sin costo, sin tarjeta"
-- Solo etiquetas HTML básicas: h1, h2, h3, p, ul, li, strong (sin markdown, sin CSS inline)
+1. HOOK (obligatorio al inicio): un párrafo impactante con un dato sorprendente, una pregunta provocadora o un escenario real. Envolvelo en: <div class="art-hook"><p>texto del hook</p></div>
 
-Respondé SOLO con JSON válido, sin texto extra, con esta estructura:
-{{"titulo": "...", "resumen": "...(100-150 chars)", "meta_description": "...(120-155 chars)", "contenido": "...(HTML completo del artículo)"}}"""
+2. ESTADÍSTICA DESTACADA (obligatoria, una sola): un número o porcentaje real o estimado sobre el sector. Formato: <div class="art-stat"><span class="stat-num">73%</span><span class="stat-label">de los cannabis social clubs en Argentina operan sin personería jurídica — y no lo saben</span></div>
+
+3. CUERPO: 4 a 5 secciones con <h2> descriptivos. Usá <p>, <ul>, <li>, <strong> normalmente.
+
+4. CALLOUT TIP (obligatorio, uno o dos): recuadro de consejo práctico. Formato: <div class="art-callout art-tip"><strong>Lo que no te dicen:</strong> texto del consejo concreto y accionable</div>
+
+5. CALLOUT WARNING (obligatorio, uno): alerta sobre error frecuente. Formato: <div class="art-callout art-warning"><strong>Error frecuente:</strong> descripción del error y sus consecuencias reales</div>
+
+6. PULL QUOTE (obligatorio, uno): la frase más poderosa del artículo, con fuerza editorial. Formato: <blockquote class="art-quote">frase memorable aquí</blockquote>
+
+7. CTA INLINE (obligatorio, uno en el centro del artículo): <div class="art-cta-mid"><div><strong>¿Tu club ya tiene sistema de gestión?</strong><p>Germina es la plataforma diseñada para clubs cannábicos en Argentina. Primer mes gratis.</p></div><a href="https://germina-clubs.netlify.app#contacto">Ver demo gratuita →</a></div>
+
+8. CIERRE: párrafo final que retoma el hook y cierra el círculo narrativo, con mención natural de Germina.
+
+REGLAS:
+- NO uses markdown, NO uses CSS inline, NO uses imágenes
+- El H1 debe incluir la keyword de forma natural
+- Germina se menciona máximo 3 veces en todo el artículo
+- Tono: profesional pero humano, como un asesor que conoce el sector
+
+Respondé SOLO con JSON válido sin texto extra:
+{{"titulo": "...", "resumen": "...(100-140 chars)", "meta_description": "...(120-155 chars)", "contenido": "...(HTML completo, todo en una sola línea)"}}"""
 
     body = _json.dumps({
         "model": "claude-haiku-4-5-20251001",
