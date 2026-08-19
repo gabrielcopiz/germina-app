@@ -130,10 +130,29 @@
       <button class="btn btn-primary btn-sm">✅ Aprobar y ejecutar</button>
     </form>
     <button class="btn btn-outline btn-sm" onclick="abrirRechazo({{ t.id }})">❌ Rechazar</button>
+    <button class="btn btn-outline btn-sm" style="color:#E07B30;border-color:#E07B30;" onclick="abrirEscalar({{ t.id }})">🆘 Escalar</button>
   </div>
   {% endif %}
 </div>
 {% endfor %}
+
+<!-- MODAL ESCALAR -->
+<div class="modal-overlay" id="modal-escalar">
+  <div class="modal-box">
+    <div style="font-weight:700;font-size:1rem;color:var(--green-deep);margin-bottom:0.8rem;">🆘 Escalar a revisión humana</div>
+    <p class="text-xs text-muted" style="margin-bottom:0.8rem;">Cuando la IA no tiene suficiente contexto para decidir, podés escalar la tarea para revisarla personalmente. Vas a recibir un email con el detalle.</p>
+    <form method="post" id="form-escalar" action="">
+      <div class="form-group-a">
+        <label>¿Por qué necesitás intervención humana?</label>
+        <input type="text" name="motivo" class="form-control-a" placeholder="Ej: El socio tiene una situación especial…">
+      </div>
+      <div style="display:flex;gap:0.6rem;margin-top:1rem;">
+        <button type="submit" class="btn btn-outline" style="border-color:#E07B30;color:#E07B30;">Confirmar escalación</button>
+        <button type="button" class="btn btn-outline" onclick="cerrarEscalar()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- MODAL RECHAZO -->
 <div class="modal-overlay" id="modal-rechazo">
@@ -165,6 +184,16 @@ function cerrarModal() {
 }
 document.getElementById('modal-rechazo').addEventListener('click', function(e){
   if (e.target === this) cerrarModal();
+});
+function abrirEscalar(id) {
+  document.getElementById('form-escalar').action = '/admin/tareas/' + id + '/escalar';
+  document.getElementById('modal-escalar').classList.add('open');
+}
+function cerrarEscalar() {
+  document.getElementById('modal-escalar').classList.remove('open');
+}
+document.getElementById('modal-escalar').addEventListener('click', function(e){
+  if (e.target === this) cerrarEscalar();
 });
 </script>
 {% endblock %}

@@ -76,9 +76,17 @@ def inject_demo_club():
     try:
         db = get_db()
         row = db.execute("SELECT value FROM config WHERE key='demo_club_nombre'").fetchone()
-        return {'demo_club_nombre': row[0] if row else CLUB_NOMBRE}
+        return {
+            'demo_club_nombre': row[0] if row else CLUB_NOMBRE,
+            'current_role': current_role(),
+            'current_username': current_username(),
+        }
     except Exception:
-        return {'demo_club_nombre': CLUB_NOMBRE}
+        return {
+            'demo_club_nombre': CLUB_NOMBRE,
+            'current_role': 'admin',
+            'current_username': 'Admin',
+        }
 
 ETAPAS = ['solicitud','documentacion','en_revision','aprobado','activo','inactivo']
 ETAPA_LABEL = {
@@ -785,6 +793,45 @@ def _migrate():
             VALUES (?,?,?,?)
         ''', ap)
 
+    # ── Tabla de usuarios con roles ──────────────────────────────────────────
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            club_id INTEGER DEFAULT 1,
+            username TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'operador',
+            nombre TEXT,
+            activo INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            UNIQUE(club_id, username)
+        )
+    ''')
+    # Seed del admin existente (no lo pisa si ya existe)
+    import hashlib as _hl
+    _admin_hash = _hl.sha256(ADMIN_PASS.encode('utf-8')).hexdigest()
+    db.execute(
+        "INSERT OR IGNORE INTO usuarios (club_id, username, password_hash, role, nombre) "
+        "VALUES (1,?,?,'admin','Administrador')",
+        (ADMIN_USER, _admin_hash)
+    )
+
+    # ── Tabla fallback humano ─────────────────────────────────────────────────
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS escalaciones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            club_id INTEGER DEFAULT 1,
+            agent_task_id INTEGER,
+            motivo TEXT,
+            contexto TEXT,
+            estado TEXT DEFAULT 'abierta',
+            asignado_a TEXT,
+            resolucion TEXT,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            resolved_at TEXT
+        )
+    ''')
+
     # Actualizar imágenes de variedades seed con URLs verificadas
     imagenes_seed = {
         'OG Kush':        'https://www.royalqueenseeds.com/149-3131-large/og-kush.jpg',
@@ -799,7 +846,18 @@ def _migrate():
     db.commit()
     db.close()
 
-# ─── auth ──────────────────────────────────────────────────────────────────
+# ─── auth y roles ─────────────────────────────────────────────────────────
+
+import hashlib as _hashlib
+
+def _hash_pw(p):
+    return _hashlib.sha256(p.encode('utf-8')).hexdigest()
+
+def current_role():
+    return session.get('user_role', 'admin')
+
+def current_username():
+    return session.get('user_nombre', ADMIN_USER)
 
 def login_required(f):
     @wraps(f)
@@ -808,6 +866,50 @@ def login_required(f):
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return wrapped
+
+def role_required(*roles):
+    """Decorator para rutas que solo pueden usar ciertos roles."""
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if not session.get('admin'):
+                return redirect(url_for('admin_login'))
+            if roles and current_role() not in roles:
+                return render_template('403.html', roles_requeridos=list(roles)), 403
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
+
+def write_required(f):
+    """Bloquea solicitudes POST/PUT/DELETE para usuarios de solo lectura."""
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not session.get('admin'):
+            return redirect(url_for('admin_login'))
+        if request.method in ('POST', 'PUT', 'DELETE') and current_role() == 'readonly':
+            return render_template('403.html', roles_requeridos=['admin', 'operador']), 403
+        return f(*args, **kwargs)
+    return wrapped
+
+# ─── Protección anti inyección de prompts ──────────────────────────────────
+
+_INJECTION_PATTERNS = [
+    'ignore previous', 'ignore all', 'forget instructions', 'system prompt',
+    'new instructions', 'override', 'jailbreak', 'disregard', 'act as',
+    'you are now', 'pretend you', 'roleplay', 'reveal', 'print your',
+    'show your instructions', 'what are your', 'ignore the above',
+]
+
+def _sanitizar_input(texto, max_len=200):
+    """Limpia texto de usuario antes de incluirlo en un prompt de IA."""
+    if not texto:
+        return ''
+    texto = str(texto)[:max_len]
+    lower = texto.lower()
+    for patron in _INJECTION_PATTERNS:
+        if patron in lower:
+            return '[contenido filtrado]'
+    return texto.strip()
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  CARA PÚBLICA
@@ -1158,8 +1260,29 @@ def portal_rating(token, vid):
 @limiter.limit('10 per minute; 30 per hour')
 def admin_login():
     if request.method == 'POST':
-        if request.form.get('user') == ADMIN_USER and request.form.get('password') == ADMIN_PASS:
-            session['admin'] = True
+        u = (request.form.get('user') or '').strip()
+        p = (request.form.get('password') or '').strip()
+        db = get_db()
+        # Busca en tabla usuarios primero
+        usuario = db.execute(
+            "SELECT * FROM usuarios WHERE username=? AND club_id=1 AND activo=1",
+            (u,)
+        ).fetchone()
+        autenticado = False
+        if usuario and usuario['password_hash'] == _hash_pw(p):
+            autenticado = True
+            session['admin']      = True
+            session['user_role']  = usuario['role']
+            session['user_nombre']= usuario['nombre'] or usuario['username']
+            session['user_id']    = usuario['id']
+        elif u == ADMIN_USER and p == ADMIN_PASS:
+            # Fallback para admin por variable de entorno
+            autenticado = True
+            session['admin']      = True
+            session['user_role']  = 'admin'
+            session['user_nombre']= 'Administrador'
+            session['user_id']    = 0
+        if autenticado:
             return redirect(url_for('admin_dashboard'))
         flash('Credenciales incorrectas')
     return render_template('admin/login.html')
@@ -1550,6 +1673,7 @@ def admin_aforo():
 
 @app.route('/admin/dispensario', methods=['GET','POST'])
 @login_required
+@write_required
 def admin_dispensario():
     db = get_db()
     hoy = date.today().isoformat()
@@ -1742,6 +1866,7 @@ def admin_socio(sid):
 
 @app.route('/admin/socio/<int:sid>/etapa', methods=['POST'])
 @login_required
+@write_required
 def admin_set_etapa(sid):
     etapa = request.form.get('etapa','')
     if etapa in ETAPAS:
@@ -2169,6 +2294,7 @@ def admin_pedido(pid):
 
 @app.route('/admin/socio/<int:sid>/pedido/nuevo', methods=['POST'])
 @login_required
+@write_required
 def admin_nuevo_pedido(sid):
     db  = get_db()
     f   = request.form
@@ -2847,7 +2973,7 @@ def admin_centro_control():
 # ═══════════════════════════════════════════════════════════════════════════
 
 @app.route('/admin/autopilot')
-@login_required
+@role_required('admin')
 def admin_autopilot():
     db = get_db()
     config_rows = db.execute(
@@ -2875,7 +3001,7 @@ def admin_autopilot():
     )
 
 @app.route('/admin/autopilot/update', methods=['POST'])
-@login_required
+@role_required('admin')
 def admin_autopilot_update():
     db = get_db()
     agent_id  = request.form.get('agent_id','').strip()
@@ -2935,6 +3061,9 @@ def _llamar_llm(prompt, max_tokens=400):
     import urllib.request as _ur, json as _j
     if not ANTHROPIC_KEY:
         return ('Sin clave de IA configurada', 0, 0, 0.0)
+    # Límite de seguridad: no enviar prompts excesivamente grandes
+    if len(prompt) > 4000:
+        prompt = prompt[:4000] + '\n[contexto truncado por seguridad]'
     body = _j.dumps({
         'model': 'claude-haiku-4-5-20251001',
         'max_tokens': max_tokens,
@@ -2986,8 +3115,9 @@ def _agente_socios_scan(db, club_id=1):
 
     lv = _level('alta_socio')
     for s in solicitudes:
+        nombre_s = _sanitizar_input(f"{s['nombre']} {s['apellido']}")
         prompt = (f"Sos el Agente Socios de un cannabis social club en Argentina. "
-                  f"El socio {s['nombre']} {s['apellido']} (DNI {s['dni']}) envió su solicitud el {s['created_at']} "
+                  f"El socio [DATOS: {nombre_s}] envió su solicitud el {s['created_at']} "
                   f"y lleva más de 24hs sin revisión. Redactá una recomendación de 2 oraciones para el administrador. "
                   f"Español, tono profesional.")
         try:
@@ -3231,6 +3361,7 @@ def admin_tareas():
 
 @app.route('/admin/tareas/<int:task_id>/aprobar', methods=['POST'])
 @login_required
+@write_required
 def admin_tarea_aprobar(task_id):
     db = get_db()
     task = db.execute('SELECT * FROM agent_tasks WHERE id=?', (task_id,)).fetchone()
@@ -3272,6 +3403,153 @@ def admin_tarea_rechazar(task_id):
     db.commit()
     flash('Tarea rechazada')
     return redirect(url_for('admin_tareas'))
+
+# ─── RBAC — gestión de usuarios ───────────────────────────────────────────────
+
+ROLES = {
+    'admin':    'Administrador completo — acceso a todo',
+    'operador': 'Operador — gestión diaria (no puede cambiar configuración de IA ni usuarios)',
+    'readonly': 'Solo lectura — puede ver todo pero no modificar nada',
+}
+
+@app.route('/admin/usuarios')
+@role_required('admin')
+def admin_usuarios():
+    db = get_db()
+    usuarios = db.execute(
+        "SELECT id, username, role, nombre, activo, created_at FROM usuarios WHERE club_id=1 ORDER BY id"
+    ).fetchall()
+    return render_template('admin/usuarios.html', usuarios=usuarios, roles=ROLES)
+
+@app.route('/admin/usuarios/nuevo', methods=['POST'])
+@role_required('admin')
+def admin_usuario_nuevo():
+    db  = get_db()
+    u   = (request.form.get('username') or '').strip().lower()
+    p   = (request.form.get('password') or '').strip()
+    rol = request.form.get('role', 'operador')
+    nom = (request.form.get('nombre') or '').strip()
+    if not u or not p or rol not in ROLES:
+        flash('Completá todos los campos')
+        return redirect(url_for('admin_usuarios'))
+    try:
+        db.execute(
+            "INSERT INTO usuarios (club_id, username, password_hash, role, nombre) VALUES (1,?,?,?,?)",
+            (u, _hash_pw(p), rol, nom)
+        )
+        db.commit()
+        flash(f'Usuario "{u}" creado correctamente')
+    except Exception:
+        flash(f'El usuario "{u}" ya existe')
+    return redirect(url_for('admin_usuarios'))
+
+@app.route('/admin/usuarios/<int:uid>/editar', methods=['POST'])
+@role_required('admin')
+def admin_usuario_editar(uid):
+    db  = get_db()
+    rol = request.form.get('role', 'operador')
+    nom = (request.form.get('nombre') or '').strip()
+    activo = 1 if request.form.get('activo') else 0
+    nueva_pw = (request.form.get('password') or '').strip()
+    if rol not in ROLES:
+        flash('Rol inválido')
+        return redirect(url_for('admin_usuarios'))
+    if nueva_pw:
+        db.execute(
+            "UPDATE usuarios SET role=?, nombre=?, activo=?, password_hash=? WHERE id=? AND club_id=1",
+            (rol, nom, activo, _hash_pw(nueva_pw), uid)
+        )
+    else:
+        db.execute(
+            "UPDATE usuarios SET role=?, nombre=?, activo=? WHERE id=? AND club_id=1",
+            (rol, nom, activo, uid)
+        )
+    db.commit()
+    flash('Usuario actualizado')
+    return redirect(url_for('admin_usuarios'))
+
+@app.route('/admin/usuarios/<int:uid>/eliminar', methods=['POST'])
+@role_required('admin')
+def admin_usuario_eliminar(uid):
+    db = get_db()
+    usuario = db.execute("SELECT username FROM usuarios WHERE id=? AND club_id=1", (uid,)).fetchone()
+    if usuario and usuario['username'] == ADMIN_USER:
+        flash('No podés eliminar el usuario administrador principal')
+        return redirect(url_for('admin_usuarios'))
+    db.execute("DELETE FROM usuarios WHERE id=? AND club_id=1", (uid,))
+    db.commit()
+    flash('Usuario eliminado')
+    return redirect(url_for('admin_usuarios'))
+
+# ─── Fallback humano — escalación de tareas ───────────────────────────────────
+
+@app.route('/admin/tareas/<int:task_id>/escalar', methods=['POST'])
+@login_required
+def admin_tarea_escalar(task_id):
+    db     = get_db()
+    task   = db.execute('SELECT * FROM agent_tasks WHERE id=?', (task_id,)).fetchone()
+    if not task:
+        flash('Tarea no encontrada')
+        return redirect(url_for('admin_tareas'))
+    motivo = (request.form.get('motivo') or 'El administrador necesita asistencia humana').strip()
+    contexto = f"Agente: {task['agent_id']} | Tipo: {task['task_type']} | Recomendación: {task['recommendation']}"
+    db.execute('''
+        INSERT INTO escalaciones (club_id, agent_task_id, motivo, contexto)
+        VALUES (1,?,?,?)
+    ''', (task_id, motivo, contexto))
+    db.execute(
+        "UPDATE agent_tasks SET status='escalado', approval_status='escalado', execution_result=? WHERE id=?",
+        (f'Escalado: {motivo}', task_id)
+    )
+    db.commit()
+    # Notificar por email al admin
+    try:
+        _send_email_simple(
+            MAIL_USER,
+            f'[Germina] Tarea escalada — requiere atención humana',
+            f'Una tarea del agente necesita tu atención:\n\n'
+            f'Tipo: {task["task_type"]}\n'
+            f'Recomendación original: {task["recommendation"]}\n\n'
+            f'Motivo de escalación: {motivo}\n\n'
+            f'Revisá en: germina-app.onrender.com/admin/tareas'
+        )
+    except Exception:
+        pass
+    flash('Tarea escalada. Vas a recibir un email con el detalle.')
+    return redirect(url_for('admin_tareas'))
+
+@app.route('/admin/escalaciones')
+@login_required
+def admin_escalaciones():
+    db = get_db()
+    escalaciones = db.execute('''
+        SELECT e.*, at.agent_id, at.task_type, at.recommendation
+        FROM escalaciones e
+        LEFT JOIN agent_tasks at ON at.id = e.agent_task_id
+        WHERE e.club_id=1 ORDER BY e.id DESC LIMIT 50
+    ''').fetchall()
+    abiertas = db.execute(
+        "SELECT COUNT(*) FROM escalaciones WHERE club_id=1 AND estado='abierta'"
+    ).fetchone()[0]
+    return render_template('admin/escalaciones.html',
+        escalaciones=escalaciones,
+        abiertas=abiertas,
+        agents=AGENTS,
+    )
+
+@app.route('/admin/escalaciones/<int:eid>/resolver', methods=['POST'])
+@login_required
+def admin_escalacion_resolver(eid):
+    db = get_db()
+    resolucion = (request.form.get('resolucion') or 'Resuelto').strip()
+    db.execute('''
+        UPDATE escalaciones SET estado='resuelta', resolucion=?,
+            resolved_at=datetime('now','localtime'), asignado_a=?
+        WHERE id=? AND club_id=1
+    ''', (resolucion, current_username(), eid))
+    db.commit()
+    flash('Escalación resuelta')
+    return redirect(url_for('admin_escalaciones'))
 
 @app.route('/api/agentes/scan', methods=['POST', 'GET'])
 def api_agentes_scan():
@@ -3462,7 +3740,7 @@ def admin_roi():
 # ─── WhatsApp config ─────────────────────────────────────────────────────────
 
 @app.route('/admin/whatsapp', methods=['GET', 'POST'])
-@login_required
+@role_required('admin')
 def admin_whatsapp():
     db = get_db()
     cfg = db.execute("SELECT * FROM whatsapp_config WHERE club_id=1").fetchone()

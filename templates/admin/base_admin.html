@@ -231,6 +231,9 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_roi') }}" class="nav-item {% if request.endpoint == 'admin_roi' %}active{% endif %}">
       <span class="nav-icon">📈</span> ROI
     </a>
+    <a href="{{ url_for('admin_escalaciones') }}" class="nav-item {% if request.endpoint in ['admin_escalaciones','admin_escalacion_resolver'] %}active{% endif %}">
+      <span class="nav-icon">🆘</span> Escalaciones
+    </a>
     <a href="{{ url_for('admin_auditoria') }}" class="nav-item {% if request.endpoint == 'admin_auditoria' %}active{% endif %}">
       <span class="nav-icon">📋</span> Registro
     </a>
@@ -281,6 +284,10 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_exportar_pedidos') }}" class="nav-item">
       <span class="nav-icon">⬇️</span> Pedidos CSV
     </a>
+    <div class="nav-section-label" style="margin-top:0.5rem;">Configuración</div>
+    <a href="{{ url_for('admin_usuarios') }}" class="nav-item {% if request.endpoint in ['admin_usuarios','admin_usuario_nuevo','admin_usuario_editar','admin_usuario_eliminar'] %}active{% endif %}">
+      <span class="nav-icon">👥</span> Usuarios
+    </a>
     <div class="nav-section-label" style="margin-top:0.5rem;">Público</div>
     <a href="{{ url_for('club_landing', nombre=demo_club_nombre) }}" target="_blank" class="nav-item">
       <span class="nav-icon">🌐</span> Ver web del club
@@ -301,7 +308,12 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
   <div class="topbar">
     <div class="topbar-title">{% block topbar_title %}Admin{% endblock %}</div>
     <div class="topbar-right">
-      <span class="topbar-club">🌿 Germina</span>
+      {% if session.get('user_role') == 'readonly' %}
+      <span style="font-size:0.68rem;background:#FEF3CD;color:#7A5C00;padding:0.25rem 0.6rem;border-radius:100px;border:1px solid var(--gold);">Solo lectura</span>
+      {% elif session.get('user_role') == 'operador' %}
+      <span style="font-size:0.68rem;background:var(--green-pale);color:var(--green-mid);padding:0.25rem 0.6rem;border-radius:100px;border:1px solid var(--green-light);">Operador</span>
+      {% endif %}
+      <span class="topbar-club">🌿 {{ session.get('user_nombre', 'Admin') }}</span>
     </div>
   </div>
   <div class="content">

@@ -1,0 +1,182 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Usuarios — Germina{% endblock %}
+{% block topbar_title %}👥 Gestión de Usuarios{% endblock %}
+
+{% block extra_head %}
+<style>
+.rol-badge { display:inline-block; padding:0.2rem 0.7rem; border-radius:100px; font-size:0.67rem; font-weight:700; letter-spacing:0.03em; }
+.rol-admin    { background:var(--green-deep); color:var(--cream); }
+.rol-operador { background:var(--green-pale); color:var(--green-mid); }
+.rol-readonly { background:var(--cream-dark); color:var(--muted); }
+.modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--white); border-radius:14px; padding:1.5rem; width:420px; max-width:94vw; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-between" style="margin-bottom:1.5rem;">
+  <div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--green-deep);">Usuarios del panel</h2>
+    <p class="text-sm text-muted" style="margin-top:0.2rem;">Controlá quién puede acceder al panel y qué puede hacer cada persona.</p>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('modal-nuevo').classList.add('open')">+ Agregar usuario</button>
+</div>
+
+<!-- EXPLICACIÓN DE ROLES -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="card-header"><div class="card-title">¿Qué puede hacer cada rol?</div></div>
+  <div class="card-body">
+    <div class="grid-3">
+      {% for rol_key, rol_desc in roles.items() %}
+      <div style="background:var(--cream);border-radius:10px;padding:1rem;">
+        <div class="rol-badge rol-{{ rol_key }}" style="margin-bottom:0.5rem;">{{ rol_key|upper }}</div>
+        <p class="text-xs text-muted" style="margin-top:0.4rem;">{{ rol_desc }}</p>
+        {% if rol_key == 'operador' %}
+        <ul style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;padding-left:1rem;">
+          <li>✅ Registrar socios y dispensaciones</li>
+          <li>✅ Ver tareas de IA y aprobarlas</li>
+          <li>❌ No puede cambiar configuración de IA</li>
+          <li>❌ No puede gestionar usuarios</li>
+        </ul>
+        {% elif rol_key == 'readonly' %}
+        <ul style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;padding-left:1rem;">
+          <li>✅ Ver todas las pantallas</li>
+          <li>❌ No puede modificar nada</li>
+        </ul>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- TABLA DE USUARIOS -->
+<div class="card">
+  <div class="card-header"><div class="card-title">Usuarios registrados</div></div>
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Nombre</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Creado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td class="fw-600">{{ u.username }}</td>
+          <td>{{ u.nombre or '—' }}</td>
+          <td><span class="rol-badge rol-{{ u.role }}">{{ u.role }}</span></td>
+          <td>
+            {% if u.activo %}
+            <span style="color:#2D9E5B;font-size:0.78rem;font-weight:600;">● Activo</span>
+            {% else %}
+            <span style="color:#ccc;font-size:0.78rem;">● Inactivo</span>
+            {% endif %}
+          </td>
+          <td class="text-xs text-muted">{{ u.created_at[:10] }}</td>
+          <td>
+            <button class="btn btn-outline btn-sm" onclick="abrirEditar({{ u.id }}, '{{ u.username }}', '{{ u.role }}', '{{ u.nombre or '' }}', {{ u.activo }})">Editar</button>
+            {% if u.username != 'admin' %}
+            <form method="post" action="{{ url_for('admin_usuario_eliminar', uid=u.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminár el usuario {{ u.username }}?')">
+              <button class="btn btn-outline btn-sm" style="color:#E07B30;border-color:#E07B30;">Eliminar</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO USUARIO -->
+<div class="modal-overlay" id="modal-nuevo">
+  <div class="modal-box">
+    <div style="font-weight:700;font-size:1rem;color:var(--green-deep);margin-bottom:1rem;">Agregar usuario</div>
+    <form method="post" action="{{ url_for('admin_usuario_nuevo') }}">
+      <div class="form-group-a">
+        <label>Usuario (para iniciar sesión)</label>
+        <input type="text" name="username" class="form-control-a" required placeholder="Ej: operador1">
+      </div>
+      <div class="form-group-a">
+        <label>Nombre visible</label>
+        <input type="text" name="nombre" class="form-control-a" placeholder="Ej: María García">
+      </div>
+      <div class="form-group-a">
+        <label>Contraseña</label>
+        <input type="password" name="password" class="form-control-a" required placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group-a">
+        <label>Rol</label>
+        <select name="role" class="form-control-a">
+          {% for rol_key, rol_desc in roles.items() %}
+          <option value="{{ rol_key }}" {% if rol_key == 'operador' %}selected{% endif %}>{{ rol_key|capitalize }} — {{ rol_desc[:40] }}…</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display:flex;gap:0.6rem;margin-top:1rem;">
+        <button type="submit" class="btn btn-primary btn-sm">Crear usuario</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('modal-nuevo').classList.remove('open')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDITAR USUARIO -->
+<div class="modal-overlay" id="modal-editar">
+  <div class="modal-box">
+    <div style="font-weight:700;font-size:1rem;color:var(--green-deep);margin-bottom:1rem;">Editar usuario: <span id="edit-username-label"></span></div>
+    <form method="post" id="form-editar" action="">
+      <div class="form-group-a">
+        <label>Nombre visible</label>
+        <input type="text" name="nombre" id="edit-nombre" class="form-control-a">
+      </div>
+      <div class="form-group-a">
+        <label>Rol</label>
+        <select name="role" id="edit-role" class="form-control-a">
+          {% for rol_key, rol_desc in roles.items() %}
+          <option value="{{ rol_key }}">{{ rol_key|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group-a">
+        <label>Nueva contraseña (dejá vacío para no cambiarla)</label>
+        <input type="password" name="password" class="form-control-a" placeholder="Nueva contraseña…">
+      </div>
+      <div class="form-group-a">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+          <input type="checkbox" name="activo" id="edit-activo" value="1"> Usuario activo
+        </label>
+      </div>
+      <div style="display:flex;gap:0.6rem;margin-top:1rem;">
+        <button type="submit" class="btn btn-primary btn-sm">Guardar cambios</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('modal-editar').classList.remove('open')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirEditar(id, username, role, nombre, activo) {
+  document.getElementById('edit-username-label').textContent = username;
+  document.getElementById('edit-nombre').value = nombre;
+  document.getElementById('edit-role').value = role;
+  document.getElementById('edit-activo').checked = activo == 1;
+  document.getElementById('form-editar').action = '/admin/usuarios/' + id + '/editar';
+  document.getElementById('modal-editar').classList.add('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
+{% endblock %}

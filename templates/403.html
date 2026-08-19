@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sin acceso — Germina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #F5F2EC; color: #1E1E1E;
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.card { background: white; border-radius: 20px; border: 1px solid #E0DBD3;
+  max-width: 420px; width: 100%; padding: 2.5rem; text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.07); }
+.icon { font-size: 3rem; margin-bottom: 1rem; }
+h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #1A3520; margin-bottom: 0.5rem; }
+p { font-size: 0.87rem; color: #6B6560; line-height: 1.6; margin-bottom: 1.2rem; }
+.btn { display: inline-block; padding: 0.65rem 1.4rem; background: #1A3520; color: #F5F2EC;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🔒</div>
+  <h1>Sin permiso de acceso</h1>
+  <p>Tu usuario no tiene el rol necesario para ver esta sección. Si creés que es un error, pedile al administrador del club que revise tus permisos.</p>
+  <a href="/admin/dashboard" class="btn">← Volver al panel</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,122 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Escalaciones — Germina{% endblock %}
+{% block topbar_title %}🆘 Fallback Humano{% endblock %}
+
+{% block extra_head %}
+<style>
+.esc-card { background:var(--white); border:1px solid var(--border); border-radius:12px;
+  padding:1.2rem 1.4rem; margin-bottom:0.8rem; }
+.esc-card.abierta { border-left:3px solid #E07B30; }
+.esc-card.resuelta { border-left:3px solid #2D9E5B; opacity:0.75; }
+.modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--white); border-radius:14px; padding:1.5rem; width:420px; max-width:94vw; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1.5rem;">
+  <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--green-deep);">Fallback Humano</h2>
+  <p class="text-sm text-muted" style="margin-top:0.2rem;">
+    Cuando la IA no puede resolver algo sola, se escala acá para que un humano tome la decisión.
+  </p>
+</div>
+
+{% if abiertas > 0 %}
+<div style="background:#FEF3CD;border:1px solid var(--gold);border-radius:10px;padding:0.8rem 1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:0.8rem;">
+  <span style="font-size:1.2rem;">⚠️</span>
+  <div>
+    <strong style="color:#7A5C00;">{{ abiertas }} escalación{{ 'es' if abiertas != 1 else '' }} abierta{{ 's' if abiertas != 1 else '' }}</strong>
+    — requieren tu atención
+  </div>
+</div>
+{% else %}
+<div style="background:#C8F0D0;border:1px solid #2D9E5B;border-radius:10px;padding:0.8rem 1rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:0.8rem;">
+  <span style="font-size:1.2rem;">✅</span>
+  <div style="color:#1A5C30;font-weight:600;">Todas las escalaciones están resueltas</div>
+</div>
+{% endif %}
+
+{% if not escalaciones %}
+<div style="text-align:center;padding:3rem;background:var(--cream);border-radius:14px;border:1px solid var(--border);">
+  <div style="font-size:2rem;margin-bottom:0.5rem;">🤖</div>
+  <div style="font-weight:600;color:var(--green-deep);">Sin escalaciones todavía</div>
+  <p class="text-sm text-muted" style="margin-top:0.3rem;">Cuando una tarea del agente necesite ayuda humana, aparecerá aquí.</p>
+</div>
+{% endif %}
+
+{% for e in escalaciones %}
+<div class="esc-card {{ e.estado }}">
+  <div class="flex-between" style="margin-bottom:0.6rem;">
+    <div style="display:flex;align-items:center;gap:0.6rem;">
+      {% if e.estado == 'abierta' %}
+      <span class="badge" style="background:#FEF3CD;color:#7A5C00;">⚠️ Abierta</span>
+      {% else %}
+      <span class="badge" style="background:#C8F0D0;color:#1A5C30;">✅ Resuelta</span>
+      {% endif %}
+      {% if e.agent_id %}
+      <span class="badge badge-en_revision">{{ agents[e.agent_id] if e.agent_id in agents else e.agent_id }}</span>
+      {% endif %}
+      {% if e.task_type %}
+      <span class="text-xs text-muted">{{ e.task_type.replace('_',' ') }}</span>
+      {% endif %}
+    </div>
+    <span class="text-xs text-muted">{{ e.created_at[:16] }}</span>
+  </div>
+
+  {% if e.recommendation %}
+  <div style="background:var(--cream);border-radius:8px;padding:0.7rem 0.9rem;font-size:0.83rem;margin-bottom:0.6rem;border-left:3px solid var(--green-light);">
+    💡 Recomendación original: {{ e.recommendation }}
+  </div>
+  {% endif %}
+
+  <div style="font-size:0.85rem;color:var(--text);margin-bottom:0.4rem;">
+    <strong>Motivo de escalación:</strong> {{ e.motivo }}
+  </div>
+
+  {% if e.resolucion %}
+  <div style="font-size:0.82rem;color:var(--muted);padding:0.5rem 0.7rem;background:#F0FFF4;border-radius:6px;margin-top:0.4rem;">
+    ✅ Resolución: {{ e.resolucion }}
+    {% if e.asignado_a %} — por {{ e.asignado_a }}{% endif %}
+    {% if e.resolved_at %} · {{ e.resolved_at[:16] }}{% endif %}
+  </div>
+  {% endif %}
+
+  {% if e.estado == 'abierta' %}
+  <div style="margin-top:0.8rem;">
+    <button class="btn btn-primary btn-sm" onclick="abrirResolver({{ e.id }})">✅ Marcar como resuelta</button>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+
+<!-- MODAL RESOLVER -->
+<div class="modal-overlay" id="modal-resolver">
+  <div class="modal-box">
+    <div style="font-weight:700;font-size:1rem;color:var(--green-deep);margin-bottom:0.8rem;">Marcar como resuelta</div>
+    <form method="post" id="form-resolver" action="">
+      <div class="form-group-a">
+        <label>¿Cómo se resolvió?</label>
+        <textarea name="resolucion" class="form-control-a" rows="3" placeholder="Describí brevemente la acción que tomaste…" style="resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:0.6rem;margin-top:1rem;">
+        <button type="submit" class="btn btn-primary btn-sm">Confirmar resolución</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('modal-resolver').classList.remove('open')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirResolver(id) {
+  document.getElementById('form-resolver').action = '/admin/escalaciones/' + id + '/resolver';
+  document.getElementById('modal-resolver').classList.add('open');
+}
+document.getElementById('modal-resolver').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+</script>
+{% endblock %}
