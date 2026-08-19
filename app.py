@@ -2019,40 +2019,137 @@ _register_globals()
 
 ANTHROPIC_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
+# Taxonomía profesional de keywords por cluster temático.
+# cluster: agrupa temas para construir autoridad topical (Google premia sitios que cubren temas en profundidad)
+# intent: informational = educa y atrae tráfico | commercial = investigan soluciones | transactional = listos para contratar
+# priority: 1=alta (long-tail, más fácil de rankear, conversión más alta) / 2=media / 3=baja (short-tail, muy competida)
 KEYWORDS_SEO = [
-    "software para clubes cannábicos Argentina",
-    "gestión digital asociación cannábica",
-    "trazabilidad cultivos cannabis social club",
-    "sistema de socios club cannábico",
-    "digitalizar club de cannabis medicinal",
-    "cómo gestionar un cannabis social club",
-    "requisitos legales club cannábico Argentina 2026",
-    "control de stock cannabis medicinal",
-    "portal para socios club cannábico",
-    "herramientas gestión asociaciones cannabis LATAM",
-    "onboarding socios club cannabis",
-    "dispensario cannabis medicinal software",
+    # ── CLUSTER 1: Legal y Regulatorio (Argentina) ──────────────────────────
+    # Búsquedas de personas que quieren saber si es legal / cómo cumplir. Alto volumen informacional.
+    {"kw": "cómo legalizar un club cannábico en Argentina",             "cluster": "legal",      "intent": "informational", "priority": 1},
+    {"kw": "requisitos legales cannabis social club Argentina 2026",    "cluster": "legal",      "intent": "informational", "priority": 1},
+    {"kw": "marco legal asociaciones cannábicas medicinales Argentina",  "cluster": "legal",      "intent": "informational", "priority": 2},
+    {"kw": "habilitaciones club cannabis medicinal Argentina",          "cluster": "legal",      "intent": "informational", "priority": 2},
+    {"kw": "ley cannabis social club Argentina estatuto modelo",        "cluster": "legal",      "intent": "informational", "priority": 3},
+
+    # ── CLUSTER 2: Gestión Operativa ────────────────────────────────────────
+    # Directivos de clubes buscando cómo resolver problemas concretos del día a día.
+    {"kw": "cómo gestionar un cannabis social club paso a paso",        "cluster": "gestion",    "intent": "informational", "priority": 1},
+    {"kw": "gestión de socios club cannábico digital",                  "cluster": "gestion",    "intent": "informational", "priority": 1},
+    {"kw": "control de stock cannabis medicinal asociación",            "cluster": "gestion",    "intent": "informational", "priority": 2},
+    {"kw": "onboarding de nuevos socios club cannábico",               "cluster": "gestion",    "intent": "informational", "priority": 2},
+    {"kw": "sistema de turnos y entregas dispensario cannabis",         "cluster": "gestion",    "intent": "informational", "priority": 2},
+    {"kw": "administración financiera asociación cannábica",            "cluster": "gestion",    "intent": "informational", "priority": 3},
+    {"kw": "trazabilidad cultivos cannabis social club registro",       "cluster": "gestion",    "intent": "informational", "priority": 3},
+
+    # ── CLUSTER 3: Tecnología y Software ────────────────────────────────────
+    # Intención comercial: ya saben que necesitan software, están eligiendo cuál.
+    {"kw": "software para clubes cannábicos Argentina",                 "cluster": "tecnologia", "intent": "commercial",    "priority": 1},
+    {"kw": "digitalizar club de cannabis medicinal herramientas",       "cluster": "tecnologia", "intent": "commercial",    "priority": 1},
+    {"kw": "sistema de gestión de socios club cannábico",               "cluster": "tecnologia", "intent": "commercial",    "priority": 1},
+    {"kw": "portal web para socios cannabis social club",               "cluster": "tecnologia", "intent": "commercial",    "priority": 2},
+    {"kw": "app gestión cannabis social club Argentina",                "cluster": "tecnologia", "intent": "commercial",    "priority": 2},
+    {"kw": "software trazabilidad cannabis medicinal LATAM",            "cluster": "tecnologia", "intent": "commercial",    "priority": 2},
+    {"kw": "dispensario cannabis medicinal software gestión integral",  "cluster": "tecnologia", "intent": "commercial",    "priority": 3},
+
+    # ── CLUSTER 4: Mercado y Tendencias LATAM ───────────────────────────────
+    # Contenido de industria: posiciona Germina como referente del sector.
+    {"kw": "cannabis social clubs Argentina crecimiento 2026",          "cluster": "mercado",    "intent": "informational", "priority": 1},
+    {"kw": "tendencias cannabis medicinal Argentina 2026",              "cluster": "mercado",    "intent": "informational", "priority": 1},
+    {"kw": "cannabis social clubs modelo España aplicado en Argentina", "cluster": "mercado",    "intent": "informational", "priority": 2},
+    {"kw": "herramientas gestión asociaciones cannabis LATAM",          "cluster": "mercado",    "intent": "informational", "priority": 2},
+    {"kw": "futuro del cannabis medicinal en Argentina regulación",     "cluster": "mercado",    "intent": "informational", "priority": 3},
+
+    # ── CLUSTER 5: Conversión (fondo de embudo) ──────────────────────────────
+    # Búsquedas de personas listas para contratar: máxima prioridad de conversión.
+    {"kw": "mejor software gestión cannabis social club Argentina",     "cluster": "conversion", "intent": "transactional", "priority": 1},
+    {"kw": "alternativas a Excel para gestionar club cannábico",        "cluster": "conversion", "intent": "commercial",    "priority": 1},
+    {"kw": "beneficios digitalizar asociación cannábica medicinal",     "cluster": "conversion", "intent": "commercial",    "priority": 2},
+    {"kw": "cuánto cuesta software cannabis social club",               "cluster": "conversion", "intent": "commercial",    "priority": 2},
+    {"kw": "por qué digitalizar tu club cannábico con Germina",        "cluster": "conversion", "intent": "transactional", "priority": 3},
 ]
 
-def _generar_articulo_ia(keyword):
+# Orden en que se cubren los clusters (primero los que más tráfico traen)
+_CLUSTER_ORDER = ["legal", "gestion", "tecnologia", "mercado", "conversion"]
+
+def _elegir_keyword(db):
+    """Selección estratégica de keyword:
+    1. Cubre clusters vacíos en orden antes de repetir cualquier cluster.
+    2. Dentro de cada cluster: prioridad 1 antes de 2 y 3; informational antes de commercial.
+    3. Si todos los clusters tienen artículos: vuelve al cluster con el artículo más antiguo.
+    4. Si todas las keywords tienen artículo: empieza la segunda vuelta por las más antiguas."""
+    rows = db.execute('SELECT keyword, created_at FROM articulos ORDER BY created_at DESC').fetchall()
+    usadas_fecha = {r[0]: r[1] for r in rows}
+
+    clusters = {c: [] for c in _CLUSTER_ORDER}
+    for item in KEYWORDS_SEO:
+        clusters[item['cluster']].append(item)
+
+    # Fecha del artículo más reciente por cluster (None si el cluster no tiene artículos)
+    cluster_ultima_fecha = {}
+    for item in KEYWORDS_SEO:
+        if item['kw'] in usadas_fecha:
+            c = item['cluster']
+            f = usadas_fecha[item['kw']]
+            if c not in cluster_ultima_fecha or f > cluster_ultima_fecha[c]:
+                cluster_ultima_fecha[c] = f
+
+    def _candidatos_sin_usar(c):
+        return [k for k in clusters[c] if k['kw'] not in usadas_fecha]
+
+    def _mejor_de(lista):
+        # informational primero, luego commercial, luego transactional; dentro de cada intent, prioridad ascendente
+        intent_order = {"informational": 0, "commercial": 1, "transactional": 2}
+        lista.sort(key=lambda x: (intent_order.get(x['intent'], 9), x['priority']))
+        return lista[0]['kw']
+
+    # Paso 1: clusters con cero artículos, en orden canónico
+    for c in _CLUSTER_ORDER:
+        if c not in cluster_ultima_fecha:
+            candidatos = _candidatos_sin_usar(c)
+            if candidatos:
+                return _mejor_de(candidatos)
+
+    # Paso 2: todos los clusters tienen al menos un artículo → elegir el cluster más rezagado
+    cluster_rezagado = min(cluster_ultima_fecha, key=lambda c: cluster_ultima_fecha[c])
+    candidatos = _candidatos_sin_usar(cluster_rezagado)
+    if candidatos:
+        return _mejor_de(candidatos)
+
+    # Paso 3: todas las keywords usadas → segunda vuelta por fecha de publicación más antigua
+    todas_con_fecha = [(item, usadas_fecha.get(item['kw'], '1970-01-01')) for item in KEYWORDS_SEO]
+    todas_con_fecha.sort(key=lambda x: x[1])
+    return todas_con_fecha[0][0]['kw']
+
+
+def _generar_articulo_ia(keyword, intent='informational'):
     import urllib.request, json as _json, re, unicodedata
+
+    intent_instruccion = {
+        'informational': "El tono es educativo y práctico. El objetivo es responder la pregunta del lector completamente.",
+        'commercial':    "El tono compara opciones y destaca ventajas de Germina frente a soluciones manuales (Excel, papel).",
+        'transactional': "El tono es persuasivo y orientado a la acción. Enfatiza que el primer mes de Germina es gratis, sin tarjeta.",
+    }.get(intent, '')
+
     prompt = f"""Sos un experto en cannabis medicinal y gestión de clubes cannábicos en Argentina y LATAM.
 Escribí un artículo SEO en español de 900-1100 palabras sobre: "{keyword}"
 
-El artículo debe:
-- Tener un H1 atractivo con la keyword
-- Incluir subtítulos H2 y H3 relevantes
-- Ser útil, concreto y práctico para directivos de clubes cannábicos
-- Mencionar naturalmente que Germina (germina-clubs.netlify.app) es la solución digital para estos clubes
-- Terminar con un CTA suave hacia Germina
-- NO incluir markdown de código, solo texto con etiquetas HTML básicas (h1,h2,h3,p,ul,li,strong)
+Intención de búsqueda: {intent} — {intent_instruccion}
 
-Respondé SOLO con JSON válido con esta estructura exacta:
-{{"titulo": "...", "resumen": "...(150 chars max)", "meta_description": "...(155 chars max)", "contenido": "...(HTML)"}}"""
+El artículo debe:
+- Título H1 atractivo que incluya la keyword de forma natural
+- 4 a 6 secciones con subtítulos H2 claros
+- Ser útil y concreto para directivos de clubes cannábicos
+- Mencionar Germina (germina-clubs.netlify.app) como solución en 2 o 3 párrafos de forma natural, no forzada
+- Cerrar con un CTA: "Probá Germina gratis en germina-clubs.netlify.app — primer mes sin costo, sin tarjeta"
+- Solo etiquetas HTML básicas: h1, h2, h3, p, ul, li, strong (sin markdown, sin CSS inline)
+
+Respondé SOLO con JSON válido, sin texto extra, con esta estructura:
+{{"titulo": "...", "resumen": "...(100-150 chars)", "meta_description": "...(120-155 chars)", "contenido": "...(HTML completo del artículo)"}}"""
 
     body = _json.dumps({
         "model": "claude-haiku-4-5-20251001",
-        "max_tokens": 2000,
+        "max_tokens": 2500,
         "messages": [{"role": "user", "content": prompt}]
     }).encode()
     req = urllib.request.Request(
@@ -2106,27 +2203,32 @@ def api_publicar_articulo():
     db.commit()
     return jsonify({'ok': True, 'slug': slug_base})
 
+@app.route('/api/next-keyword')
+def api_next_keyword():
+    """Devuelve la próxima keyword a trabajar según criterio estratégico de SEO."""
+    if request.args.get('secret') != CRM_PASS:
+        return jsonify({'ok': False, 'error': 'unauthorized'}), 403
+    db = get_db()
+    keyword = _elegir_keyword(db)
+    meta = next((k for k in KEYWORDS_SEO if k['kw'] == keyword), {})
+    return jsonify({'ok': True, 'keyword': keyword, 'cluster': meta.get('cluster'), 'intent': meta.get('intent')})
+
 @app.route('/api/generar-articulo', methods=['POST'])
 def api_generar_articulo():
     secret = request.json.get('secret') if request.is_json else request.form.get('secret')
     if secret != CRM_PASS:
         return jsonify({'ok': False, 'error': 'unauthorized'}), 403
     db = get_db()
-    # elegir keyword que aún no tiene artículo
-    usadas = {r[0] for r in db.execute('SELECT keyword FROM articulos').fetchall()}
-    disponibles = [k for k in KEYWORDS_SEO if k not in usadas]
-    if not disponibles:
-        disponibles = KEYWORDS_SEO  # rotar de nuevo
-    import random
-    keyword = random.choice(disponibles)
+    keyword = _elegir_keyword(db)
+    meta = next((k for k in KEYWORDS_SEO if k['kw'] == keyword), {})
     try:
-        art = _generar_articulo_ia(keyword)
+        art = _generar_articulo_ia(keyword, intent=meta.get('intent', 'informational'))
         db.execute(
             'INSERT OR IGNORE INTO articulos (slug,titulo,resumen,contenido,keyword,meta_description) VALUES (?,?,?,?,?,?)',
             (art['slug'], art['titulo'], art['resumen'], art['contenido'], art['keyword'], art['meta_description'])
         )
         db.commit()
-        return jsonify({'ok': True, 'slug': art['slug'], 'titulo': art['titulo']})
+        return jsonify({'ok': True, 'slug': art['slug'], 'titulo': art['titulo'], 'keyword': keyword})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
 
