@@ -215,7 +215,17 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <div class="sidebar-sub">Panel de gestión</div>
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-section-label">Principal</div>
+    <div class="nav-section-label">Inteligencia</div>
+    <a href="{{ url_for('admin_centro_control') }}" class="nav-item {% if request.endpoint == 'admin_centro_control' %}active{% endif %}" style="background:rgba(200,164,74,0.08);border:1px solid rgba(200,164,74,0.2);margin-bottom:0.3rem;">
+      <span class="nav-icon">⚡</span> <span style="color:var(--gold);">Centro de Control</span>
+    </a>
+    <a href="{{ url_for('admin_autopilot') }}" class="nav-item {% if request.endpoint in ['admin_autopilot','admin_autopilot_update'] %}active{% endif %}">
+      <span class="nav-icon">🤖</span> Autopilot
+    </a>
+    <a href="{{ url_for('admin_auditoria') }}" class="nav-item {% if request.endpoint == 'admin_auditoria' %}active{% endif %}">
+      <span class="nav-icon">📋</span> Registro
+    </a>
+    <div class="nav-section-label" style="margin-top:0.5rem;">Gestión</div>
     <a href="{{ url_for('admin_dashboard') }}" class="nav-item {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
       <span class="nav-icon">📊</span> Dashboard
     </a>

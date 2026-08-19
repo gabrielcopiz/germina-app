@@ -1,0 +1,110 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Registro de Actividad — Germina{% endblock %}
+{% block topbar_title %}📋 Registro de Actividad{% endblock %}
+
+{% block extra_head %}
+<style>
+.audit-hero {
+  display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.audit-kpi {
+  background: var(--white); border-radius: 12px; border: 1px solid var(--border);
+  padding: 1.2rem 1.6rem; min-width: 160px; flex: 1;
+}
+.audit-kpi .val {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; color: var(--green-deep); line-height:1; margin-bottom:0.2rem;
+}
+.audit-kpi .lbl { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+
+.log-action {
+  font-size: 0.75rem; font-weight: 600;
+  background: var(--cream); color: var(--green-deep);
+  padding: 0.15rem 0.5rem; border-radius: 4px;
+  font-family: monospace;
+}
+.log-result { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+.log-entity { font-size: 0.75rem; color: var(--muted); }
+.log-min { font-size: 0.75rem; font-weight: 700; color: var(--green-mid); }
+.log-ts  { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+
+.empty-state { padding: 3rem; text-align: center; color: var(--muted); }
+.empty-state .ei { font-size: 3rem; margin-bottom: 0.5rem; display: block; }
+.empty-state p { font-size: 0.85rem; line-height: 1.7; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="audit-hero">
+  <div class="audit-kpi">
+    <div class="val">{{ total_tareas }}</div>
+    <div class="lbl">Acciones registradas en total</div>
+  </div>
+  <div class="audit-kpi">
+    <div class="val">{{ total_min }}'</div>
+    <div class="lbl">Minutos de trabajo registrados</div>
+  </div>
+  <div class="audit-kpi">
+    <div class="val">{{ (total_min // 60) if total_min >= 60 else 0 }}h</div>
+    <div class="lbl">Equivalente en horas</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Historial completo (últimas 200 acciones)</span>
+    <span style="font-size:0.72rem;color:var(--muted);">Solo lectura — no se puede modificar</span>
+  </div>
+
+  {% if logs %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Acción</th>
+          <th>Resultado</th>
+          <th>Entidad</th>
+          <th>Quién</th>
+          <th>Ahorró</th>
+          <th>Cuándo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in logs %}
+        <tr>
+          <td style="color:var(--muted);font-size:0.72rem;">{{ entry.id }}</td>
+          <td>
+            <span class="log-action">{{ entry.action }}</span>
+            {% if entry.agent_id %}<div style="font-size:0.65rem;color:var(--green-mid);margin-top:0.1rem;">🤖 {{ entry.agent_id }}</div>{% endif %}
+          </td>
+          <td>
+            {% if entry.result %}
+            <span class="log-result">{{ entry.result[:60] }}{% if entry.result|length > 60 %}…{% endif %}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="log-entity">
+            {% if entry.entity_type %}{{ entry.entity_type }} #{{ entry.entity_id or '—' }}{% else %}—{% endif %}
+          </td>
+          <td style="font-size:0.75rem;">{{ entry.actor or 'Admin' }}</td>
+          <td class="log-min">
+            {% if entry.human_minutes %}+{{ entry.human_minutes }}'{% else %}—{% endif %}
+          </td>
+          <td class="log-ts">{{ entry.timestamp[:16] if entry.timestamp else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="ei">📋</span>
+    <p>Todavía no hay acciones registradas.<br>
+    Cada vez que se registre una dispensación, cambie el estado de un pedido,<br>
+    o un socio avance de etapa, acá va a quedar el registro permanente.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

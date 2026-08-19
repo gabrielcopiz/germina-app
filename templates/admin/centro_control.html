@@ -1,0 +1,352 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Centro de Control — Germina{% endblock %}
+{% block topbar_title %}⚡ Centro de Control{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── HERO BANNER ── */
+.cc-hero {
+  background: linear-gradient(135deg, var(--green-deep) 0%, #243d29 100%);
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  margin-bottom: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 2rem;
+  flex-wrap: wrap;
+}
+.cc-hero-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; color: var(--cream); margin-bottom: 0.2rem;
+}
+.cc-hero-left p { font-size: 0.82rem; color: rgba(245,242,236,0.45); }
+.cc-hero-num {
+  text-align: right;
+}
+.cc-hero-num .num {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.5rem; font-weight: 500;
+  color: var(--gold); line-height: 1;
+}
+.cc-hero-num .label {
+  font-size: 0.72rem; color: rgba(245,242,236,0.45);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── REVISAR BANNER ── */
+.cc-revisar {
+  background: #FFF8EC;
+  border: 1.5px solid var(--gold);
+  border-radius: 12px;
+  padding: 1.2rem 1.6rem;
+  margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 1.2rem;
+}
+.cc-revisar-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; color: var(--gold); line-height: 1;
+  min-width: 50px; text-align: center;
+}
+.cc-revisar h3 { font-size: 0.92rem; font-weight: 700; color: #7A5C00; margin-bottom: 0.2rem; }
+.cc-revisar p  { font-size: 0.78rem; color: #A07800; }
+.cc-revisar-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.cc-tag {
+  font-size: 0.68rem; font-weight: 600; padding: 0.25rem 0.7rem;
+  border-radius: 100px; background: var(--gold-light); color: #7A5C00;
+}
+.cc-tag-ok { background: var(--green-pale); color: var(--green-mid); }
+
+/* ── IMPACTO GRID ── */
+.impact-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.impact-card {
+  background: var(--white); border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 1.2rem;
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.impact-card .ic-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+.impact-card .ic-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; color: var(--green-deep); line-height: 1;
+}
+.impact-card .ic-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+.impact-card .ic-sub   { font-size: 0.65rem; color: var(--muted); }
+
+/* ── LOG TABLE ── */
+.log-action {
+  font-size: 0.75rem; font-weight: 600;
+  background: var(--cream); color: var(--green-deep);
+  padding: 0.15rem 0.5rem; border-radius: 4px;
+  font-family: monospace;
+}
+.log-entity { font-size: 0.75rem; color: var(--muted); }
+.log-time   { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+.log-min    {
+  font-size: 0.7rem; font-weight: 700;
+  color: var(--green-mid); white-space: nowrap;
+}
+
+/* ── ALERTAS ── */
+.alerta-item {
+  display: flex; align-items: flex-start; gap: 0.7rem;
+  padding: 0.8rem 1rem; border-bottom: 1px solid var(--border);
+  font-size: 0.83rem;
+}
+.alerta-item:last-child { border-bottom: none; }
+.alerta-icon { font-size: 1.1rem; flex-shrink: 0; }
+.alerta-title { font-weight: 600; color: var(--green-deep); }
+.alerta-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 0.1rem; }
+.alerta-btn   {
+  margin-left: auto; flex-shrink: 0;
+  font-size: 0.72rem; font-weight: 600; padding: 0.3rem 0.8rem;
+  background: var(--cream); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--green-deep); cursor: pointer;
+  text-decoration: none; display: inline-block;
+}
+.alerta-btn:hover { background: var(--green-pale); }
+
+/* ── EMPTY STATE ── */
+.empty-log {
+  padding: 2.5rem; text-align: center; color: var(--muted);
+}
+.empty-log .ei { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.empty-log p { font-size: 0.83rem; }
+
+@media (max-width: 900px) {
+  .impact-grid { grid-template-columns: repeat(2,1fr); }
+  .cc-hero { flex-direction: column; }
+  .cc-hero-num { text-align: left; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- HERO: qué hizo Germina hoy -->
+<div class="cc-hero">
+  <div class="cc-hero-left">
+    <h1>🟢 Germina está trabajando</h1>
+    <p>Hoy · {{ hoy }}</p>
+  </div>
+  <div class="cc-hero-num">
+    <div class="num">{{ total_tareas_hoy }}</div>
+    <div class="label">tareas realizadas hoy</div>
+  </div>
+</div>
+
+<!-- BANNER: cosas que el admin tiene que revisar -->
+{% if total_para_revisar > 0 %}
+<div class="cc-revisar">
+  <div class="cc-revisar-num">{{ total_para_revisar }}</div>
+  <div style="flex:1">
+    <h3>Necesitás revisar {{ total_para_revisar }} cosa{% if total_para_revisar != 1 %}s{% endif %}</h3>
+    <p>Germina identificó situaciones que requieren tu decisión</p>
+    <div class="cc-revisar-tags">
+      {% if socios_pendientes > 0 %}
+        <span class="cc-tag">{{ socios_pendientes }} solicitud{% if socios_pendientes != 1 %}es{% endif %}</span>
+      {% endif %}
+      {% if cuotas_vencidas > 0 %}
+        <span class="cc-tag">{{ cuotas_vencidas }} cuota{% if cuotas_vencidas != 1 %}s{% endif %} vencida{% if cuotas_vencidas != 1 %}s{% endif %}</span>
+      {% endif %}
+      {% if pedidos_activos > 0 %}
+        <span class="cc-tag">{{ pedidos_activos }} pedido{% if pedidos_activos != 1 %}s{% endif %} activo{% if pedidos_activos != 1 %}s{% endif %}</span>
+      {% endif %}
+      {% if cosechas_urgentes > 0 %}
+        <span class="cc-tag">{{ cosechas_urgentes }} cosecha{% if cosechas_urgentes != 1 %}s{% endif %} próxima{% if cosechas_urgentes != 1 %}s{% endif %}</span>
+      {% endif %}
+      {% if alertas_stock %}
+        <span class="cc-tag">{{ alertas_stock|length }} variedad{% if alertas_stock|length != 1 %}es{% endif %} con stock bajo</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="cc-revisar" style="background:#EFF7F2;border-color:var(--green-mid);">
+  <div class="cc-revisar-num" style="color:var(--green-mid);">✓</div>
+  <div>
+    <h3 style="color:var(--green-mid);">Todo en orden</h3>
+    <p style="color:var(--green-light);">No hay nada pendiente de revisión en este momento</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- IMPACTO -->
+<div class="impact-grid">
+  <div class="impact-card">
+    <div class="ic-icon">⏱️</div>
+    <div class="ic-val">{{ tiempo_ahorrado_min }}'</div>
+    <div class="ic-label">Minutos ahorrados hoy</div>
+    <div class="ic-sub">{{ tiempo_ahorrado_semana }}' esta semana</div>
+  </div>
+  <div class="impact-card">
+    <div class="ic-icon">💊</div>
+    <div class="ic-val">{{ disp_hoy }}</div>
+    <div class="ic-label">Dispensaciones hoy</div>
+    <div class="ic-sub">{{ dispensaciones_mes[0] }} este mes · {{ dispensaciones_mes[1]|round(1) }}g</div>
+  </div>
+  <div class="impact-card">
+    <div class="ic-icon">🚪</div>
+    <div class="ic-val">{{ accesos_hoy }}</div>
+    <div class="ic-label">Accesos registrados hoy</div>
+    <div class="ic-sub">Control de aforo activo</div>
+  </div>
+  <div class="impact-card">
+    <div class="ic-icon">🌿</div>
+    <div class="ic-val">{{ socios_nuevos_mes }}</div>
+    <div class="ic-label">Socios nuevos este mes</div>
+    <div class="ic-sub">{{ roi_mes_min }}' ahorrados en el mes</div>
+  </div>
+</div>
+
+<div class="grid-2" style="align-items:start">
+
+  <!-- LOG DE ACTIVIDAD -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📋 Últimas acciones registradas</span>
+      <a href="{{ url_for('admin_auditoria') }}" style="font-size:0.72rem;color:var(--gold);">Ver todo →</a>
+    </div>
+    {% if log_reciente %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Acción</th>
+            <th>Entidad</th>
+            <th>Minutos</th>
+            <th>Hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in log_reciente %}
+          <tr>
+            <td>
+              <span class="log-action">{{ entry.action }}</span>
+              {% if entry.result %}<div style="font-size:0.7rem;color:var(--muted);margin-top:0.15rem;">{{ entry.result[:50] }}</div>{% endif %}
+            </td>
+            <td class="log-entity">
+              {% if entry.entity_type %}{{ entry.entity_type }} #{{ entry.entity_id or '—' }}{% else %}—{% endif %}
+            </td>
+            <td class="log-min">
+              {% if entry.human_minutes %}+{{ entry.human_minutes }}'{% else %}—{% endif %}
+            </td>
+            <td class="log-time">{{ entry.timestamp[11:16] if entry.timestamp else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-log">
+      <div class="ei">📋</div>
+      <p>Acá vas a ver cada acción que registre el sistema.<br>
+      Empezá a dispensar, cambiar estados o registrar cultivos y el log se va a ir llenando.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ALERTAS Y PENDIENTES -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🔔 Necesitás revisar</span>
+    </div>
+
+    {% set tiene_alertas = socios_pendientes or cuotas_vencidas or pedidos_activos or cosechas_urgentes or alertas_stock %}
+    {% if tiene_alertas %}
+
+    {% if socios_pendientes > 0 %}
+    <div class="alerta-item">
+      <div class="alerta-icon">🌿</div>
+      <div>
+        <div class="alerta-title">{{ socios_pendientes }} solicitud{% if socios_pendientes != 1 %}es{% endif %} de socios</div>
+        <div class="alerta-sub">Tienen que ser revisadas y aprobadas</div>
+      </div>
+      <a href="{{ url_for('admin_socios') }}?etapa=solicitud" class="alerta-btn">Revisar →</a>
+    </div>
+    {% endif %}
+
+    {% if pedidos_activos > 0 %}
+    <div class="alerta-item">
+      <div class="alerta-icon">📋</div>
+      <div>
+        <div class="alerta-title">{{ pedidos_activos }} pedido{% if pedidos_activos != 1 %}s{% endif %} esperando</div>
+        <div class="alerta-sub">Pendiente o en preparación</div>
+      </div>
+      <a href="{{ url_for('admin_pedidos') }}?estado=pendiente" class="alerta-btn">Ver →</a>
+    </div>
+    {% endif %}
+
+    {% if cuotas_vencidas > 0 %}
+    <div class="alerta-item">
+      <div class="alerta-icon">💳</div>
+      <div>
+        <div class="alerta-title">{{ cuotas_vencidas }} cuota{% if cuotas_vencidas != 1 %}s{% endif %} vencida{% if cuotas_vencidas != 1 %}s{% endif %}</div>
+        <div class="alerta-sub">Socios con cuota sin renovar</div>
+      </div>
+      <a href="{{ url_for('admin_cuotas') }}?estado=vencida" class="alerta-btn">Ver →</a>
+    </div>
+    {% endif %}
+
+    {% if cosechas_urgentes > 0 %}
+    <div class="alerta-item">
+      <div class="alerta-icon">🌾</div>
+      <div>
+        <div class="alerta-title">{{ cosechas_urgentes }} cosecha{% if cosechas_urgentes != 1 %}s{% endif %} en los próximos 14 días</div>
+        <div class="alerta-sub">Planeá la logística con anticipación</div>
+      </div>
+      <a href="{{ url_for('admin_cultivos') }}" class="alerta-btn">Ver →</a>
+    </div>
+    {% endif %}
+
+    {% for alerta in alertas_stock %}
+    <div class="alerta-item">
+      <div class="alerta-icon">📦</div>
+      <div>
+        <div class="alerta-title">Stock bajo: {{ alerta.variedad }}</div>
+        <div class="alerta-sub">Solo {{ alerta.disponible_g }}g disponibles</div>
+      </div>
+      <a href="{{ url_for('admin_stock') }}" class="alerta-btn">Ver →</a>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="empty-log">
+      <div class="ei">✅</div>
+      <p>No hay nada pendiente.<br>Germina está monitoreando el club.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- SOCIOS RECIENTES -->
+{% if socios_recientes %}
+<div class="card" style="margin-top:1.5rem;">
+  <div class="card-header">
+    <span class="card-title">🌿 Últimos socios con actividad</span>
+    <a href="{{ url_for('admin_socios') }}" style="font-size:0.72rem;color:var(--gold);">Ver todos →</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Socio</th><th>Etapa</th><th>Actualizado</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in socios_recientes %}
+        <tr onclick="location.href='{{ url_for('admin_socio', sid=s.id) }}'">
+          <td class="fw-600">{{ s.nombre }} {{ s.apellido }}</td>
+          <td>
+            <span class="badge badge-{{ s.etapa }}">{{ etapa_label.get(s.etapa, s.etapa) }}</span>
+          </td>
+          <td class="text-xs text-muted">{{ s.updated_at[:16] if s.updated_at else '—' }}</td>
+          <td><a href="{{ url_for('admin_socio', sid=s.id) }}" style="font-size:0.75rem;color:var(--gold);">Ver →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

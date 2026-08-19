@@ -1,0 +1,265 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Autopilot — Germina{% endblock %}
+{% block topbar_title %}🤖 Germina Autopilot{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── INTRO ── */
+.ap-intro {
+  background: linear-gradient(135deg, var(--green-deep) 0%, #243d29 100%);
+  border-radius: 14px; padding: 1.8rem 2rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap;
+}
+.ap-intro h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--cream); margin-bottom: 0.3rem; }
+.ap-intro p  { font-size: 0.82rem; color: rgba(245,242,236,0.5); max-width: 520px; }
+.ap-stats { display: flex; gap: 2rem; }
+.ap-stat .val { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); line-height:1; }
+.ap-stat .lbl { font-size: 0.65rem; color: rgba(245,242,236,0.35); text-transform:uppercase; letter-spacing:0.08em; }
+
+/* ── NIVEL PILLS ── */
+.level-pill {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em;
+  padding: 0.3rem 0.8rem; border-radius: 100px; cursor: pointer;
+  border: none; font-family: 'Inter', sans-serif; transition: all 0.15s;
+}
+.lp-RECOMENDAR { background: #F0EDEA; color: var(--muted); }
+.lp-PREPARAR   { background: var(--gold-light); color: #7A5C00; }
+.lp-EJECUTAR   { background: var(--green-pale); color: var(--green-mid); }
+.lp-RECOMENDAR.active { background: var(--muted); color: white; }
+.lp-PREPARAR.active   { background: var(--gold); color: var(--green-deep); }
+.lp-EJECUTAR.active   { background: var(--green-mid); color: white; }
+
+/* ── AGENTE SECTION ── */
+.agent-section { margin-bottom: 1.5rem; }
+.agent-header {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 1rem 1.4rem; border-bottom: 1px solid var(--border);
+}
+.agent-icon { font-size: 1.3rem; }
+.agent-name { font-size: 0.9rem; font-weight: 700; color: var(--green-deep); }
+.agent-desc { font-size: 0.72rem; color: var(--muted); }
+.agent-badge {
+  margin-left: auto; font-size: 0.65rem; font-weight: 700;
+  padding: 0.2rem 0.6rem; border-radius: 100px;
+  background: var(--green-pale); color: var(--green-mid);
+}
+.agent-badge.coming { background: #F0EDEA; color: var(--muted); }
+
+/* ── ACTION ROW ── */
+.action-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.9rem 1.4rem; border-bottom: 1px solid var(--border); gap: 1rem;
+  flex-wrap: wrap;
+}
+.action-row:last-child { border-bottom: none; }
+.action-info { flex: 1; }
+.action-name { font-size: 0.84rem; font-weight: 600; color: var(--green-deep); }
+.action-desc { font-size: 0.72rem; color: var(--muted); }
+.level-selector { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+/* ── REGLAS ── */
+.rule-row {
+  display: grid; grid-template-columns: 70px 1fr 100px;
+  gap: 0.8rem; align-items: center;
+  padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.82rem;
+}
+.rule-row:last-child { border-bottom: none; }
+.rule-id { font-weight: 700; font-family: monospace; font-size: 0.7rem; color: var(--green-mid); }
+.rule-sev-WARNING { color: #B8930F; font-weight: 700; font-size: 0.68rem; }
+.rule-sev-BLOCK   { color: #C0392B; font-weight: 700; font-size: 0.68rem; }
+.rule-jur { font-size: 0.65rem; background: var(--cream); padding: 0.15rem 0.5rem; border-radius: 4px; text-align:center; }
+
+/* ── NIVELES EXPLICACION ── */
+.levels-legend { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.level-card {
+  border-radius: 10px; padding: 1rem 1.2rem;
+  border: 1px solid var(--border);
+}
+.level-card.rc { background:#F8F6F2; border-color: #D8D3C8; }
+.level-card.pr { background:#FBF8EC; border-color: var(--gold); }
+.level-card.ej { background:#EFF7F2; border-color: var(--green-mid); }
+.level-card .lc-num { font-family:'Playfair Display',serif; font-size:1.6rem; margin-bottom:0.3rem; }
+.level-card .lc-name { font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.3rem; }
+.level-card .lc-desc { font-size:0.78rem; color:var(--muted); line-height:1.5; }
+.level-card.rc .lc-name { color:var(--muted); }
+.level-card.pr .lc-name { color:#7A5C00; }
+.level-card.ej .lc-name { color:var(--green-mid); }
+
+@media(max-width:700px){.levels-legend{grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- INTRO -->
+<div class="ap-intro">
+  <div>
+    <h1>Germina Autopilot</h1>
+    <p>Decidí qué hace Germina sola y qué te consulta antes de actuar. La autonomía se gana gradualmente — arrancás en modo "sugerir" y activás más cuando te genere confianza.</p>
+  </div>
+  <div class="ap-stats">
+    <div class="ap-stat">
+      <div class="val">{{ tareas_total }}</div>
+      <div class="lbl">Acciones registradas</div>
+    </div>
+    <div class="ap-stat">
+      <div class="val">{{ roi_total_min }}'</div>
+      <div class="lbl">Min. ahorrados</div>
+    </div>
+  </div>
+</div>
+
+<!-- NIVELES EXPLICADOS -->
+<div class="levels-legend">
+  <div class="level-card rc">
+    <div class="lc-num">1</div>
+    <div class="lc-name">Recomendar</div>
+    <div class="lc-desc">Germina detecta la situación y te avisa. Vos decidís qué hacer.</div>
+  </div>
+  <div class="level-card pr">
+    <div class="lc-num">2</div>
+    <div class="lc-name">Preparar</div>
+    <div class="lc-desc">Germina prepara todo (el mensaje, la acción). Vos aprobás antes de que se ejecute.</div>
+  </div>
+  <div class="level-card ej">
+    <div class="lc-num">3</div>
+    <div class="lc-name">Ejecutar</div>
+    <div class="lc-desc">Germina actúa automáticamente. Lo que hizo queda registrado en el log.</div>
+  </div>
+</div>
+
+<!-- AGENTE SOCIOS -->
+<div class="card agent-section">
+  <div class="agent-header">
+    <span class="agent-icon">🌿</span>
+    <div>
+      <div class="agent-name">Agente Socios</div>
+      <div class="agent-desc">Gestiona altas, documentación, comunicaciones y seguimiento de socios</div>
+    </div>
+    <span class="agent-badge">Disponible</span>
+  </div>
+  {% for action_id, action_label in agent_actions['socios'] %}
+  {% set current_level = config.get(('socios', action_id), 'RECOMENDAR') %}
+  <div class="action-row">
+    <div class="action-info">
+      <div class="action-name">{{ action_label }}</div>
+    </div>
+    <div class="level-selector">
+      {% for level_id, level_desc in autopilot_levels.items() %}
+      <button
+        class="level-pill lp-{{ level_id }} {% if current_level == level_id %}active{% endif %}"
+        title="{{ level_desc }}"
+        onclick="setLevel('socios','{{ action_id }}','{{ level_id }}',this)">
+        {{ level_id }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- AGENTE ADMINISTRACIÓN -->
+<div class="card agent-section">
+  <div class="agent-header">
+    <span class="agent-icon">📊</span>
+    <div>
+      <div class="agent-name">Agente Administración</div>
+      <div class="agent-desc">Cuotas, reportes, alertas y tareas administrativas del club</div>
+    </div>
+    <span class="agent-badge">Disponible</span>
+  </div>
+  {% for action_id, action_label in agent_actions['administracion'] %}
+  {% set current_level = config.get(('administracion', action_id), 'RECOMENDAR') %}
+  <div class="action-row">
+    <div class="action-info">
+      <div class="action-name">{{ action_label }}</div>
+    </div>
+    <div class="level-selector">
+      {% for level_id, level_desc in autopilot_levels.items() %}
+      <button
+        class="level-pill lp-{{ level_id }} {% if current_level == level_id %}active{% endif %}"
+        title="{{ level_desc }}"
+        onclick="setLevel('administracion','{{ action_id }}','{{ level_id }}',this)">
+        {{ level_id }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- AGENTE WHATSAPP -->
+<div class="card agent-section">
+  <div class="agent-header">
+    <span class="agent-icon">💬</span>
+    <div>
+      <div class="agent-name">Agente WhatsApp</div>
+      <div class="agent-desc">Responde consultas, envía recordatorios y gestiona comunicación por WhatsApp</div>
+    </div>
+    <span class="agent-badge coming">Próximamente</span>
+  </div>
+  {% for action_id, action_label in agent_actions['whatsapp'] %}
+  <div class="action-row" style="opacity:0.5;pointer-events:none;">
+    <div class="action-info">
+      <div class="action-name">{{ action_label }}</div>
+      <div class="action-desc">Disponible cuando se conecte WhatsApp</div>
+    </div>
+    <div class="level-selector">
+      {% for level_id, level_desc in autopilot_levels.items() %}
+      <button class="level-pill lp-{{ level_id }}" disabled>{{ level_id }}</button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- MOTOR DE REGLAS -->
+<div class="card" style="margin-top:1.5rem;">
+  <div class="card-header">
+    <span class="card-title">⚖️ Motor de Reglas</span>
+    <span style="font-size:0.72rem;color:var(--muted);">La IA nunca inventa qué es legal — consulta estas reglas</span>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div style="padding:1rem 1.4rem 0.5rem;font-size:0.75rem;color:var(--muted);">
+      Estas reglas son determinísticas. Ningún agente puede saltearlas. Si una acción viola una regla BLOCK, se bloquea aunque el agente quiera ejecutarla.
+    </div>
+    {% for rule in rules %}
+    <div class="rule-row">
+      <span class="rule-id">{{ rule.rule_id }}</span>
+      <div>
+        <div style="font-size:0.82rem;font-weight:500;color:var(--green-deep);">{{ rule.description }}</div>
+        <div style="font-size:0.68rem;color:var(--muted);">{{ rule.source }}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="rule-jur">{{ rule.jurisdiction }}</span>
+        <div class="rule-sev-{{ rule.severity }}" style="margin-top:0.2rem;">{{ rule.severity }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setLevel(agentId, actionId, level, btn) {
+  // visual feedback inmediato
+  const row = btn.closest('.level-selector');
+  row.querySelectorAll('.level-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  // guardar en servidor
+  const fd = new FormData();
+  fd.append('agent_id', agentId);
+  fd.append('action_id', actionId);
+  fd.append('level', level);
+  fetch('/admin/autopilot/update', {
+    method: 'POST',
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
+    body: fd
+  }).catch(() => {});
+}
+</script>
+{% endblock %}

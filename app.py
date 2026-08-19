@@ -1,4 +1,4 @@
-import os, sqlite3, csv, io, secrets, smtplib
+import os, sqlite3, csv, io, secrets, smtplib, json
 from datetime import datetime, date, timedelta
 from functools import wraps
 from email.mime.multipart import MIMEMultipart
@@ -159,6 +159,40 @@ FORMA_PAGO_LABEL = {
 TIPO_ENTREGA_LABEL = {
     'delivery': 'Delivery a domicilio',
     'retiro':   'Retiro en punto',
+}
+
+# ─── Germina Autopilot — agentes, acciones y niveles ─────────────────────────
+
+AGENTS = {
+    'socios':         'Agente Socios',
+    'administracion': 'Agente Administración',
+    'whatsapp':       'Agente WhatsApp',
+}
+AGENT_ACTIONS = {
+    'socios': [
+        ('alta_socio',           'Alta de nuevo socio'),
+        ('aviso_vencimiento',    'Aviso vencimiento de documento'),
+        ('recordatorio_cuota',   'Recordatorio de cuota mensual'),
+        ('seguimiento_inactivo', 'Seguimiento de socio inactivo'),
+        ('renovacion',           'Gestión de renovación'),
+    ],
+    'administracion': [
+        ('alerta_stock',         'Alerta de stock bajo'),
+        ('reporte_diario',       'Reporte diario automático'),
+        ('cuota_vencida',        'Seguimiento de cuota vencida'),
+        ('pendientes_revision',  'Pendientes de revisión'),
+    ],
+    'whatsapp': [
+        ('responder_consulta',   'Responder consultas de socios'),
+        ('enviar_recordatorio',  'Enviar recordatorio por WhatsApp'),
+        ('derivar_admin',        'Derivar al administrador'),
+        ('solicitar_info',       'Solicitar información al socio'),
+    ],
+}
+AUTOPILOT_LEVELS = {
+    'RECOMENDAR': 'La IA detecta y sugiere. Vos decidís.',
+    'PREPARAR':   'La IA prepara todo. Vos aprobás antes de que se ejecute.',
+    'EJECUTAR':   'La IA ejecuta automáticamente sin pedirte permiso.',
 }
 
 # ─── DB init ───────────────────────────────────────────────────────────────
@@ -541,6 +575,143 @@ def _migrate():
                  'https://images.unsplash.com/photo-1569987516701-4e74f4ac0e15?auto=format&fit=crop&w=600&q=80',1),
             ]
         )
+    # ── tablas Germina AI (se agregan si no existen — no tocan las existentes) ──
+    db.executescript('''
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT DEFAULT (datetime('now','localtime')),
+        club_id INTEGER DEFAULT 1,
+        agent_id TEXT,
+        action TEXT NOT NULL,
+        actor TEXT DEFAULT 'Admin',
+        entity_type TEXT,
+        entity_id INTEGER,
+        input_data TEXT,
+        result TEXT,
+        error TEXT,
+        cost_usd REAL DEFAULT 0,
+        tokens_in INTEGER DEFAULT 0,
+        tokens_out INTEGER DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT DEFAULT (datetime('now','localtime')),
+        club_id INTEGER DEFAULT 1,
+        event_type TEXT NOT NULL,
+        entity_type TEXT,
+        entity_id INTEGER,
+        payload TEXT,
+        status TEXT DEFAULT 'pending',
+        processed_at TEXT,
+        agent_id TEXT
+    );
+    CREATE TABLE IF NOT EXISTS rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        rule_id TEXT UNIQUE NOT NULL,
+        jurisdiction TEXT NOT NULL DEFAULT 'AR',
+        country TEXT NOT NULL DEFAULT 'Argentina',
+        version INTEGER DEFAULT 1,
+        effective_from TEXT,
+        effective_until TEXT,
+        source TEXT,
+        description TEXT NOT NULL,
+        condition_field TEXT,
+        condition_operator TEXT,
+        condition_value TEXT,
+        action TEXT,
+        severity TEXT DEFAULT 'WARNING',
+        status TEXT DEFAULT 'active'
+    );
+    CREATE TABLE IF NOT EXISTS autopilot_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        club_id INTEGER DEFAULT 1,
+        agent_id TEXT NOT NULL,
+        action_id TEXT NOT NULL,
+        level TEXT DEFAULT 'RECOMENDAR',
+        UNIQUE(club_id, agent_id, action_id)
+    );
+    CREATE TABLE IF NOT EXISTS task_type_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task_type TEXT UNIQUE NOT NULL,
+        human_minutes INTEGER DEFAULT 5,
+        description TEXT
+    );
+    CREATE TABLE IF NOT EXISTS roi_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT DEFAULT (datetime('now','localtime')),
+        club_id INTEGER DEFAULT 1,
+        agent_id TEXT,
+        task_type TEXT,
+        audit_log_id INTEGER,
+        human_minutes_saved REAL DEFAULT 0,
+        automation_cost_usd REAL DEFAULT 0,
+        net_value_usd REAL DEFAULT 0
+    );
+    ''')
+
+    # Reglas motor AR — esqueleto regulatorio (no inventamos normativa)
+    _rules_ar = [
+        ('AR-001', 'AR', 'Argentina', 1, 'Ley 27.350',
+         'El socio debe tener diagnóstico médico para recibir cannabis medicinal',
+         'tiene_diagnostico', 'eq', 'no', 'BLOCK', 'WARNING'),
+        ('AR-002', 'AR', 'Argentina', 1, 'Ley 27.350 / Decreto 883/2020',
+         'El autocultivo medicinal requiere inscripción activa en REPROCANN',
+         'reprocann_activo', 'eq', 'no', 'WARN', 'WARNING'),
+        ('AR-003', 'AR', 'Argentina', 1, 'Operativo interno',
+         'La dispensación mensual no debe superar el cupo aprobado por el médico',
+         'gramos_mes', 'gt', '40', 'WARN', 'WARNING'),
+        ('AR-004', 'AR', 'Argentina', 1, 'Ley 27.350',
+         'Todo movimiento de cannabis debe quedar registrado con trazabilidad completa',
+         'trazabilidad', 'eq', 'no', 'BLOCK', 'WARNING'),
+        ('UY-001', 'UY', 'Uruguay', 1, 'Ley 19.172',
+         'El club cannábico no puede superar 45 socios',
+         'total_socios', 'gt', '45', 'BLOCK', 'WARNING'),
+        ('UY-002', 'UY', 'Uruguay', 1, 'Ley 19.172',
+         'Cada socio no puede recibir más de 480g anuales (40g/mes)',
+         'gramos_año', 'gt', '480', 'BLOCK', 'WARNING'),
+    ]
+    for r in _rules_ar:
+        db.execute('''
+            INSERT OR IGNORE INTO rules
+            (rule_id,jurisdiction,country,version,source,description,
+             condition_field,condition_operator,condition_value,action,severity)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        ''', r)
+
+    # Tiempos de trabajo humano equivalente por tipo de tarea
+    _task_types = [
+        ('alta_socio',           15, 'Procesar alta de nuevo socio (formulario + revisión de docs)'),
+        ('aviso_vencimiento',     3, 'Revisar y enviar aviso de vencimiento de documento'),
+        ('recordatorio_cuota',    2, 'Generar y enviar recordatorio de cuota mensual'),
+        ('seguimiento_inactivo',  5, 'Revisar socio inactivo y decidir acción'),
+        ('alerta_stock',          4, 'Revisar stock y tomar decisión sobre reabastecimiento'),
+        ('reporte_diario',       10, 'Generar reporte diario del club'),
+        ('cuota_vencida',         5, 'Revisar y gestionar cuota vencida'),
+        ('responder_consulta',    3, 'Responder consulta de socio por WhatsApp o email'),
+        ('enviar_recordatorio',   2, 'Preparar y enviar recordatorio personalizado'),
+        ('dispensacion',          2, 'Registrar dispensación de cannabis medicinal'),
+        ('cambio_etapa_cultivo',  3, 'Registrar cambio de etapa de cultivo'),
+        ('nuevo_pedido',          4, 'Procesar nuevo pedido de socio'),
+        ('cambio_etapa_socio',    3, 'Revisar y cambiar etapa de un socio'),
+        ('registro_cosecha',      5, 'Registrar datos de cosecha en el sistema'),
+    ]
+    for tt in _task_types:
+        db.execute('''
+            INSERT OR IGNORE INTO task_type_config (task_type, human_minutes, description)
+            VALUES (?,?,?)
+        ''', tt)
+
+    # Autopilot defaults — todos en RECOMENDAR (la autonomía se gana gradualmente)
+    _autopilot_defaults = []
+    for agent_id, actions in AGENT_ACTIONS.items():
+        for action_id, _ in actions:
+            _autopilot_defaults.append((1, agent_id, action_id, 'RECOMENDAR'))
+    for ap in _autopilot_defaults:
+        db.execute('''
+            INSERT OR IGNORE INTO autopilot_config (club_id, agent_id, action_id, level)
+            VALUES (?,?,?,?)
+        ''', ap)
+
     # Actualizar imágenes de variedades seed con URLs verificadas
     imagenes_seed = {
         'OG Kush':        'https://www.royalqueenseeds.com/149-3131-large/og-kush.jpg',
@@ -1314,6 +1485,8 @@ def admin_dispensario():
                 "INSERT INTO dispensaciones (socio_id, variedad, gramos, fecha, notas) VALUES (?,?,?,?,?)",
                 (socio_id, variedad, gramos, hoy, notas)
             )
+            _log_tarea(db, 'dispensacion', entity_type='socio', entity_id=int(socio_id),
+                       result=f'{gramos}g de {variedad}')
             db.commit()
             flash(f'Dispensación registrada: {gramos}g de {variedad}')
         return redirect(url_for('admin_dispensario'))
@@ -1493,8 +1666,15 @@ def admin_socio(sid):
 def admin_set_etapa(sid):
     etapa = request.form.get('etapa','')
     if etapa in ETAPAS:
-        get_db().execute('UPDATE socios SET etapa=?, updated_at=datetime("now","localtime") WHERE id=?', (etapa, sid))
-        get_db().commit()
+        db2 = get_db()
+        db2.execute('UPDATE socios SET etapa=?, updated_at=datetime("now","localtime") WHERE id=?', (etapa, sid))
+        _log_tarea(db2, 'cambio_etapa_socio', entity_type='socio', entity_id=sid,
+                   result=f'→ {ETAPA_LABEL.get(etapa, etapa)}')
+        _emit_event(db2, 'MEMBER_UPDATED', entity_type='socio', entity_id=sid,
+                    payload={'etapa': etapa})
+        if etapa == 'activo':
+            _emit_event(db2, 'MEMBER_ACTIVATED', entity_type='socio', entity_id=sid)
+        db2.commit()
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify(ok=True)
     return redirect(url_for('admin_socio', sid=sid))
@@ -1731,6 +1911,10 @@ def admin_cultivo_etapa(cid):
         INSERT INTO etapas_cultivo (cultivo_id, etapa_anterior, etapa_nueva, notas, registrado_por)
         VALUES (?,?,?,?,?)
     ''', (cid, c['etapa_actual'], nueva, notas, prof))
+    _log_tarea(db, 'cambio_etapa_cultivo', actor=prof, entity_type='cultivo', entity_id=cid,
+               result=f'→ {ETAPA_CULTIVO_LABEL.get(nueva, nueva)}')
+    _emit_event(db, 'CULTIVO_STAGE_CHANGED', entity_type='cultivo', entity_id=cid,
+                payload={'etapa_nueva': nueva})
     db.commit()
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1978,6 +2162,11 @@ def admin_pedido_estado(pid):
         params.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     params.append(pid)
     db.execute(f'UPDATE pedidos SET {updates} WHERE id=?', params)
+    _log_tarea(db, 'nuevo_pedido' if nuevo == 'pendiente' else 'dispensacion',
+               entity_type='pedido', entity_id=pid,
+               result=f'Estado → {ESTADO_PEDIDO_LABEL.get(nuevo, nuevo)}')
+    _emit_event(db, 'ORDER_STATUS_CHANGED', entity_type='pedido', entity_id=pid,
+                payload={'estado': nuevo})
     db.commit()
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -2037,6 +2226,61 @@ def delivery_confirmar(token):
 # ═══════════════════════════════════════════════════════════════════════════
 
 _register_globals()
+
+# ─── Germina AI — helpers de registro ────────────────────────────────────────
+
+def _log_tarea(db, task_type, actor='Admin', agent_id=None,
+               entity_type=None, entity_id=None, result=None, club_id=1):
+    """Registra una acción en audit_log y calcula tiempo humano ahorrado en roi_tasks."""
+    db.execute('''
+        INSERT INTO audit_log
+        (club_id, agent_id, action, actor, entity_type, entity_id, result)
+        VALUES (?,?,?,?,?,?,?)
+    ''', (club_id, agent_id, task_type, actor, entity_type, entity_id,
+          result if isinstance(result, str) else json.dumps(result) if result else None))
+    log_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+    cfg = db.execute('SELECT human_minutes FROM task_type_config WHERE task_type=?',
+                     (task_type,)).fetchone()
+    human_min = cfg['human_minutes'] if cfg else 3
+    db.execute('''
+        INSERT INTO roi_tasks (club_id, agent_id, task_type, audit_log_id, human_minutes_saved)
+        VALUES (?,?,?,?,?)
+    ''', (club_id, agent_id, task_type, log_id, human_min))
+    return log_id
+
+def _emit_event(db, event_type, entity_type=None, entity_id=None, payload=None, club_id=1):
+    """Emite un evento al motor de eventos para que los agentes puedan procesarlo."""
+    db.execute('''
+        INSERT INTO events (club_id, event_type, entity_type, entity_id, payload)
+        VALUES (?,?,?,?,?)
+    ''', (club_id, event_type, entity_type, entity_id,
+          json.dumps(payload) if payload else None))
+
+def _evaluar_reglas(db, field, value, jurisdiction='AR'):
+    """Evalúa el motor de reglas. Retorna lista de reglas violadas."""
+    rules = db.execute('''
+        SELECT * FROM rules
+        WHERE jurisdiction=? AND status='active' AND condition_field=?
+        AND (effective_until IS NULL OR effective_until >= date('now'))
+    ''', (jurisdiction, field)).fetchall()
+    violations = []
+    for r in rules:
+        try:
+            op, val = r['condition_operator'], r['condition_value']
+            v_num = float(value) if value not in (None,'') else 0
+            c_num = float(val) if val not in (None,'') else 0
+            hit = (
+                (op == 'gt'  and v_num >  c_num) or
+                (op == 'gte' and v_num >= c_num) or
+                (op == 'lt'  and v_num <  c_num) or
+                (op == 'lte' and v_num <= c_num) or
+                (op == 'eq'  and str(value) == str(val))
+            )
+            if hit:
+                violations.append(dict(r))
+        except Exception:
+            pass
+    return violations
 
 # ─── BLOG SEO ──────────────────────────────────────────────────────────────
 
@@ -2400,6 +2644,193 @@ def crm_prospectos():
         return redirect(url_for('crm_login'))
     prospectos = _get_prospectos_imap()
     return render_template('crm_prospectos.html', prospectos=prospectos)
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  CENTRO DE CONTROL
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/centro-control')
+@login_required
+def admin_centro_control():
+    db  = get_db()
+    hoy = date.today().isoformat()
+    mes_inicio = date.today().replace(day=1).isoformat()
+
+    # ── Tareas registradas hoy (audit_log + acciones manuales) ──────────────
+    tareas_ai_hoy = db.execute(
+        "SELECT COUNT(*) FROM audit_log WHERE DATE(timestamp)=?", (hoy,)
+    ).fetchone()[0]
+    disp_hoy = db.execute("SELECT COUNT(*) FROM dispensaciones WHERE fecha=?", (hoy,)).fetchone()[0]
+    accesos_hoy = db.execute("SELECT COUNT(*) FROM accesos WHERE fecha=?", (hoy,)).fetchone()[0]
+    total_tareas_hoy = tareas_ai_hoy + disp_hoy + accesos_hoy
+
+    # ── Tiempo ahorrado (en minutos, de roi_tasks) ──────────────────────────
+    tiempo_ahorrado_min = db.execute(
+        "SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks WHERE DATE(timestamp)=?", (hoy,)
+    ).fetchone()[0] or 0
+    tiempo_ahorrado_semana = db.execute(
+        "SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks WHERE timestamp >= date('now','-7 days')"
+    ).fetchone()[0] or 0
+
+    # ── Últimas acciones del log ─────────────────────────────────────────────
+    log_reciente = db.execute('''
+        SELECT al.*, tt.human_minutes, tt.description as task_desc
+        FROM audit_log al
+        LEFT JOIN task_type_config tt ON tt.task_type = al.action
+        ORDER BY al.id DESC LIMIT 20
+    ''').fetchall()
+
+    # ── Eventos pendientes de procesamiento ──────────────────────────────────
+    eventos_pendientes = db.execute(
+        "SELECT COUNT(*) FROM events WHERE status='pending'"
+    ).fetchone()[0]
+
+    # ── Cosas que necesitan atención del admin ────────────────────────────────
+    socios_pendientes = db.execute(
+        "SELECT COUNT(*) FROM socios WHERE etapa IN ('solicitud','documentacion','en_revision')"
+    ).fetchone()[0]
+    cuotas_vencidas = db.execute(
+        "SELECT COUNT(*) FROM cuotas WHERE fecha_vencimiento < ? AND estado='pagada'", (hoy,)
+    ).fetchone()[0]
+    cosechas_urgentes = db.execute(
+        "SELECT COUNT(*) FROM cultivos WHERE estado='activo' AND cosecha_estimada IS NOT NULL "
+        "AND cosecha_estimada >= date('now') AND cosecha_estimada <= date('now','+14 days')"
+    ).fetchone()[0]
+    pedidos_activos = db.execute(
+        "SELECT COUNT(*) FROM pedidos WHERE estado IN ('pendiente','preparando')"
+    ).fetchone()[0]
+
+    # Stock bajo (< 50g disponibles)
+    alertas_stock = []
+    for row in db.execute('''
+        SELECT cu.variedad, COALESCE(SUM(co.peso_seco_g),0) as total_g
+        FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
+        GROUP BY cu.variedad
+    ''').fetchall():
+        v = row['variedad']
+        entregado = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado='entregado'", (v,)
+        ).fetchone()[0]
+        reservado = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado IN ('pendiente','preparando','en_camino')", (v,)
+        ).fetchone()[0]
+        disp_g = round((row['total_g'] or 0) - entregado - reservado, 1)
+        if disp_g < 50:
+            alertas_stock.append({'variedad': v, 'disponible_g': disp_g})
+
+    total_para_revisar = socios_pendientes + cuotas_vencidas + cosechas_urgentes + pedidos_activos + len(alertas_stock)
+
+    # ── Impacto del mes ──────────────────────────────────────────────────────
+    dispensaciones_mes = db.execute(
+        "SELECT COUNT(*), COALESCE(SUM(gramos),0) FROM dispensaciones WHERE fecha >= ?", (mes_inicio,)
+    ).fetchone()
+    socios_nuevos_mes = db.execute(
+        "SELECT COUNT(*) FROM socios WHERE created_at >= ?", (mes_inicio,)
+    ).fetchone()[0]
+    roi_mes_min = db.execute(
+        "SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks WHERE timestamp >= ?", (mes_inicio,)
+    ).fetchone()[0] or 0
+
+    # ── Últimos socios con evento ─────────────────────────────────────────────
+    socios_recientes = db.execute('''
+        SELECT * FROM socios ORDER BY updated_at DESC LIMIT 5
+    ''').fetchall()
+
+    return render_template('admin/centro_control.html',
+        hoy=hoy,
+        total_tareas_hoy=total_tareas_hoy,
+        tareas_ai_hoy=tareas_ai_hoy,
+        disp_hoy=disp_hoy,
+        accesos_hoy=accesos_hoy,
+        tiempo_ahorrado_min=round(tiempo_ahorrado_min),
+        tiempo_ahorrado_semana=round(tiempo_ahorrado_semana),
+        log_reciente=log_reciente,
+        eventos_pendientes=eventos_pendientes,
+        socios_pendientes=socios_pendientes,
+        cuotas_vencidas=cuotas_vencidas,
+        cosechas_urgentes=cosechas_urgentes,
+        pedidos_activos=pedidos_activos,
+        alertas_stock=alertas_stock,
+        total_para_revisar=total_para_revisar,
+        dispensaciones_mes=dispensaciones_mes,
+        socios_nuevos_mes=socios_nuevos_mes,
+        roi_mes_min=round(roi_mes_min),
+        socios_recientes=socios_recientes,
+        etapa_label=ETAPA_LABEL,
+        etapa_color=ETAPA_COLOR,
+    )
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  GERMINA AUTOPILOT
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/autopilot')
+@login_required
+def admin_autopilot():
+    db = get_db()
+    config_rows = db.execute(
+        "SELECT agent_id, action_id, level FROM autopilot_config WHERE club_id=1 ORDER BY agent_id, action_id"
+    ).fetchall()
+    config = {(r['agent_id'], r['action_id']): r['level'] for r in config_rows}
+
+    rules = db.execute(
+        "SELECT * FROM rules WHERE status='active' ORDER BY jurisdiction, rule_id"
+    ).fetchall()
+
+    roi_total = db.execute(
+        "SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks"
+    ).fetchone()[0] or 0
+    tareas_total = db.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+
+    return render_template('admin/autopilot.html',
+        agents=AGENTS,
+        agent_actions=AGENT_ACTIONS,
+        autopilot_levels=AUTOPILOT_LEVELS,
+        config=config,
+        rules=rules,
+        roi_total_min=round(roi_total),
+        tareas_total=tareas_total,
+    )
+
+@app.route('/admin/autopilot/update', methods=['POST'])
+@login_required
+def admin_autopilot_update():
+    db = get_db()
+    agent_id  = request.form.get('agent_id','').strip()
+    action_id = request.form.get('action_id','').strip()
+    level     = request.form.get('level','RECOMENDAR')
+    if agent_id in AGENTS and level in AUTOPILOT_LEVELS:
+        db.execute('''
+            INSERT INTO autopilot_config (club_id, agent_id, action_id, level)
+            VALUES (1,?,?,?)
+            ON CONFLICT(club_id, agent_id, action_id) DO UPDATE SET level=excluded.level
+        ''', (agent_id, action_id, level))
+        db.commit()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(ok=True, level=level, label=AUTOPILOT_LEVELS.get(level,''))
+    return redirect(url_for('admin_autopilot'))
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  AUDITORÍA
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/auditoria')
+@login_required
+def admin_auditoria():
+    db = get_db()
+    logs = db.execute('''
+        SELECT al.*, tt.human_minutes, tt.description as task_desc
+        FROM audit_log al
+        LEFT JOIN task_type_config tt ON tt.task_type = al.action
+        ORDER BY al.id DESC LIMIT 200
+    ''').fetchall()
+    total_min = db.execute("SELECT COALESCE(SUM(human_minutes_saved),0) FROM roi_tasks").fetchone()[0] or 0
+    total_tareas = db.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+    return render_template('admin/auditoria.html',
+        logs=logs,
+        total_min=round(total_min),
+        total_tareas=total_tareas,
+    )
 
 if __name__ == '__main__':
     init_db()
