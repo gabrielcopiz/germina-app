@@ -3929,19 +3929,15 @@ def germina_dashboard():
     db = get_db()
     clubs_raw = db.execute("SELECT * FROM clubs ORDER BY created_at DESC").fetchall()
 
+    mes_inicio = date.today().replace(day=1).isoformat()
     clubs_data = []
     for c in clubs_raw:
         cid = c['id']
-        total_socios = db.execute(
-            "SELECT COUNT(*) FROM socios WHERE club_id=?", (cid,)
-        ).fetchone()[0]
-        activos = db.execute(
-            "SELECT COUNT(*) FROM socios WHERE club_id=? AND etapa='activo'", (cid,)
-        ).fetchone()[0]
-        mes_inicio = date.today().replace(day=1).isoformat()
+        # socios y dispensaciones no tienen club_id en el esquema actual (un club por DB)
+        total_socios = db.execute("SELECT COUNT(*) FROM socios").fetchone()[0]
+        activos = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo'").fetchone()[0]
         disp_mes = db.execute(
-            "SELECT COUNT(*) FROM dispensaciones d JOIN socios s ON s.id=d.socio_id "
-            "WHERE s.club_id=? AND d.fecha>=?", (cid, mes_inicio)
+            "SELECT COUNT(*) FROM dispensaciones WHERE fecha>=?", (mes_inicio,)
         ).fetchone()[0]
         tareas_mes = db.execute(
             "SELECT COUNT(*) FROM agent_tasks WHERE club_id=? AND timestamp>=?",
@@ -4006,27 +4002,27 @@ def germina_club(club_id):
 
     mes_inicio = date.today().replace(day=1).isoformat()
 
-    total_socios = db.execute("SELECT COUNT(*) FROM socios WHERE club_id=?", (club_id,)).fetchone()[0]
-    activos = db.execute("SELECT COUNT(*) FROM socios WHERE club_id=? AND etapa='activo'", (club_id,)).fetchone()[0]
+    # socios/dispensaciones/cultivos no tienen club_id (un club por instancia de DB)
+    total_socios = db.execute("SELECT COUNT(*) FROM socios").fetchone()[0]
+    activos      = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo'").fetchone()[0]
 
     por_etapa = {e: db.execute(
-        "SELECT COUNT(*) FROM socios WHERE club_id=? AND etapa=?", (club_id, e)
+        "SELECT COUNT(*) FROM socios WHERE etapa=?", (e,)
     ).fetchone()[0] for e in ETAPAS}
 
     row = db.execute(
-        "SELECT COUNT(*), COALESCE(SUM(d.gramos),0) FROM dispensaciones d "
-        "JOIN socios s ON s.id=d.socio_id WHERE s.club_id=? AND d.fecha>=?",
-        (club_id, mes_inicio)
+        "SELECT COUNT(*), COALESCE(SUM(gramos),0) FROM dispensaciones WHERE fecha>=?",
+        (mes_inicio,)
     ).fetchone()
     disp_count, disp_g = row[0], round(row[1], 1)
 
     cosechado_g = db.execute(
         "SELECT COALESCE(SUM(co.peso_seco_g),0) FROM cosechas co "
-        "JOIN cultivos cu ON cu.id=co.cultivo_id WHERE cu.club_id=?", (club_id,)
+        "JOIN cultivos cu ON cu.id=co.cultivo_id"
     ).fetchone()[0]
 
     cultivos_activos = db.execute(
-        "SELECT COUNT(*) FROM cultivos WHERE club_id=? AND estado='activo'", (club_id,)
+        "SELECT COUNT(*) FROM cultivos WHERE estado='activo'"
     ).fetchone()[0]
 
     tareas_total = db.execute("SELECT COUNT(*) FROM agent_tasks WHERE club_id=?", (club_id,)).fetchone()[0]
@@ -4040,9 +4036,8 @@ def germina_club(club_id):
         desde = (date.today() - timedelta(weeks=i+1)).isoformat()
         hasta = (date.today() - timedelta(weeks=i)).isoformat()
         n = db.execute(
-            "SELECT COUNT(*) FROM dispensaciones d JOIN socios s ON s.id=d.socio_id "
-            "WHERE s.club_id=? AND d.fecha>=? AND d.fecha<?",
-            (club_id, desde, hasta)
+            "SELECT COUNT(*) FROM dispensaciones WHERE fecha>=? AND fecha<?",
+            (desde, hasta)
         ).fetchone()[0]
         actividad_semanal.append({'semana': f"S-{i}", 'n': n})
     max_act = max((a['n'] for a in actividad_semanal), default=1) or 1
