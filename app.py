@@ -2326,17 +2326,31 @@ def api_next_keyword():
 
 @app.route('/api/generar-articulo', methods=['POST'])
 def api_generar_articulo():
+    import re as _re, unicodedata as _uni
     secret = request.json.get('secret') if request.is_json else request.form.get('secret')
     if secret != CRM_PASS:
         return jsonify({'ok': False, 'error': 'unauthorized'}), 403
+    if not ANTHROPIC_KEY:
+        return jsonify({'ok': False, 'error': 'ANTHROPIC_API_KEY no configurada en Render'}), 500
     db = get_db()
     keyword = _elegir_keyword(db)
     meta = next((k for k in KEYWORDS_SEO if k['kw'] == keyword), {})
+    cluster = meta.get('cluster', 'legal')
     try:
         art = _generar_articulo_ia(keyword, intent=meta.get('intent', 'informational'))
+        contenido = art['contenido']
+
+        # Inyectar imágenes del pool del cluster
+        hero_url, hero_alt, inline_url, inline_alt = _elegir_imagen(cluster, db)
+        hero_html = f'<img class="art-img-hero" src="{hero_url}" alt="{hero_alt}" loading="lazy">'
+        contenido = hero_html + contenido
+        inline_html = f'<img class="art-img-inline" src="{inline_url}" alt="{inline_alt}" loading="lazy"><p class="art-img-caption">{inline_alt}.</p>'
+        if '<div class="art-cta-mid">' in contenido:
+            contenido = contenido.replace('<div class="art-cta-mid">', inline_html + '<div class="art-cta-mid">', 1)
+
         db.execute(
             'INSERT OR IGNORE INTO articulos (slug,titulo,resumen,contenido,keyword,meta_description) VALUES (?,?,?,?,?,?)',
-            (art['slug'], art['titulo'], art['resumen'], art['contenido'], art['keyword'], art['meta_description'])
+            (art['slug'], art['titulo'], art['resumen'], contenido, art['keyword'], art['meta_description'])
         )
         db.commit()
         return jsonify({'ok': True, 'slug': art['slug'], 'titulo': art['titulo'], 'keyword': keyword})
