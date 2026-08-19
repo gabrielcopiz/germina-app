@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ art.titulo }} — Blog Germina</title>
+<meta name="description" content="{{ art.meta_description or art.resumen }}">
+<meta property="og:title" content="{{ art.titulo }}">
+<meta property="og:description" content="{{ art.meta_description or art.resumen }}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://germina-app.onrender.com/blog/{{ art.slug }}">
+<link rel="canonical" href="https://germina-app.onrender.com/blog/{{ art.slug }}">
+<meta name="keywords" content="{{ art.keyword }}, cannabis social club, software cannabis, gestión club cannábico">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#F5F0E8;color:#2A2A2A;}
+a{text-decoration:none;color:inherit;}
+
+nav{background:#1A3520;padding:0 5%;height:64px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.4rem;color:#F5F0E8;}
+.nav-logo span{color:#C8A44A;}
+.nav-links{display:flex;gap:2rem;align-items:center;}
+.nav-links a{color:rgba(245,240,232,0.7);font-size:0.85rem;}
+.nav-cta{background:#C8A44A;color:#1A3520!important;padding:8px 20px;border-radius:6px;font-weight:700;}
+
+.layout{max-width:1100px;margin:3rem auto;padding:0 5%;display:grid;grid-template-columns:1fr 300px;gap:3rem;}
+@media(max-width:768px){.layout{grid-template-columns:1fr;}}
+
+.article-header{margin-bottom:2rem;}
+.article-tag{font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A44A;margin-bottom:0.8rem;}
+.article-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,3.5vw,2.6rem);color:#1A3520;line-height:1.2;margin-bottom:1rem;}
+.article-meta{font-size:0.78rem;color:#aaa;display:flex;gap:1.5rem;}
+
+.article-body{background:#fff;border-radius:14px;padding:2.5rem;border:1px solid #E8E2DA;font-size:0.95rem;line-height:1.85;color:#3A3530;}
+.article-body h1{font-family:'Playfair Display',serif;font-size:1.7rem;color:#1A3520;margin:1.8rem 0 0.8rem;}
+.article-body h2{font-family:'Playfair Display',serif;font-size:1.35rem;color:#1A3520;margin:1.6rem 0 0.7rem;}
+.article-body h3{font-size:1.05rem;font-weight:700;color:#1A3520;margin:1.2rem 0 0.5rem;}
+.article-body p{margin-bottom:1rem;}
+.article-body ul,.article-body ol{margin:0.8rem 0 1rem 1.4rem;}
+.article-body li{margin-bottom:0.4rem;}
+.article-body strong{color:#1A3520;font-weight:600;}
+
+.cta-box{background:#1A3520;border-radius:14px;padding:2rem;margin-top:2.5rem;text-align:center;}
+.cta-box h3{font-family:'Playfair Display',serif;color:#F5F0E8;font-size:1.2rem;margin-bottom:0.6rem;}
+.cta-box p{color:rgba(245,240,232,0.6);font-size:0.82rem;margin-bottom:1.2rem;}
+.cta-box a{display:inline-block;background:#C8A44A;color:#1A3520;font-weight:700;padding:12px 28px;border-radius:8px;font-size:0.9rem;}
+
+.sidebar{}
+.sidebar-card{background:#fff;border-radius:14px;padding:1.4rem;border:1px solid #E8E2DA;margin-bottom:1.5rem;}
+.sidebar-title{font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C8A44A;margin-bottom:1rem;}
+.recent-item{padding:0.7rem 0;border-bottom:1px solid #F0EBE3;}
+.recent-item:last-child{border-bottom:none;}
+.recent-item a{font-size:0.83rem;color:#1A3520;line-height:1.4;font-weight:500;}
+.recent-item a:hover{color:#C8A44A;}
+
+footer{background:#1A3520;padding:2.5rem 5%;text-align:center;margin-top:5rem;}
+footer p{color:rgba(245,240,232,0.3);font-size:0.78rem;}
+footer a{color:#C8A44A;margin:0 0.8rem;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://germina-clubs.netlify.app" class="nav-logo">Germi<span>na</span></a>
+  <div class="nav-links">
+    <a href="/blog">Blog</a>
+    <a href="https://germina-clubs.netlify.app#contacto" class="nav-cta">Quiero una demo</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <main>
+    <div class="article-header">
+      <div class="article-tag">{{ art.keyword or 'Cannabis · Gestión' }}</div>
+      <h1 class="article-title">{{ art.titulo }}</h1>
+      <div class="article-meta">
+        <span>📅 {{ art.created_at[:10] if art.created_at else '' }}</span>
+        <span>🌿 Germina Blog</span>
+      </div>
+    </div>
+
+    <div class="article-body">
+      {{ art.contenido | safe }}
+    </div>
+
+    <div class="cta-box">
+      <h3>¿Querés digitalizar tu club?</h3>
+      <p>Germina es la plataforma diseñada específicamente para asociaciones cannábicas medicinales. Primer mes gratis.</p>
+      <a href="https://germina-clubs.netlify.app#contacto">Ver demo gratuita →</a>
+    </div>
+  </main>
+
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">Artículos recientes</div>
+      {% for r in recientes %}
+      <div class="recent-item">
+        <a href="{{ url_for('blog_articulo', slug=r.slug) }}">{{ r.titulo }}</a>
+      </div>
+      {% endfor %}
+      <div style="margin-top:1rem;">
+        <a href="/blog" style="font-size:0.78rem;color:#C8A44A;font-weight:600;">Ver todos →</a>
+      </div>
+    </div>
+
+    <div class="sidebar-card" style="background:#1A3520;border-color:#1A3520;">
+      <div class="sidebar-title" style="color:rgba(200,164,74,0.7);">Probá Germina gratis</div>
+      <p style="color:rgba(245,240,232,0.6);font-size:0.8rem;margin-bottom:1rem;line-height:1.6;">Primer mes sin costo. Sin tarjeta de crédito.</p>
+      <a href="https://germina-clubs.netlify.app#contacto" style="display:block;background:#C8A44A;color:#1A3520;font-weight:700;padding:10px;border-radius:8px;text-align:center;font-size:0.85rem;">Quiero una demo</a>
+    </div>
+  </aside>
+</div>
+
+<footer>
+  <p>
+    <a href="https://germina-clubs.netlify.app">Inicio</a>
+    <a href="/blog">Blog</a>
+    <a href="https://germina-clubs.netlify.app#contacto">Contacto</a>
+  </p>
+  <p style="margin-top:1rem;">© 2026 Germina · Software para clubes cannábicos medicinales</p>
+</footer>
+
+</body>
+</html>

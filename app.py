@@ -344,6 +344,17 @@ def init_db():
         key TEXT PRIMARY KEY,
         value TEXT
     );
+    CREATE TABLE IF NOT EXISTS articulos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT UNIQUE NOT NULL,
+        titulo TEXT NOT NULL,
+        resumen TEXT,
+        contenido TEXT NOT NULL,
+        keyword TEXT,
+        meta_description TEXT,
+        publicado INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    );
     CREATE TABLE IF NOT EXISTS prospectos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT,
@@ -2003,6 +2014,118 @@ def delivery_confirmar(token):
 # ═══════════════════════════════════════════════════════════════════════════
 
 _register_globals()
+
+# ─── BLOG SEO ──────────────────────────────────────────────────────────────
+
+ANTHROPIC_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
+KEYWORDS_SEO = [
+    "software para clubes cannábicos Argentina",
+    "gestión digital asociación cannábica",
+    "trazabilidad cultivos cannabis social club",
+    "sistema de socios club cannábico",
+    "digitalizar club de cannabis medicinal",
+    "cómo gestionar un cannabis social club",
+    "requisitos legales club cannábico Argentina 2026",
+    "control de stock cannabis medicinal",
+    "portal para socios club cannábico",
+    "herramientas gestión asociaciones cannabis LATAM",
+    "onboarding socios club cannabis",
+    "dispensario cannabis medicinal software",
+]
+
+def _generar_articulo_ia(keyword):
+    import urllib.request, json as _json, re, unicodedata
+    prompt = f"""Sos un experto en cannabis medicinal y gestión de clubes cannábicos en Argentina y LATAM.
+Escribí un artículo SEO en español de 900-1100 palabras sobre: "{keyword}"
+
+El artículo debe:
+- Tener un H1 atractivo con la keyword
+- Incluir subtítulos H2 y H3 relevantes
+- Ser útil, concreto y práctico para directivos de clubes cannábicos
+- Mencionar naturalmente que Germina (germina-clubs.netlify.app) es la solución digital para estos clubes
+- Terminar con un CTA suave hacia Germina
+- NO incluir markdown de código, solo texto con etiquetas HTML básicas (h1,h2,h3,p,ul,li,strong)
+
+Respondé SOLO con JSON válido con esta estructura exacta:
+{{"titulo": "...", "resumen": "...(150 chars max)", "meta_description": "...(155 chars max)", "contenido": "...(HTML)"}}"""
+
+    body = _json.dumps({
+        "model": "claude-haiku-4-5-20251001",
+        "max_tokens": 2000,
+        "messages": [{"role": "user", "content": prompt}]
+    }).encode()
+    req = urllib.request.Request(
+        'https://api.anthropic.com/v1/messages',
+        data=body,
+        headers={
+            'x-api-key': ANTHROPIC_KEY,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json'
+        }
+    )
+    resp = _json.loads(urllib.request.urlopen(req, timeout=30).read())
+    text = resp['content'][0]['text'].strip()
+    # extraer JSON aunque venga con markdown
+    m = re.search(r'\{[\s\S]+\}', text)
+    data = _json.loads(m.group(0)) if m else _json.loads(text)
+
+    # generar slug
+    slug_base = unicodedata.normalize('NFD', data['titulo'].lower())
+    slug_base = ''.join(c for c in slug_base if unicodedata.category(c) != 'Mn')
+    slug_base = re.sub(r'[^a-z0-9]+', '-', slug_base).strip('-')[:80]
+
+    return {
+        'slug':             slug_base,
+        'titulo':           data['titulo'],
+        'resumen':          data.get('resumen', '')[:200],
+        'contenido':        data['contenido'],
+        'keyword':          keyword,
+        'meta_description': data.get('meta_description', '')[:160],
+    }
+
+@app.route('/api/generar-articulo', methods=['POST'])
+def api_generar_articulo():
+    secret = request.json.get('secret') if request.is_json else request.form.get('secret')
+    if secret != CRM_PASS:
+        return jsonify({'ok': False, 'error': 'unauthorized'}), 403
+    db = get_db()
+    # elegir keyword que aún no tiene artículo
+    usadas = {r[0] for r in db.execute('SELECT keyword FROM articulos').fetchall()}
+    disponibles = [k for k in KEYWORDS_SEO if k not in usadas]
+    if not disponibles:
+        disponibles = KEYWORDS_SEO  # rotar de nuevo
+    import random
+    keyword = random.choice(disponibles)
+    try:
+        art = _generar_articulo_ia(keyword)
+        db.execute(
+            'INSERT OR IGNORE INTO articulos (slug,titulo,resumen,contenido,keyword,meta_description) VALUES (?,?,?,?,?,?)',
+            (art['slug'], art['titulo'], art['resumen'], art['contenido'], art['keyword'], art['meta_description'])
+        )
+        db.commit()
+        return jsonify({'ok': True, 'slug': art['slug'], 'titulo': art['titulo']})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/blog')
+def blog():
+    db = get_db()
+    articulos = db.execute(
+        'SELECT id,slug,titulo,resumen,keyword,created_at FROM articulos WHERE publicado=1 ORDER BY id DESC'
+    ).fetchall()
+    return render_template('blog/index.html', articulos=articulos)
+
+@app.route('/blog/<slug>')
+def blog_articulo(slug):
+    db = get_db()
+    art = db.execute('SELECT * FROM articulos WHERE slug=? AND publicado=1', (slug,)).fetchone()
+    if not art:
+        return redirect(url_for('blog'))
+    recientes = db.execute(
+        'SELECT slug,titulo FROM articulos WHERE publicado=1 AND slug!=? ORDER BY id DESC LIMIT 4', (slug,)
+    ).fetchall()
+    return render_template('blog/articulo.html', art=art, recientes=recientes)
 
 # ─── CRM INTERNO GERMINA ───────────────────────────────────────────────────
 
