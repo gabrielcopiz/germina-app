@@ -6,9 +6,25 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from flask import (Flask, render_template, request, redirect, url_for,
                    session, flash, jsonify, make_response, g)
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('CW_SECRET_KEY', 'cannawaka-dev-2026')
+
+# ─── Rate limiting — protege contra bots, ataques de fuerza bruta y spam ────
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    storage_uri='memory://',
+    default_limits=[],
+)
+
+@app.errorhandler(429)
+def demasiadas_solicitudes(e):
+    if request.path.startswith('/api/') or request.path.startswith('/webhook/'):
+        return jsonify({'ok': False, 'error': 'Demasiadas solicitudes. Intentá de nuevo en unos minutos.'}), 429
+    return render_template('429.html'), 429
 
 DB_PATH    = os.environ.get('CW_DB_PATH', 'cannawaka.db')
 ADMIN_USER = os.environ.get('CW_ADMIN_USER', 'admin')
@@ -802,6 +818,7 @@ def landing():
     return render_template('landing.html')
 
 @app.route('/unirme', methods=['GET','POST'])
+@limiter.limit('5 per hour', methods=['POST'])
 def solicitud():
     if request.method == 'POST':
         token = secrets.token_urlsafe(20)
@@ -978,6 +995,7 @@ def _get_prospectos_imap():
     return prospectos
 
 @app.route('/api/lead', methods=['POST', 'OPTIONS'])
+@limiter.limit('10 per hour', methods=['POST'])
 def api_lead():
     if request.method == 'OPTIONS':
         r = make_response()
@@ -992,6 +1010,7 @@ def api_lead():
     return r
 
 @app.route('/api/set-demo-club', methods=['POST', 'OPTIONS'])
+@limiter.limit('10 per hour', methods=['POST'])
 def api_set_demo_club():
     if request.method == 'OPTIONS':
         r = make_response()
@@ -1010,6 +1029,7 @@ def api_set_demo_club():
     return r
 
 @app.route('/contacto-club', methods=['GET', 'POST'])
+@limiter.limit('5 per hour', methods=['POST'])
 def contacto_club():
     enviado = False
     error = None
@@ -1038,6 +1058,7 @@ def contacto_club():
                            form=form, email_enviado=email_enviado)
 
 @app.route('/acceso-socio', methods=['GET', 'POST'])
+@limiter.limit('20 per minute; 100 per hour', methods=['POST'])
 def acceso_socio():
     error = None
     if request.method == 'POST':
@@ -1134,6 +1155,7 @@ def portal_rating(token, vid):
 # ═══════════════════════════════════════════════════════════════════════════
 
 @app.route('/admin/login', methods=['GET','POST'])
+@limiter.limit('10 per minute; 30 per hour')
 def admin_login():
     if request.method == 'POST':
         if request.form.get('user') == ADMIN_USER and request.form.get('password') == ADMIN_PASS:
@@ -2578,6 +2600,7 @@ Respondé SOLO con JSON válido sin texto extra:
     }
 
 @app.route('/api/publicar-articulo', methods=['POST'])
+@limiter.limit('30 per hour')
 def api_publicar_articulo():
     import re, unicodedata
     data = request.get_json(silent=True) or {}
@@ -2626,6 +2649,7 @@ def api_next_keyword():
     return jsonify({'ok': True, 'keyword': keyword, 'cluster': meta.get('cluster'), 'intent': meta.get('intent')})
 
 @app.route('/api/generar-articulo', methods=['POST'])
+@limiter.limit('10 per hour')
 def api_generar_articulo():
     import re as _re, unicodedata as _uni
     secret = request.json.get('secret') if request.is_json else request.form.get('secret')
@@ -2680,6 +2704,7 @@ def blog_articulo(slug):
 # ─── CRM INTERNO GERMINA ───────────────────────────────────────────────────
 
 @app.route('/crm/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute; 30 per hour', methods=['POST'])
 def crm_login():
     error = None
     if request.method == 'POST':
@@ -3279,6 +3304,7 @@ COLUMNAS_SOCIO = {
 
 @app.route('/admin/importar', methods=['GET', 'POST'])
 @login_required
+@limiter.limit('20 per hour', methods=['POST'])
 def admin_importar():
     if request.method == 'GET':
         return render_template('admin/importar.html', columnas=COLUMNAS_SOCIO)
@@ -3474,6 +3500,7 @@ def admin_whatsapp():
     )
 
 @app.route('/webhook/whatsapp', methods=['GET', 'POST'])
+@limiter.limit('120 per minute')
 def webhook_whatsapp():
     db = get_db()
     cfg = db.execute("SELECT * FROM whatsapp_config WHERE club_id=1").fetchone()
@@ -3516,6 +3543,7 @@ def webhook_whatsapp():
 # ─── Onboarding self-service ──────────────────────────────────────────────────
 
 @app.route('/nuevo-club', methods=['GET', 'POST'])
+@limiter.limit('5 per hour', methods=['POST'])
 def nuevo_club():
     if request.method == 'GET':
         return render_template('nuevo_club.html')
