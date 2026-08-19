@@ -1,0 +1,39 @@
+name: Articulo SEO diario Germina
+
+on:
+  schedule:
+    - cron: '3 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  publicar-articulo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generar y publicar articulo SEO
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python3 << 'PYEOF'
+          import os, json, urllib.request, re
+          BASE = "https://germina-app.onrender.com"
+          SECRET = "spark2026"
+          API_KEY = os.environ["ANTHROPIC_API_KEY"]
+          req = urllib.request.Request(f"{BASE}/api/next-keyword?secret={SECRET}")
+          resp = json.loads(urllib.request.urlopen(req, timeout=90).read())
+          if not resp.get("ok"): raise Exception(f"Error keyword: {resp}")
+          keyword = resp["keyword"]; cluster = resp["cluster"]; intent = resp["intent"]
+          print(f"Keyword: {keyword} | Cluster: {cluster} | Intent: {intent}")
+          intent_map = {"informational": "Tono educativo, responde la pregunta en profundidad.", "commercial": "Tono comparativo, muestra ventajas de Germina sobre Excel.", "transactional": "Tono persuasivo, primer mes gratis sin tarjeta."}
+          prompt = f'''Sos redactor SEO especializado en cannabis medicinal y SaaS para Argentina. Escribe un articulo de 950-1100 palabras sobre: "{keyword}". Intencion: {intent} - {intent_map.get(intent, "")}. USA estas clases CSS: art-hook, art-stat (stat-num+stat-label), art-callout art-tip, art-callout art-warning, art-quote, art-cta-mid. NO incluyas imagenes. NO uses markdown. H1 con la keyword. Germina max 3 veces. CTA final: Proba Germina gratis primer mes sin costo. Responde SOLO JSON: {{"titulo":"...","resumen":"...(100-140c)","meta_description":"...(120-155c)","contenido":"...(HTML una linea)"}}'''
+          body = json.dumps({"model":"claude-haiku-4-5-20251001","max_tokens":3000,"messages":[{"role":"user","content":prompt}]}).encode()
+          req2 = urllib.request.Request("https://api.anthropic.com/v1/messages",data=body,headers={"x-api-key":API_KEY,"anthropic-version":"2023-06-01","content-type":"application/json"})
+          resp_ia = json.loads(urllib.request.urlopen(req2,timeout=60).read())
+          text = resp_ia["content"][0]["text"].strip()
+          m = re.search(r'\{[\s\S]+\}', text)
+          data = json.loads(m.group(0)) if m else json.loads(text)
+          print(f"Articulo: {data['titulo']}")
+          payload = json.dumps({"secret":SECRET,"cluster":cluster,"keyword":keyword,"titulo":data["titulo"],"resumen":data.get("resumen",""),"contenido":data["contenido"],"meta_description":data.get("meta_description","")}).encode()
+          req3 = urllib.request.Request(f"{BASE}/api/publicar-articulo",data=payload,headers={"content-type":"application/json"})
+          pub = json.loads(urllib.request.urlopen(req3,timeout=90).read())
+          print(f"Publicado: {BASE}/blog/{pub['slug']}" if pub.get("ok") else f"Error: {pub}")
+          PYEOF
