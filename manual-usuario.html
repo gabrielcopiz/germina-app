@@ -559,7 +559,7 @@ tbody tr:hover { background: var(--cream); }
   <div class="sidebar-logo">
     <div class="brand">Germi<span>na</span></div>
     <div class="subtitle">Panel de Gestión</div>
-    <div class="badge">Manual de Usuario v1.0</div>
+    <div class="badge">Manual de Usuario v2.0</div>
   </div>
 
   <nav class="sidebar-nav">
@@ -577,6 +577,7 @@ tbody tr:hover { background: var(--cream); }
     <a href="#pedidos" class="nav-item"><span class="icon">📋</span> Pedidos</a>
     <a href="#dispensario" class="nav-item"><span class="icon">⚖️</span> Dispensario</a>
     <a href="#aforo" class="nav-item"><span class="icon">🚪</span> Aforo</a>
+    <a href="#portal" class="nav-item"><span class="icon">📱</span> Portal del Socio</a>
 
     <div class="nav-section-title">Inteligencia Artificial</div>
     <a href="#agentes" class="nav-item"><span class="icon">🧠</span> Agentes IA</a>
@@ -586,6 +587,7 @@ tbody tr:hover { background: var(--cream); }
     <a href="#escalaciones" class="nav-item"><span class="icon">🆘</span> Escalaciones</a>
 
     <div class="nav-section-title">Configuración</div>
+    <a href="#reprocann" class="nav-item"><span class="icon">📄</span> REPROCANN</a>
     <a href="#importar" class="nav-item"><span class="icon">⬆️</span> Importar Socios</a>
     <a href="#whatsapp" class="nav-item"><span class="icon">💬</span> WhatsApp</a>
     <a href="#usuarios" class="nav-item"><span class="icon">👤</span> Usuarios</a>
@@ -603,7 +605,7 @@ tbody tr:hover { background: var(--cream); }
   <div class="topbar">
     <div class="topbar-title">Manual de Usuario — Germina Panel de Gestión</div>
     <div class="topbar-actions">
-      <span class="version-badge">Versión 1.0 · Agosto 2026</span>
+      <span class="version-badge">Versión 2.0 · Agosto 2026</span>
       <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
     </div>
   </div>
@@ -615,11 +617,11 @@ tbody tr:hover { background: var(--cream); }
     <p>Todo lo que necesitás saber para gestionar tu club con Germina: socios, cultivos, dispensaciones, e inteligencia artificial que trabaja por vos.</p>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="num">14</div>
+        <div class="num">17</div>
         <div class="label">Secciones cubiertas</div>
       </div>
       <div class="hero-stat">
-        <div class="num">3</div>
+        <div class="num">5</div>
         <div class="label">Agentes de IA</div>
       </div>
       <div class="hero-stat">
@@ -663,9 +665,19 @@ tbody tr:hover { background: var(--cream); }
           <p>Registro rápido de cada retiro con control de límites por socio y variedad.</p>
         </div>
         <div class="card">
+          <div class="card-icon">📱</div>
+          <div class="card-title">Portal del socio</div>
+          <p>Cada socio tiene su propio portal donde puntúa flores, hace pedidos y paga.</p>
+        </div>
+        <div class="card">
           <div class="card-icon">🧠</div>
-          <div class="card-title">Inteligencia artificial</div>
-          <p>Agentes que detectan problemas y te sugieren acciones antes de que sea tarde.</p>
+          <div class="card-title">Inteligencia artificial real</div>
+          <p>5 agentes especializados: patrones de consumo, predicción de stock, informes REPROCANN y más.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📄</div>
+          <div class="card-title">REPROCANN automático</div>
+          <p>El sistema genera el informe semestral obligatorio con un solo clic, listo para presentar.</p>
         </div>
       </div>
 
@@ -1260,6 +1272,125 @@ tbody tr:hover { background: var(--cream); }
       </div>
     </section>
 
+    <!-- PORTAL DEL SOCIO -->
+    <section class="section" id="portal">
+      <div class="section-header">
+        <div class="section-icon">📱</div>
+        <div>
+          <div class="section-title">Portal del Socio</div>
+          <div class="section-sub">La app del socio para pedir, pagar y conocer su paladar</div>
+        </div>
+      </div>
+
+      <p>Cada socio activo tiene acceso a su propio portal web con un link único y personal. Desde ahí puede ver las flores disponibles, hacer pedidos, pagar y registrar su experiencia de consumo. No necesita crear una cuenta ni recordar contraseña: el link es todo lo que necesita.</p>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>El portal funciona en el celular del socio. El administrador comparte el link único una sola vez y el socio lo guarda. El link no expira.</p>
+      </div>
+
+      <h3>Las 4 pestañas del portal</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">🏠</div>
+          <div class="card-title">Inicio</div>
+          <p>Estado de su membresía, cupo mensual disponible y pedidos activos pendientes de entrega.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌿</div>
+          <div class="card-title">Flores</div>
+          <p>Catálogo de variedades disponibles con foto, info y botón para pedir. También puede puntuar las que ya probó.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📋</div>
+          <div class="card-title">Historial</div>
+          <p>Todas sus dispensaciones y pedidos anteriores con fechas, gramos y variedad.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">👤</div>
+          <div class="card-title">Perfil</div>
+          <p>Su perfil de paladar y variedades recomendadas basadas en lo que le gustó.</p>
+        </div>
+      </div>
+
+      <h3>Sistema de paladar — puntuación de flores</h3>
+      <p>Cuando un socio recibe una variedad, puede puntuarla desde el portal. Esto no es solo una calificación con estrellas: es un perfil de gustos completo que el sistema usa para recomendarle otras flores.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Dato que registra</th>
+              <th>Opciones</th>
+              <th>Para qué sirve</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Sabores percibidos</strong></td>
+              <td>Cítrico · Dulce · Frutal · Floral · Pino · Terroso · Mentol · Herbáceo · Especiado · Chocolate</td>
+              <td>Conocer el perfil aromático que prefiere el socio</td>
+            </tr>
+            <tr>
+              <td><strong>Efectos sentidos</strong></td>
+              <td>Relajante · Energizante · Creativo · Analgésico · Sedante · Eufórico · Social · Enfocado · Ansiolítico · Somnoliento</td>
+              <td>Identificar qué efectos le funcionan según su condición</td>
+            </tr>
+            <tr>
+              <td><strong>Intensidad</strong></td>
+              <td>Suave · Moderada · Intensa</td>
+              <td>Ajustar recomendaciones según tolerancia</td>
+            </tr>
+            <tr>
+              <td><strong>¿Lo repetiría?</strong></td>
+              <td>Sí · Tal vez · No</td>
+              <td>Dato clave para el motor de recomendaciones</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Motor de recomendaciones</h3>
+      <p>A medida que el socio puntúa flores, el sistema construye su perfil de paladar. En la pestaña <strong>Perfil</strong> aparecen sus sabores y efectos más repetidos, y el sistema sugiere variedades disponibles que hacen match con ese perfil. Si el socio tiene diagnóstico médico registrado, el <strong>Agente Patrones</strong> usa esa información para afinar las recomendaciones cruzando el paladar con las indicaciones terapéuticas de cada variedad.</p>
+
+      <h3>Hacer un pedido desde el portal</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">El socio va a la pestaña "Flores"</div>
+            <p>Ve todas las variedades disponibles con stock real en tiempo real.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Hace clic en "Pedir esta flor"</div>
+            <p>Se abre un panel donde elige los gramos y el método de pago.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Elige cómo pagar</div>
+            <p>Tres opciones: Efectivo (paga al retirar), Transferencia (ve el CBU/alias y carga el número de comprobante), Mercado Pago (el sistema muestra el link de pago configurado por el club).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">El pedido llega al panel admin</div>
+            <p>El administrador ve el pedido en la sección Pedidos con el código único generado automáticamente.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <p>Los datos de pago (CBU, alias, link de Mercado Pago) se configuran desde el panel del administrador en <strong>Configuración → Club y pagos</strong>. Si no están configurados, la opción de transferencia y Mercado Pago no aparece en el portal.</p>
+      </div>
+    </section>
+
     <!-- AGENTES IA -->
     <section class="section" id="agentes">
       <div class="section-header">
@@ -1272,37 +1403,48 @@ tbody tr:hover { background: var(--cream); }
 
       <div class="highlight">
         <h3>¿Qué es un agente de IA?</h3>
-        <p>Pensalo como un empleado que no duerme. Revisa continuamente toda la información del club, detecta situaciones que necesitan atención, y te avisa con recomendaciones concretas. Vos decidís si seguir su sugerencia o no.</p>
+        <p>Es un proceso automático que corre en segundo plano. Analiza los datos del club, detecta situaciones que necesitan atención, y te avisa con recomendaciones concretas. Algunos agentes solo detectan y avisan (automatización). Uno solo — el Agente Socios en el alta de socio — llama realmente a una IA para redactar la recomendación. Vos siempre decidís si actuás o no.</p>
       </div>
 
-      <p>Germina tiene <strong>tres agentes especializados</strong>, cada uno enfocado en un área distinta del club:</p>
+      <p>Germina tiene <strong>cinco agentes especializados</strong>, cada uno enfocado en un área distinta del club:</p>
 
-      <h3>Los 3 agentes</h3>
+      <h3>Los 5 agentes — qué hace cada uno</h3>
       <div class="cards">
         <div class="card">
           <div class="card-icon">🌿</div>
           <div class="card-title">Agente Socios</div>
-          <p>Monitorea el estado de todos los socios. Detecta solicitudes sin respuesta, cuotas vencidas y socios que llevan mucho tiempo sin actividad.</p>
+          <p>Detecta solicitudes sin respuesta (+24hs), cuotas vencidas y socios inactivos +60 días. <strong>El alta de nuevo socio sí usa IA real (Claude Haiku)</strong> para redactar la recomendación. Las otras situaciones son alertas automáticas.</p>
         </div>
         <div class="card">
           <div class="card-icon">📊</div>
           <div class="card-title">Agente Administración</div>
-          <p>Controla el stock, genera reportes diarios y hace seguimiento de cuotas impagas a nivel del club.</p>
+          <p>Alerta de stock bajo (&lt;50g), reporte diario y <strong>predicción de agotamiento</strong>: calcula cuántos días queda stock por variedad según el consumo real de los últimos 30 días.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔍</div>
+          <div class="card-title">Agente Patrones de Consumo</div>
+          <p><strong>Usa IA real.</strong> Compara el consumo de cada socio mes a mes. Si detecta aumento repentino (+50%), inactividad prolongada o cese abrupto, llama a Claude con el contexto clínico del socio para generar una recomendación específica.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📄</div>
+          <div class="card-title">Agente REPROCANN</div>
+          <p>Monitorea el calendario semestral. Cuando faltan ≤45 días para cerrar el semestre sin informe presentado, genera una alerta automática recordando la obligación legal.</p>
         </div>
         <div class="card">
           <div class="card-icon">💬</div>
           <div class="card-title">Agente WhatsApp</div>
-          <p>Responde consultas de socios por WhatsApp, envía recordatorios automáticos y escala conversaciones complejas a un humano.</p>
+          <p><em>Disponible próximamente.</em> Responderá consultas de socios por WhatsApp y escalará conversaciones complejas a un humano. Por ahora se configura pero no está activo.</p>
         </div>
       </div>
 
-      <h3>¿Qué detecta cada agente?</h3>
+      <h3>¿Qué detecta cada agente y cómo actúa?</h3>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Agente</th>
               <th>Situación que detecta</th>
+              <th>Usa IA real</th>
               <th>Acción que propone</th>
             </tr>
           </thead>
@@ -1310,37 +1452,56 @@ tbody tr:hover { background: var(--cream); }
             <tr>
               <td rowspan="3"><strong>Socios</strong></td>
               <td>Solicitudes sin respuesta más de 24 horas</td>
-              <td>Enviar email de seguimiento al interesado</td>
+              <td>✅ Sí — Claude Haiku redacta la recomendación</td>
+              <td>Alerta con texto generado por IA para el administrador</td>
             </tr>
             <tr>
               <td>Cuotas mensuales vencidas</td>
+              <td>No — alerta automática</td>
               <td>Enviar recordatorio de pago por email</td>
             </tr>
             <tr>
-              <td>Socios sin actividad hace más de 60 días</td>
+              <td>Socios sin actividad más de 60 días</td>
+              <td>No — alerta automática</td>
               <td>Enviar mensaje de reactivación</td>
             </tr>
             <tr>
               <td rowspan="3"><strong>Administración</strong></td>
-              <td>Stock de alguna variedad por debajo del mínimo</td>
-              <td>Alerta de reposición necesaria</td>
+              <td>Stock de alguna variedad por debajo de 50g</td>
+              <td>No — alerta automática</td>
+              <td>Alerta de reposición con gramos disponibles</td>
             </tr>
             <tr>
-              <td>Cada día a las 8am</td>
-              <td>Enviar reporte diario al administrador</td>
+              <td>Predicción de agotamiento (&lt;30 días restantes)</td>
+              <td>No — cálculo automático</td>
+              <td>Alerta con días exactos restantes y tasa de consumo diaria</td>
             </tr>
             <tr>
-              <td>Cuotas impagas acumuladas</td>
-              <td>Resumen de morosidad del club</td>
+              <td>Una vez por día</td>
+              <td>No — automatizado</td>
+              <td>Reporte diario: socios activos, dispensaciones y pedidos pendientes</td>
             </tr>
             <tr>
-              <td rowspan="2"><strong>WhatsApp</strong></td>
-              <td>Mensaje entrante de un socio</td>
-              <td>Respuesta automática con información del club</td>
+              <td rowspan="3"><strong>Patrones</strong></td>
+              <td>Aumento de consumo &gt;50% vs mes anterior</td>
+              <td>✅ Sí — Claude Haiku analiza el caso clínico</td>
+              <td>Recomendación clínica personalizada para el administrador</td>
             </tr>
             <tr>
-              <td>Pregunta que la IA no puede resolver</td>
-              <td>Escalar la conversación a un humano</td>
+              <td>Socio que consumía y paró (0g en 30 días)</td>
+              <td>✅ Sí — Claude Haiku redacta la recomendación</td>
+              <td>Alerta de inactividad o cese con sugerencia de seguimiento</td>
+            </tr>
+            <tr>
+              <td>Recomendación de variedad por paladar + diagnóstico</td>
+              <td>✅ Sí — Claude Haiku cruza paladar y condición médica</td>
+              <td>Variedad sugerida para el socio con justificación clínica</td>
+            </tr>
+            <tr>
+              <td><strong>REPROCANN</strong></td>
+              <td>Faltan ≤45 días para cerrar el semestre sin informe</td>
+              <td>No — alerta de calendario automática</td>
+              <td>Alerta recordando la obligación + link directo a generar el informe</td>
             </tr>
           </tbody>
         </table>
@@ -1450,11 +1611,37 @@ tbody tr:hover { background: var(--cream); }
         </table>
       </div>
 
+      <h3>Tipos de tareas que puede generar el sistema</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo de tarea</th>
+              <th>Agente</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Alta de socio</strong></td><td>Socios</td><td>Solicitud pendiente +24hs. La IA redactó una recomendación personalizada.</td></tr>
+            <tr><td><strong>Recordatorio cuota</strong></td><td>Socios</td><td>Cuota mensual vencida. El sistema puede enviar el email automáticamente.</td></tr>
+            <tr><td><strong>Seguimiento inactivo</strong></td><td>Socios</td><td>Socio sin actividad más de 60 días. Propone contactarlo.</td></tr>
+            <tr><td><strong>Alerta stock</strong></td><td>Administración</td><td>Stock de una variedad por debajo de 50g.</td></tr>
+            <tr><td><strong>Predicción stock</strong></td><td>Administración</td><td>Stock calculado para agotarse en menos de 30 días según el consumo actual.</td></tr>
+            <tr><td><strong>Reporte diario</strong></td><td>Administración</td><td>Resumen del día: socios activos, dispensaciones y pedidos pendientes.</td></tr>
+            <tr><td><strong>Aumento de consumo</strong></td><td>Patrones</td><td>Un socio aumentó su consumo más del 50% vs el mes anterior. La IA analizó su caso.</td></tr>
+            <tr><td><strong>Inactividad prolongada</strong></td><td>Patrones</td><td>Un socio que consumía regularmente no registra actividad en 30 días.</td></tr>
+            <tr><td><strong>Cese abrupto</strong></td><td>Patrones</td><td>Un socio con consumo frecuente paró de golpe. La IA recomienda verificar el estado del tratamiento.</td></tr>
+            <tr><td><strong>Recomendación variedad</strong></td><td>Patrones</td><td>La IA sugiere una variedad específica para un socio cruzando su paladar con su diagnóstico.</td></tr>
+            <tr><td><strong>Informe semestral</strong></td><td>REPROCANN</td><td>Alerta de vencimiento: faltan ≤45 días para presentar el informe al REPROCANN.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <h3>Filtros de la cola de tareas</h3>
       <p>Podés filtrar las tareas por:</p>
       <ul class="checklist">
         <li>Estado: Pendientes, Ejecutadas, Rechazadas, Todas</li>
-        <li>Agente: Todos los agentes, Solo Socios, Solo Administración</li>
+        <li>Agente: Todos, Socios, Administración, Patrones, REPROCANN</li>
       </ul>
 
       <div class="callout tip">
@@ -1500,12 +1687,12 @@ tbody tr:hover { background: var(--cream); }
         <p>Recomendamos empezar todos los agentes en nivel <strong>RECOMENDAR</strong>. A medida que la IA te genere confianza en cada tipo de acción, podés subirla a PREPARAR y luego a EJECUTAR. La autonomía se gana gradualmente.</p>
       </div>
 
-      <h3>Ejemplo práctico</h3>
+      <h3>Configuración sugerida por agente</h3>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Acción</th>
+              <th>Agente / Acción</th>
               <th>Nivel sugerido</th>
               <th>Por qué</th>
             </tr>
@@ -1514,17 +1701,42 @@ tbody tr:hover { background: var(--cream); }
             <tr>
               <td>Recordatorio de cuota mensual</td>
               <td><span class="badge badge-ejecutar">EJECUTAR</span></td>
-              <td>Es un email estándar, sin riesgo, y ahorras mucho tiempo si lo automatizás</td>
+              <td>Email estándar, sin riesgo. Automatizarlo ahorra mucho tiempo.</td>
             </tr>
             <tr>
               <td>Seguimiento de socio inactivo</td>
               <td><span class="badge badge-preparar">PREPARAR</span></td>
-              <td>Cada caso puede ser diferente, mejor revisar el borrador antes de enviar</td>
+              <td>Cada caso puede ser diferente, mejor revisar el borrador primero.</td>
             </tr>
             <tr>
               <td>Alta de nuevo socio</td>
               <td><span class="badge badge-recomendar">RECOMENDAR</span></td>
-              <td>Decisión importante, siempre mejor que la tome un humano</td>
+              <td>Decisión importante, siempre mejor que la tome un humano.</td>
+            </tr>
+            <tr>
+              <td>Aumento de consumo / cese abrupto</td>
+              <td><span class="badge badge-recomendar">RECOMENDAR</span></td>
+              <td>Situaciones clínicas que requieren criterio profesional antes de actuar.</td>
+            </tr>
+            <tr>
+              <td>Recomendación de variedad</td>
+              <td><span class="badge badge-recomendar">RECOMENDAR</span></td>
+              <td>La IA sugiere, el administrador decide qué comunicarle al socio.</td>
+            </tr>
+            <tr>
+              <td>Predicción de agotamiento de stock</td>
+              <td><span class="badge badge-recomendar">RECOMENDAR</span></td>
+              <td>Alerta informativa. La decisión de cultivar más siempre es del administrador.</td>
+            </tr>
+            <tr>
+              <td>Alerta stock bajo</td>
+              <td><span class="badge badge-recomendar">RECOMENDAR</span></td>
+              <td>Solo informa. No hay acción automática posible en el stock.</td>
+            </tr>
+            <tr>
+              <td>Informe REPROCANN</td>
+              <td><span class="badge badge-recomendar">RECOMENDAR</span></td>
+              <td>El informe se genera manualmente desde la sección REPROCANN, no en automático.</td>
             </tr>
           </tbody>
         </table>
@@ -1631,6 +1843,91 @@ tbody tr:hover { background: var(--cream); }
       <div class="callout warning">
         <span class="callout-icon">⚠️</span>
         <p>Las escalaciones abiertas aparecen en el Dashboard como alertas. Revisalas todos los días ya que pueden corresponder a situaciones urgentes con socios.</p>
+      </div>
+    </section>
+
+    <!-- REPROCANN -->
+    <section class="section" id="reprocann">
+      <div class="section-header">
+        <div class="section-icon">📄</div>
+        <div>
+          <div class="section-title">REPROCANN — Informes Semestrales</div>
+          <div class="section-sub">Cumplí con la Ley 27.350 y el Decreto 883/2020 con un clic</div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">⚖️</span>
+        <p><strong>Marco legal:</strong> La Ley 27.350 (Cannabis medicinal en Argentina) y el Decreto 883/2020 (Cannabis social club y autocultivo) obligan a los clubes registrados a presentar un informe semestral al REPROCANN con datos de socios, diagnósticos, médicos prescriptores, producción y distribución.</p>
+      </div>
+
+      <h3>¿Qué información contiene el informe?</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Sección del informe</th>
+              <th>Dato incluido</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Datos del club</strong></td><td>Nombre, período del semestre, fecha de generación</td></tr>
+            <tr><td><strong>Registro de socios</strong></td><td>Listado completo de socios activos con apellido, nombre, DNI, diagnóstico y médico prescriptor</td></tr>
+            <tr><td><strong>Diagnósticos</strong></td><td>Condiciones de salud declaradas agrupadas por cantidad de pacientes</td></tr>
+            <tr><td><strong>Médicos prescriptores</strong></td><td>Listado de profesionales y cuántos pacientes tienen a cargo</td></tr>
+            <tr><td><strong>Producción del semestre</strong></td><td>Variedades cultivadas, cantidad de cosechas, gramos secos obtenidos, plantas involucradas</td></tr>
+            <tr><td><strong>Distribución del semestre</strong></td><td>Gramos dispensados por variedad y número de entregas realizadas en el período</td></tr>
+            <tr><td><strong>Stock actual</strong></td><td>Gramos disponibles de cada variedad al momento de generar el informe</td></tr>
+            <tr><td><strong>Cultivos activos</strong></td><td>Cantidad de cultivos en curso y plantas en crecimiento</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cómo generar el informe</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Ir a Configuración → REPROCANN</div>
+            <p>En el menú lateral, bajo la sección Configuración, hacé clic en "REPROCANN".</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Elegir el semestre</div>
+            <p>El sistema muestra el semestre actual y el anterior. Seleccioná el que necesitás reportar.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Hacer clic en "Generar informe con IA"</div>
+            <p>El sistema recolecta todos los datos del período (socios, cosechas, dispensaciones, stock) y llama a Claude para redactar el informe completo en formato formal, listo para presentar ante la autoridad sanitaria.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Revisar y copiar</div>
+            <p>El informe aparece en pantalla. Podés copiarlo con el botón "Copiar" y pegarlo en el sistema del REPROCANN o en un documento Word.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-title">Marcar como presentado</div>
+            <p>Una vez que lo presentaste oficialmente, hacé clic en "Marcar como presentado". El sistema guarda el historial de todos los informes generados.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>El Agente REPROCANN te avisa antes</h3>
+      <p>No tenés que acordarte de los plazos. El Agente REPROCANN monitorea el calendario y cuando <strong>faltan 45 días o menos para cerrar el semestre</strong> sin informe presentado, genera automáticamente una alerta en la cola de tareas con el detalle de la fecha límite.</p>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p>El informe es generado por IA con los datos que el club tiene cargados en el sistema. Si los datos de socios, cosechas o dispensaciones están incompletos, el informe también lo estará. Para que el REPROCANN sea correcto, el sistema tiene que estar al día.</p>
       </div>
     </section>
 
@@ -1967,7 +2264,7 @@ tbody tr:hover { background: var(--cream); }
       <div style="text-align:center; padding: 2rem 0 1rem;">
         <div style="font-size: 2rem; margin-bottom: 0.8rem;">🌿</div>
         <div style="font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--green-deep); margin-bottom:0.4rem;">Germina — Panel de Gestión</div>
-        <div style="font-size:0.8rem; color:var(--muted);">Manual de Usuario v1.0 · Agosto 2026</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Manual de Usuario v2.0 · Agosto 2026</div>
         <div style="font-size:0.75rem; color:var(--muted); margin-top:0.3rem;">Para soporte técnico escribí a <strong>besparkcreativa@gmail.com</strong></div>
       </div>
 
