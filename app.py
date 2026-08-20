@@ -1357,12 +1357,15 @@ def portal(token):
             recomendaciones.append({'id': v['id'], 'nombre': v['nombre'], 'genetica': v['genetica'], 'score': score})
     recomendaciones.sort(key=lambda x: -x['score'])
     recomendaciones = recomendaciones[:3]
-    club = db.execute('SELECT * FROM clubs WHERE id=1').fetchone()
-    club_pago = {
-        'cbu': club['cbu'] if club else None,
-        'alias': club['alias_bancario'] if club else None,
-        'mp_link': club['mp_link'] if club else None,
-    }
+    try:
+        club = db.execute('SELECT cbu, alias_bancario, mp_link FROM clubs WHERE id=1').fetchone()
+        club_pago = {
+            'cbu': club['cbu'] if club else None,
+            'alias': club['alias_bancario'] if club else None,
+            'mp_link': club['mp_link'] if club else None,
+        }
+    except Exception:
+        club_pago = {'cbu': None, 'alias': None, 'mp_link': None}
     return render_template('portal.html',
         s=s, docs=docs, cuota_actual=cuota_actual, hoy=hoy,
         consumido_mes=round(consumido_mes,1),
@@ -4537,8 +4540,10 @@ def admin_configuracion():
     return render_template('admin/configuracion.html', club=club, msg=msg)
 
 
+# Inicializar DB siempre al arrancar — funciona con Gunicorn y ejecución directa
+init_db()
+_migrate()
+
 if __name__ == '__main__':
-    init_db()
-    _migrate()
     port = int(os.environ.get('PORT', 5002))
     app.run(debug=False, host='0.0.0.0', port=port)
