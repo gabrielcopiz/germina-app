@@ -285,6 +285,9 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
       <span class="nav-icon">⬇️</span> Pedidos CSV
     </a>
     <div class="nav-section-label" style="margin-top:0.5rem;">Configuración</div>
+    <a href="{{ url_for('admin_configuracion') }}" class="nav-item {% if request.endpoint == 'admin_configuracion' %}active{% endif %}">
+      <span class="nav-icon">⚙️</span> Club y pagos
+    </a>
     <a href="{{ url_for('admin_usuarios') }}" class="nav-item {% if request.endpoint in ['admin_usuarios','admin_usuario_nuevo','admin_usuario_editar','admin_usuario_eliminar'] %}active{% endif %}">
       <span class="nav-icon">👥</span> Usuarios
     </a>

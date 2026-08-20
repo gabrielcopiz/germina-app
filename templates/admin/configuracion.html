@@ -1,0 +1,93 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Configuración del club{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Configuración del club</h1>
+    <p class="page-subtitle">Datos del club y métodos de pago aceptados</p>
+  </div>
+</div>
+
+{% if msg %}
+<div class="alert alert-success" style="margin-bottom:1.5rem;">✓ {{ msg }}</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('admin_configuracion') }}">
+  <div style="display:grid;gap:1.5rem;max-width:700px;">
+
+    <div class="card">
+      <div class="card-header"><h3 class="card-title">Datos del club</h3></div>
+      <div class="card-body">
+        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Nombre del club</label>
+            <input type="text" name="nombre" class="form-input" value="{{ club.nombre if club else '' }}" placeholder="Mi Cannabis Club" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email de contacto</label>
+            <input type="email" name="email" class="form-input" value="{{ club.email if club else '' }}" placeholder="club@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">WhatsApp (con código de país)</label>
+            <input type="text" name="whatsapp" class="form-input" value="{{ club.whatsapp if club else '' }}" placeholder="+5491112345678">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Medios de pago</h3>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-top:0.25rem;">
+          Cuando un socio elige "Transferencia" o "Mercado Pago" desde el portal,
+          verá estos datos para saber a dónde enviar el dinero.
+        </p>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;gap:1.25rem;">
+
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.85rem;">
+              🏦 Transferencia bancaria
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">CBU</label>
+                <input type="text" name="cbu" class="form-input" value="{{ club.cbu if club else '' }}"
+                       placeholder="0000000000000000000000" maxlength="22"
+                       style="font-family:monospace;letter-spacing:0.05em">
+                <span style="font-size:0.72rem;color:var(--text-muted)">22 dígitos</span>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Alias</label>
+                <input type="text" name="alias_bancario" class="form-input" value="{{ club.alias_bancario if club else '' }}"
+                       placeholder="mi.club.cannabis">
+              </div>
+            </div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+            <div style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.85rem;">
+              📱 Mercado Pago
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Link de cobro de Mercado Pago</label>
+              <input type="url" name="mp_link" class="form-input" value="{{ club.mp_link if club else '' }}"
+                     placeholder="https://mpago.la/xxxxx">
+              <span style="font-size:0.72rem;color:var(--text-muted)">
+                Desde la app de MP: Cobrar → Compartir link. El socio podrá abrir este link directo para pagar.
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:1rem;">
+      <button type="submit" class="btn btn-primary">Guardar configuración</button>
+    </div>
+
+  </div>
+</form>
+{% endblock %}

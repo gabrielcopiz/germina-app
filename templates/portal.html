@@ -742,6 +742,39 @@ a { color: inherit; text-decoration: none; }
       </div>
     </div>
 
+    <!-- Info transferencia -->
+    <div id="info-transferencia" style="display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.85rem;margin-bottom:0.85rem;">
+      <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-weight:600;margin-bottom:0.5rem">Datos para transferir</div>
+      {% if club_pago.cbu %}
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:0.3rem">CBU: <strong style="color:var(--cream);font-family:monospace">{{ club_pago.cbu }}</strong></div>
+      {% endif %}
+      {% if club_pago.alias %}
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:0.3rem">Alias: <strong style="color:var(--cream)">{{ club_pago.alias }}</strong></div>
+      {% endif %}
+      {% if not club_pago.cbu and not club_pago.alias %}
+      <div style="font-size:0.78rem;color:var(--text3);font-style:italic">El club comunicará los datos de transferencia al confirmar el pedido.</div>
+      {% endif %}
+      <label class="field-label" style="margin-top:0.75rem">Número de comprobante de transferencia</label>
+      <input class="field-input" type="text" id="pedido-comprobante" placeholder="Ej: 123456789 o CVU de origen" style="margin-bottom:0">
+    </div>
+
+    <!-- Info Mercado Pago -->
+    <div id="info-mercadopago" style="display:none;margin-bottom:0.85rem;">
+      {% if club_pago.mp_link %}
+      <a href="{{ club_pago.mp_link }}" target="_blank"
+         style="display:block;background:rgba(0,164,222,0.12);border:1px solid rgba(0,164,222,0.25);border-radius:10px;padding:0.85rem;text-align:center;color:#5BE0FF;font-size:0.85rem;font-weight:600;text-decoration:none;">
+        📱 Abrir link de pago de Mercado Pago
+      </a>
+      <div style="font-size:0.72rem;color:var(--text3);text-align:center;margin-top:0.4rem">Pagá primero y luego confirmá el pedido</div>
+      {% else %}
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:0.85rem;font-size:0.78rem;color:var(--text3);font-style:italic;text-align:center;">
+        El club te enviará el link de pago de Mercado Pago al confirmar.
+      </div>
+      {% endif %}
+      <label class="field-label" style="margin-top:0.75rem">Número de operación de Mercado Pago</label>
+      <input class="field-input" type="text" id="pedido-comprobante-mp" placeholder="Ej: 12345678901" style="margin-bottom:0">
+    </div>
+
     <label class="field-label">Notas para el club (opcional)</label>
     <input class="field-input" type="text" id="pedido-notas" placeholder="ej: sin semillas" style="margin-bottom:1.25rem">
 
@@ -905,6 +938,9 @@ function cerrarPedido(e) {
 function selPago(el) {
   document.querySelectorAll('.pago-opt').forEach(function(p){ p.classList.remove('selected'); });
   el.classList.add('selected');
+  var val = el.getAttribute('data-val');
+  document.getElementById('info-transferencia').style.display = val === 'transferencia' ? 'block' : 'none';
+  document.getElementById('info-mercadopago').style.display  = val === 'mercadopago'   ? 'block' : 'none';
 }
 
 function confirmarPedido() {
@@ -912,6 +948,15 @@ function confirmarPedido() {
   if (!gramos || gramos <= 0) { showToast('Ingresá los gramos que querés'); return; }
   var formaPago = (document.querySelector('.pago-opt.selected') || {}).getAttribute('data-val') || 'efectivo';
   var notas = document.getElementById('pedido-notas').value || '';
+  var comprobante = '';
+  if (formaPago === 'transferencia') {
+    comprobante = (document.getElementById('pedido-comprobante') || {}).value || '';
+    if (!comprobante.trim()) { showToast('Ingresá el número de comprobante de la transferencia'); return; }
+    notas = 'Comprobante: ' + comprobante.trim() + (notas ? ' | ' + notas : '');
+  } else if (formaPago === 'mercadopago') {
+    comprobante = (document.getElementById('pedido-comprobante-mp') || {}).value || '';
+    if (comprobante.trim()) notas = 'MP operación: ' + comprobante.trim() + (notas ? ' | ' + notas : '');
+  }
   var btn = document.getElementById('btn-confirmar-pedido');
   if (btn) btn.disabled = true;
   fetch('/mi-estado/{{ token }}/pedido', {

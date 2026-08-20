@@ -615,6 +615,16 @@ def _migrate():
             db.execute("ALTER TABLE pedidos ADD COLUMN origen TEXT DEFAULT 'admin'")
         except Exception:
             pass
+    # datos de pago del club
+    club_cols = {r[1] for r in db.execute("PRAGMA table_info(clubs)")}
+    for col, typedef in {
+        'cbu': 'TEXT', 'alias_bancario': 'TEXT', 'mp_link': 'TEXT',
+    }.items():
+        if col not in club_cols:
+            try:
+                db.execute(f'ALTER TABLE clubs ADD COLUMN {col} {typedef}')
+            except Exception:
+                pass
     # Seed variedades de muestra si el catálogo está vacío
     if db.execute('SELECT COUNT(*) FROM variedades').fetchone()[0] == 0:
         db.executemany(
@@ -1347,6 +1357,12 @@ def portal(token):
             recomendaciones.append({'id': v['id'], 'nombre': v['nombre'], 'genetica': v['genetica'], 'score': score})
     recomendaciones.sort(key=lambda x: -x['score'])
     recomendaciones = recomendaciones[:3]
+    club = db.execute('SELECT * FROM clubs WHERE id=1').fetchone()
+    club_pago = {
+        'cbu': club['cbu'] if club else None,
+        'alias': club['alias_bancario'] if club else None,
+        'mp_link': club['mp_link'] if club else None,
+    }
     return render_template('portal.html',
         s=s, docs=docs, cuota_actual=cuota_actual, hoy=hoy,
         consumido_mes=round(consumido_mes,1),
@@ -1354,6 +1370,7 @@ def portal(token):
         historial=historial, variedades=variedades,
         pedidos_activos=pedidos_activos,
         paladar=paladar, recomendaciones=recomendaciones,
+        club_pago=club_pago,
         token=token,
         etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR)
 
@@ -4487,6 +4504,37 @@ def germina_datos_export():
     resp.headers['Content-Type'] = 'text/csv; charset=utf-8'
     resp.headers['Content-Disposition'] = f'attachment; filename=germina_datos_{hoy}.csv'
     return resp
+
+
+@app.route('/admin/configuracion', methods=['GET', 'POST'])
+@login_required
+def admin_configuracion():
+    db = get_db()
+    club = db.execute('SELECT * FROM clubs WHERE id=1').fetchone()
+    msg = None
+    if request.method == 'POST':
+        campos = {
+            'nombre': request.form.get('nombre', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'whatsapp': request.form.get('whatsapp', '').strip(),
+            'cbu': request.form.get('cbu', '').strip(),
+            'alias_bancario': request.form.get('alias_bancario', '').strip(),
+            'mp_link': request.form.get('mp_link', '').strip(),
+        }
+        if club:
+            db.execute(
+                'UPDATE clubs SET nombre=?,email=?,whatsapp=?,cbu=?,alias_bancario=?,mp_link=? WHERE id=1',
+                (campos['nombre'], campos['email'], campos['whatsapp'],
+                 campos['cbu'] or None, campos['alias_bancario'] or None, campos['mp_link'] or None))
+        else:
+            db.execute(
+                'INSERT INTO clubs (id,nombre,email,whatsapp,cbu,alias_bancario,mp_link) VALUES (1,?,?,?,?,?,?)',
+                (campos['nombre'], campos['email'], campos['whatsapp'],
+                 campos['cbu'] or None, campos['alias_bancario'] or None, campos['mp_link'] or None))
+        db.commit()
+        club = db.execute('SELECT * FROM clubs WHERE id=1').fetchone()
+        msg = 'Configuración guardada correctamente.'
+    return render_template('admin/configuracion.html', club=club, msg=msg)
 
 
 if __name__ == '__main__':
