@@ -260,6 +260,19 @@
           {{ row('Cosecha estimada', c.cosecha_estimada) }}
           {{ row('Ubicación', c.ubicacion_detalle) }}
           {{ row('Notas', c.notas) }}
+          {% if c.banco_genetico or c.tipo_semilla or c.factura_numero %}
+          <tr><td colspan="2" style="padding:0.6rem 0 0.2rem;"><span style="font-size:0.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">🌱 Trazabilidad de semilla</span></td></tr>
+          {{ row('Banco genético', c.banco_genetico) }}
+          {{ row('Tipo de semilla', c.tipo_semilla) }}
+          {{ row('Proveedor', c.proveedor_semilla) }}
+          {{ row('Fecha de compra', c.fecha_compra_semilla) }}
+          {{ row('Factura / Remito', c.factura_numero) }}
+          {{ row('Lote del banco', c.lote_semilla) }}
+          {% if c.num_semillas_compradas %}{{ row('Semillas compradas', c.num_semillas_compradas) }}{% endif %}
+          {% if c.num_semillas_germinadas %}{{ row('Germinadas', c.num_semillas_germinadas) }}{% endif %}
+          {% if c.precio_semilla %}{{ row('Precio por semilla', '$' ~ c.precio_semilla) }}{% endif %}
+          {% if c.url_banco %}<tr><td style="font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;padding:0.4rem 0;width:40%;border-bottom:1px solid #F0EAE3;">Banco (web)</td><td style="font-size:0.86rem;padding:0.4rem 0;border-bottom:1px solid #F0EAE3;"><a href="{{ c.url_banco }}" target="_blank" style="color:var(--green);">Ver ficha →</a></td></tr>{% endif %}
+          {% endif %}
           {% if c.estado == 'finalizado' %}
           <tr><td colspan="2" style="padding:0.4rem 0;"><span style="color:#999;font-size:0.8rem;">⏹ Cultivo finalizado</span></td></tr>
           {% endif %}

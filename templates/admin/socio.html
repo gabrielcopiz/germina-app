@@ -273,7 +273,61 @@
               <label>Notas <span style="font-weight:400;color:var(--muted);">opcional</span></label>
               <input type="text" name="notas" class="form-control-a" placeholder="Observaciones iniciales">
             </div>
-            <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem;">
+
+            <!-- TRAZABILIDAD DE SEMILLA -->
+            <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border);">
+              <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.6rem;">🌱 Trazabilidad de semilla</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;">
+                <div class="form-group-a">
+                  <label>Banco genético</label>
+                  <input type="text" name="banco_genetico" class="form-control-a" placeholder="Ej: Dinafem, FastBuds, RQS...">
+                </div>
+                <div class="form-group-a">
+                  <label>Tipo de semilla</label>
+                  <select name="tipo_semilla" class="form-control-a">
+                    <option value="">Seleccioná</option>
+                    <option value="feminizada">Feminizada</option>
+                    <option value="autofloreciente">Autofloreciente</option>
+                    <option value="regular">Regular</option>
+                    <option value="cbd">CBD (alto CBD / bajo THC)</option>
+                  </select>
+                </div>
+                <div class="form-group-a">
+                  <label>Semillas compradas</label>
+                  <input type="number" name="num_semillas_compradas" class="form-control-a" min="0" placeholder="Ej: 5">
+                </div>
+                <div class="form-group-a">
+                  <label>Semillas germinadas</label>
+                  <input type="number" name="num_semillas_germinadas" class="form-control-a" min="0" placeholder="Ej: 4">
+                </div>
+                <div class="form-group-a">
+                  <label>Proveedor / Growshop</label>
+                  <input type="text" name="proveedor_semilla" class="form-control-a" placeholder="Nombre del proveedor">
+                </div>
+                <div class="form-group-a">
+                  <label>Fecha de compra</label>
+                  <input type="date" name="fecha_compra_semilla" class="form-control-a">
+                </div>
+                <div class="form-group-a">
+                  <label>N° Factura / Remito</label>
+                  <input type="text" name="factura_numero" class="form-control-a" placeholder="Ej: FC-0001-00043">
+                </div>
+                <div class="form-group-a">
+                  <label>Lote del banco</label>
+                  <input type="text" name="lote_semilla" class="form-control-a" placeholder="Ej: LOT-2024-003">
+                </div>
+                <div class="form-group-a">
+                  <label>Precio por semilla ($)</label>
+                  <input type="number" name="precio_semilla" class="form-control-a" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group-a">
+                  <label>Web del banco <span style="font-weight:400;color:var(--muted);">opcional</span></label>
+                  <input type="url" name="url_banco" class="form-control-a" placeholder="https://...">
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.8rem;">
               <button type="button" onclick="document.getElementById('form-nuevo-cultivo').classList.add('hidden')" class="btn btn-outline btn-sm">Cancelar</button>
               <button type="submit" class="btn btn-gold btn-sm">Crear cultivo</button>
             </div>

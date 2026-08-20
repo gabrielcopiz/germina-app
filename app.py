@@ -477,6 +477,22 @@ def _migrate():
     }.items():
         if col not in cols:
             db.execute(f'ALTER TABLE socios ADD COLUMN {col} {typedef}')
+    # trazabilidad de semillas en cultivos
+    cols_c = {r[1] for r in db.execute("PRAGMA table_info(cultivos)")}
+    for col, typedef in {
+        'banco_genetico':        'TEXT',
+        'tipo_semilla':          'TEXT',
+        'num_semillas_compradas':'INTEGER',
+        'num_semillas_germinadas':'INTEGER',
+        'precio_semilla':        'REAL',
+        'proveedor_semilla':     'TEXT',
+        'fecha_compra_semilla':  'TEXT',
+        'factura_numero':        'TEXT',
+        'lote_semilla':          'TEXT',
+        'url_banco':             'TEXT',
+    }.items():
+        if col not in cols_c:
+            db.execute(f'ALTER TABLE cultivos ADD COLUMN {col} {typedef}')
     # cultivos extras
     tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     if 'cultivos' not in tables:
@@ -2107,6 +2123,17 @@ def admin_nuevo_cultivo(sid):
     sustrato = f.get('sustrato','').strip()
     ubicacion= f.get('ubicacion_detalle','').strip()
     notas    = f.get('notas','').strip()
+    # trazabilidad semilla
+    banco_genetico         = f.get('banco_genetico','').strip()
+    tipo_semilla           = f.get('tipo_semilla','')
+    num_semillas_compradas = int(f.get('num_semillas_compradas', 0) or 0)
+    num_semillas_germinadas= int(f.get('num_semillas_germinadas', 0) or 0)
+    precio_semilla         = float(f.get('precio_semilla', 0) or 0)
+    proveedor_semilla      = f.get('proveedor_semilla','').strip()
+    fecha_compra_semilla   = f.get('fecha_compra_semilla','')
+    factura_numero         = f.get('factura_numero','').strip()
+    lote_semilla           = f.get('lote_semilla','').strip()
+    url_banco              = f.get('url_banco','').strip()
 
     # estimar cosecha: sumar días de todas las etapas
     dias_total = sum(ETAPA_CULTIVO_DIAS.values())
@@ -2119,10 +2146,16 @@ def admin_nuevo_cultivo(sid):
         INSERT INTO cultivos
         (codigo, socio_id, variedad, genetica, num_plantas, tipo_cultivo,
          fecha_inicio, etapa_actual, fecha_etapa, cosecha_estimada,
-         ubicacion_detalle, sustrato, notas, estado)
-        VALUES (?,?,?,?,?,?,?,'germinacion',?,?,?,?,?,'activo')
+         ubicacion_detalle, sustrato, notas, estado,
+         banco_genetico, tipo_semilla, num_semillas_compradas, num_semillas_germinadas,
+         precio_semilla, proveedor_semilla, fecha_compra_semilla,
+         factura_numero, lote_semilla, url_banco)
+        VALUES (?,?,?,?,?,?,?,'germinacion',?,?,?,?,?,'activo',?,?,?,?,?,?,?,?,?,?)
     ''', (codigo, sid, variedad, genetica, n_plant, tipo,
-          fecha_i, fecha_i, cos_est, ubicacion, sustrato, notas))
+          fecha_i, fecha_i, cos_est, ubicacion, sustrato, notas,
+          banco_genetico, tipo_semilla, num_semillas_compradas, num_semillas_germinadas,
+          precio_semilla, proveedor_semilla, fecha_compra_semilla,
+          factura_numero, lote_semilla, url_banco))
 
     cid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
     db.execute('''
