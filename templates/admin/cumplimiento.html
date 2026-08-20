@@ -1,0 +1,232 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Cumplimiento REPROCANN — Germina{% endblock %}
+{% block topbar_title %}✅ Cumplimiento REPROCANN{% endblock %}
+
+{% block extra_head %}
+<style>
+.score-ring { display:flex; align-items:center; gap:1.5rem; }
+.ring-wrap {
+  width:90px; height:90px; border-radius:50%;
+  background: conic-gradient(var(--green-mid) {{ pct }}%, var(--cream-dark) 0%);
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.ring-inner {
+  width:68px; height:68px; border-radius:50%; background:var(--white);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; font-weight:700; color:var(--green-deep);
+}
+.doc-row { display:flex; gap:1rem; align-items:flex-start; padding:0.9rem 0; border-bottom:1px solid var(--border); }
+.doc-row:last-child { border-bottom:none; }
+.doc-letra {
+  width:34px; height:34px; border-radius:50%; background:var(--green-pale);
+  color:var(--green-deep); font-weight:700; font-size:0.88rem;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.doc-letra.presentado { background:var(--green-mid); color:var(--cream); }
+.doc-letra.observado  { background:#FEF3CD; color:#7A5C00; }
+.doc-letra.pendiente  { background:var(--cream-dark); color:var(--muted); }
+.semaforo {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:4px;
+}
+.sem-verde  { background:#2D9C4E; }
+.sem-amarillo { background:#C8A44A; }
+.sem-rojo   { background:#C23B3B; }
+.chip-estado {
+  font-size:0.68rem; font-weight:700; padding:0.18rem 0.6rem; border-radius:100px;
+  text-transform:uppercase; letter-spacing:0.04em;
+}
+.chip-presentado { background:#D4EAD9; color:#1A5C30; }
+.chip-pendiente  { background:#F0EDEA; color:var(--muted); }
+.chip-observado  { background:#FEF3CD; color:#7A5C00; }
+.chip-vencido    { background:#FDE8E8; color:#9B2222; }
+.modal-bg {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; align-items:center; justify-content:center;
+}
+.modal-bg.open { display:flex; }
+.modal-box {
+  background:var(--white); border-radius:14px; padding:1.8rem;
+  width:100%; max-width:440px; border:1px solid var(--border);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;">
+
+  <!-- KPI cumplimiento -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-body" style="display:flex; gap:2rem; align-items:center; flex-wrap:wrap;">
+      <div class="score-ring">
+        <div class="ring-wrap"><div class="ring-inner">{{ pct }}%</div></div>
+        <div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.2rem;">Documentos presentados</div>
+          <div style="font-size:1.3rem;font-weight:700;color:var(--green-deep);">{{ presentados }} / {{ total_docs }}</div>
+          <div style="font-size:0.72rem;color:var(--muted);">Documentos A–I exigidos por REPROCANN</div>
+        </div>
+      </div>
+      <div style="border-left:1px solid var(--border);padding-left:2rem;display:flex;gap:2rem;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);">Socios en REPROCANN</div>
+          <div style="font-size:1.3rem;font-weight:700;color:var(--green-deep);">{{ socios_en_reprocann }}<span style="font-size:0.9rem;color:var(--muted);font-weight:400;"> / {{ total_socios_activos }}</span></div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);">M² interiores activos</div>
+          <div style="font-size:1.3rem;font-weight:700;color:{% if m2_total_int > 6 * total_socios_activos %}#C23B3B{% else %}var(--green-deep){% endif %};">{{ "%.1f"|format(m2_total_int) }}</div>
+          <div style="font-size:0.65rem;color:var(--muted);">Límite: {{ 6 * total_socios_activos }}m² (6×{{ total_socios_activos }} socios)</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);">M² exteriores activos</div>
+          <div style="font-size:1.3rem;font-weight:700;color:{% if m2_total_ext > 15 * total_socios_activos %}#C23B3B{% else %}var(--green-deep){% endif %};">{{ "%.1f"|format(m2_total_ext) }}</div>
+          <div style="font-size:0.65rem;color:var(--muted);">Límite: {{ 15 * total_socios_activos }}m² (15×{{ total_socios_activos }} socios)</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);">Socios activos</div>
+          <div style="font-size:1.3rem;font-weight:700;color:{% if total_socios_activos > 150 %}#C23B3B{% else %}var(--green-deep){% endif %};">{{ total_socios_activos }} <span style="font-size:0.7rem;color:var(--muted);">/ 150 máx.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if msg %}
+  <div style="background:#D4EAD9;border:1px solid var(--green-light);border-radius:8px;padding:0.7rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#1A5C30;font-weight:600;">
+    ✅ {{ msg }}
+  </div>
+  {% endif %}
+
+  <div class="grid-2" style="gap:1.5rem;align-items:start;">
+
+    <!-- Checklist documentos -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Documentos A–I requeridos por REPROCANN</span>
+        <span style="font-size:0.7rem;color:var(--muted);">Ley 27.350 / Decreto 883/2020</span>
+      </div>
+      <div class="card-body">
+        {% for doc in docs %}
+        <div class="doc-row">
+          <div class="doc-letra {{ doc['estado'] }}">{{ doc['tipo_doc'] }}</div>
+          <div class="semaforo {% if doc['estado'] == 'presentado' %}sem-verde{% elif doc['estado'] == 'observado' %}sem-amarillo{% else %}sem-rojo{% endif %}"></div>
+          <div style="flex:1;">
+            <div style="font-size:0.83rem;font-weight:500;color:var(--green-deep);margin-bottom:0.2rem;">
+              {{ doc['descripcion'] }}
+            </div>
+            <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+              <span class="chip-estado chip-{{ doc['estado'] }}">{{ doc['estado'] }}</span>
+              {% if doc['fecha_presentacion'] %}
+              <span style="font-size:0.7rem;color:var(--muted);">Presentado: {{ doc['fecha_presentacion'] }}</span>
+              {% endif %}
+              {% if doc['fecha_vencimiento'] %}
+              <span style="font-size:0.7rem;color:var(--muted);">Vence: {{ doc['fecha_vencimiento'] }}</span>
+              {% endif %}
+              {% if doc['notas'] %}
+              <span style="font-size:0.7rem;color:var(--muted);">— {{ doc['notas'] }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <button onclick="abrirModal({{ doc['id'] }}, '{{ doc['tipo_doc'] }}', '{{ doc['descripcion'][:40] }}', '{{ doc['estado'] }}', '{{ doc['fecha_presentacion'] or '' }}', '{{ doc['fecha_vencimiento'] or '' }}', '{{ (doc['notas'] or '')|replace("'","\'") }}')"
+            class="btn btn-sm btn-outline" style="flex-shrink:0;">Editar</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Socios con REPROCANN -->
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+          <span class="card-title">Socios con credencial REPROCANN</span>
+          <a href="{{ url_for('admin_nomina') }}" class="btn btn-sm btn-outline">Ver nómina →</a>
+        </div>
+        <div class="card-body">
+          {% if socios_reprocann %}
+          {% for s in socios_reprocann %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:0.83rem;font-weight:500;">{{ s['nombre'] }} {{ s['apellido'] }}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">Vence: {{ s['reprocann_vencimiento'] or '—' }} · {{ s['plantas_autorizadas'] or 9 }} plantas</div>
+            </div>
+            <span class="chip-estado chip-{{ s['reprocann_estado'] or 'pendiente' }}">{{ s['reprocann_estado'] or '—' }}</span>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.84rem;">
+            Ningún socio tiene código REPROCANN registrado aún.<br>
+            <a href="{{ url_for('admin_socios') }}" style="color:var(--green-mid);">Ir a socios →</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Accesos rápidos -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Accesos rápidos</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:0.6rem;">
+          <a href="{{ url_for('admin_reprocann') }}" class="btn btn-primary" style="width:100%;">📄 Generar informe semestral REPROCANN</a>
+          <a href="{{ url_for('admin_informe_director') }}" class="btn btn-outline" style="width:100%;">🩺 Informe trimestral Director Médico</a>
+          <a href="{{ url_for('admin_nomina') }}?formato=csv" class="btn btn-outline" style="width:100%;">⬇️ Descargar nómina CSV</a>
+          <a href="{{ url_for('admin_carta_porte') }}" class="btn btn-outline" style="width:100%;">🚚 Nueva Carta de Porte</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar documento -->
+<div class="modal-bg" id="modal-doc">
+  <div class="modal-box">
+    <div style="font-size:0.82rem;font-weight:700;color:var(--green-deep);margin-bottom:1.2rem;">
+      Actualizar documento <span id="modal-letra" style="font-family:monospace;"></span>
+    </div>
+    <form method="POST">
+      <input type="hidden" name="doc_id" id="modal-doc-id">
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Estado</label>
+        <select name="estado" id="modal-estado" class="form-control" style="width:100%;">
+          <option value="pendiente">Pendiente</option>
+          <option value="presentado">Presentado</option>
+          <option value="observado">Observado / Requiere corrección</option>
+          <option value="vencido">Vencido</option>
+        </select>
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Fecha de presentación</label>
+        <input type="date" name="fecha_presentacion" id="modal-fecha-p" class="form-control" style="width:100%;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Fecha de vencimiento (si aplica)</label>
+        <input type="date" name="fecha_vencimiento" id="modal-fecha-v" class="form-control" style="width:100%;">
+      </div>
+      <div style="margin-bottom:1.2rem;">
+        <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Notas</label>
+        <textarea name="notas" id="modal-notas" class="form-control" rows="2" style="width:100%;resize:vertical;" placeholder="Número de expediente, observación, etc."></textarea>
+      </div>
+      <div style="display:flex;gap:0.6rem;">
+        <button type="submit" class="btn btn-primary" style="flex:1;">Guardar</button>
+        <button type="button" onclick="cerrarModal()" class="btn btn-outline" style="flex:1;">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirModal(id, letra, desc, estado, fechaP, fechaV, notas) {
+  document.getElementById('modal-doc-id').value = id;
+  document.getElementById('modal-letra').textContent = letra + ' — ' + desc;
+  document.getElementById('modal-estado').value = estado;
+  document.getElementById('modal-fecha-p').value = fechaP;
+  document.getElementById('modal-fecha-v').value = fechaV;
+  document.getElementById('modal-notas').value = notas;
+  document.getElementById('modal-doc').classList.add('open');
+}
+function cerrarModal() {
+  document.getElementById('modal-doc').classList.remove('open');
+}
+document.getElementById('modal-doc').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+</script>
+{% endblock %}

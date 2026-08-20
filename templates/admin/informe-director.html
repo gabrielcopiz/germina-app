@@ -1,0 +1,134 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Informe Director Médico — Germina{% endblock %}
+{% block topbar_title %}🩺 Informe Trimestral — Director Médico{% endblock %}
+
+{% block extra_head %}
+<style>
+.trim-tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; }
+.trim-tab {
+  padding:0.5rem 1.1rem; border-radius:8px; font-size:0.82rem; font-weight:600;
+  border:1.5px solid var(--border); cursor:pointer; background:var(--white); color:var(--muted);
+  text-decoration:none; transition:all 0.15s;
+}
+.trim-tab.active { background:var(--green-deep); color:var(--cream); border-color:var(--green-deep); }
+.trim-tab:hover:not(.active) { border-color:var(--green-mid); color:var(--green-deep); }
+.informe-box {
+  background:var(--cream); border:1px solid var(--border); border-radius:10px;
+  padding:1.5rem; font-size:0.86rem; line-height:1.9; white-space:pre-wrap;
+  font-family:'Inter',sans-serif; color:var(--text); max-height:600px; overflow-y:auto;
+}
+.law-box {
+  background:linear-gradient(135deg,#1A3520,#2D5C38);
+  border-radius:12px; padding:1rem 1.4rem; color:var(--cream); margin-bottom:1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;">
+
+  <div class="law-box">
+    <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.6;margin-bottom:0.3rem;">Marco normativo</div>
+    <div style="font-size:0.85rem;line-height:1.6;opacity:0.9;">
+      <strong>Decreto 883/2020 — Documento H.</strong>
+      La Persona Jurídica Permitida debe designar un Director Médico que presente al REPROCANN un
+      <strong>informe trimestral</strong> con datos clínicos de los pacientes vinculados.
+      Este informe es parte de la documentación de renovación y cumplimiento.
+    </div>
+  </div>
+
+  <!-- Selector de trimestre -->
+  <div class="trim-tabs">
+    {% for t, d, h in trimestres %}
+    <a href="?trimestre={{ t }}" class="trim-tab {% if trim_sel == t %}active{% endif %}">
+      {{ t }} — {{ d[:7] }} a {{ h[:7] }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if msg %}
+  <div style="background:#D4EAD9;border:1px solid var(--green-light);border-radius:8px;padding:0.7rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#1A5C30;font-weight:600;">
+    ✅ {{ msg }}
+  </div>
+  {% endif %}
+
+  <div class="grid-2" style="gap:1.5rem;align-items:start;">
+
+    <!-- Panel generar -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Generar Informe {{ trim_sel }}</span>
+        <span style="font-size:0.7rem;color:var(--muted);">{{ desde_t }} al {{ hasta_t }}</span>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="trimestre" value="{{ trim_sel }}">
+          <div style="margin-bottom:1rem;">
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Nombre del Director Médico</label>
+            <input type="text" name="director_nombre" class="form-control" style="width:100%;" placeholder="Dr./Dra. Nombre Apellido" required>
+          </div>
+          <div style="margin-bottom:1.2rem;">
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Matrícula profesional</label>
+            <input type="text" name="matricula" class="form-control" style="width:100%;" placeholder="Mat. XXXX — Provincia">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;"
+            onclick="this.textContent='Generando con IA...';this.disabled=true;this.form.submit();">
+            🧠 Generar informe con IA
+          </button>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:0.7rem;text-align:center;">
+            La IA redacta el borrador completo con los datos del período seleccionado.
+            Revisá y firmá antes de presentar al REPROCANN.
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Informe generado -->
+    <div>
+      {% if informe_texto %}
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Informe {{ trim_sel }}</span>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('txt-informe').innerText)" class="btn btn-sm btn-outline">📋 Copiar</button>
+        </div>
+        <div class="card-body">
+          <div class="informe-box" id="txt-informe">{{ informe_texto }}</div>
+          <div style="margin-top:1rem;font-size:0.72rem;color:var(--muted);">
+            ⚠️ Este texto es un borrador generado por IA. El Director Médico debe revisarlo, completarlo con datos clínicos individuales y firmarlo antes de presentarlo.
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-body" style="text-align:center;padding:3rem;color:var(--muted);">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🩺</div>
+          <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;">Sin informe generado</div>
+          <div style="font-size:0.8rem;">
+            Seleccioná el trimestre y completá los datos del Director Médico para generar el borrador con IA.
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Qué incluye el informe -->
+      <div class="card" style="margin-top:1rem;">
+        <div class="card-header"><span class="card-title">Qué incluye el informe</span></div>
+        <div class="card-body" style="font-size:0.82rem;line-height:1.8;color:var(--text);">
+          <ol style="padding-left:1.2rem;color:var(--text);">
+            <li>Identificación del Director Médico (nombre, matrícula)</li>
+            <li>Nombre del club y período cubierto</li>
+            <li>Nómina de pacientes con diagnóstico y tratamiento</li>
+            <li>Variedades y dosis promedio por perfil</li>
+            <li>Evolución clínica general del período</li>
+            <li>Conclusiones y adherencia al tratamiento</li>
+            <li>Declaración de responsabilidad profesional</li>
+          </ol>
+          <div style="margin-top:0.8rem;font-size:0.75rem;color:var(--muted);">
+            El informe debe presentarse dentro del trimestre siguiente al período informado.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

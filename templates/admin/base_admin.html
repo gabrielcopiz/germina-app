@@ -288,6 +288,18 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_reprocann') }}" class="nav-item {% if request.endpoint == 'admin_reprocann' %}active{% endif %}">
       <span class="nav-icon">📄</span> REPROCANN
     </a>
+    <a href="{{ url_for('admin_cumplimiento') }}" class="nav-item {% if request.endpoint == 'admin_cumplimiento' %}active{% endif %}">
+      <span class="nav-icon">✅</span> Cumplimiento
+    </a>
+    <a href="{{ url_for('admin_carta_porte') }}" class="nav-item {% if request.endpoint == 'admin_carta_porte' %}active{% endif %}">
+      <span class="nav-icon">🚚</span> Carta de Porte
+    </a>
+    <a href="{{ url_for('admin_informe_director') }}" class="nav-item {% if request.endpoint == 'admin_informe_director' %}active{% endif %}">
+      <span class="nav-icon">🩺</span> Informe Director
+    </a>
+    <a href="{{ url_for('admin_nomina') }}" class="nav-item {% if request.endpoint == 'admin_nomina' %}active{% endif %}">
+      <span class="nav-icon">📋</span> Nómina REPROCANN
+    </a>
     <a href="{{ url_for('admin_configuracion') }}" class="nav-item {% if request.endpoint == 'admin_configuracion' %}active{% endif %}">
       <span class="nav-icon">⚙️</span> Club y pagos
     </a>

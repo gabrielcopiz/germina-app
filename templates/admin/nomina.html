@@ -1,0 +1,147 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Nómina REPROCANN — Germina{% endblock %}
+{% block topbar_title %}📋 Nómina de Beneficiarios{% endblock %}
+
+{% block extra_head %}
+<style>
+.estado-chip {
+  display:inline-block; padding:0.15rem 0.55rem; border-radius:100px;
+  font-size:0.63rem; font-weight:700; text-transform:uppercase; letter-spacing:0.03em;
+}
+.chip-vigente       { background:#D4EAD9; color:#1A5C30; }
+.chip-sin_registro  { background:#F0EDEA; color:var(--muted); }
+.chip-pendiente     { background:#FEF3CD; color:#7A5C00; }
+.chip-vencido       { background:#FDE8E8; color:#9B2222; }
+.chip-proximo_vencer { background:#FFE5CC; color:#8C4A00; }
+.dias-alerta { font-size:0.68rem; font-weight:600; }
+.dias-ok    { color:var(--green-mid); }
+.dias-warn  { color:#C8A44A; }
+.dias-peligro { color:#C23B3B; }
+table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+th { text-align:left; padding:0.6rem 0.8rem; font-size:0.68rem; text-transform:uppercase;
+     letter-spacing:0.07em; color:var(--muted); border-bottom:2px solid var(--border); font-weight:600; }
+td { padding:0.55rem 0.8rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--bg); }
+.count-badge { background:var(--green-deep); color:var(--cream); padding:0.2rem 0.7rem; border-radius:100px; font-size:0.72rem; font-weight:700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px;">
+
+  <!-- Header acciones -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+      <div style="font-size:1rem;font-weight:600;color:var(--green-deep);">
+        Nómina de Beneficiarios Activos
+        <span class="count-badge" style="margin-left:0.5rem;">{{ socios|length }}</span>
+      </div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem;">
+        Documento B exigido por REPROCANN — Ley 27.350 / Decreto 883/2020
+        {% if socios|length > 150 %}
+        <span style="color:#C23B3B;font-weight:600;margin-left:0.5rem;">⚠️ SUPERA EL LÍMITE DE 150 SOCIOS</span>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:0.6rem;">
+      <a href="{{ url_for('admin_nomina') }}?formato=csv" class="btn btn-outline">⬇️ Exportar CSV</a>
+      <a href="{{ url_for('admin_cumplimiento') }}" class="btn btn-outline">✅ Ver cumplimiento</a>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem;">
+    <div class="card" style="overflow:hidden;">
+      <div class="card-body" style="text-align:center;padding:1rem;">
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.3rem;">Total socios</div>
+        <div style="font-size:1.6rem;font-weight:700;color:{% if socios|length > 150 %}#C23B3B{% else %}var(--green-deep){% endif %};">{{ socios|length }}</div>
+        <div style="font-size:0.65rem;color:var(--muted);">máx. 150</div>
+      </div>
+    </div>
+    <div class="card" style="overflow:hidden;">
+      <div class="card-body" style="text-align:center;padding:1rem;">
+        {% set en_reprocann = socios|selectattr('reprocann_codigo')|list|length %}
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.3rem;">Con código REPROCANN</div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--green-deep);">{{ en_reprocann }}</div>
+        <div style="font-size:0.65rem;color:var(--muted);">de {{ socios|length }} activos</div>
+      </div>
+    </div>
+    <div class="card" style="overflow:hidden;">
+      <div class="card-body" style="text-align:center;padding:1rem;">
+        {% set vigentes = socios|selectattr('reprocann_estado','eq','vigente')|list|length %}
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.3rem;">Credenciales vigentes</div>
+        <div style="font-size:1.6rem;font-weight:700;color:var(--green-deep);">{{ vigentes }}</div>
+      </div>
+    </div>
+    <div class="card" style="overflow:hidden;">
+      <div class="card-body" style="text-align:center;padding:1rem;">
+        {% set sin_reg = socios|selectattr('reprocann_estado','eq','sin_registro')|list|length %}
+        <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.3rem;">Sin registro</div>
+        <div style="font-size:1.6rem;font-weight:700;color:{% if sin_reg > 0 %}#C8A44A{% else %}var(--green-deep){% endif %};">{{ sin_reg }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body" style="padding:0;overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Apellido y Nombre</th>
+            <th>DNI</th>
+            <th>Diagnóstico</th>
+            <th>Médico prescriptor</th>
+            <th>Tipo</th>
+            <th>Código REPROCANN</th>
+            <th>Estado</th>
+            <th>Vencimiento</th>
+            <th>Plantas</th>
+            <th>Alta</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in socios %}
+          {% set venc = s['reprocann_vencimiento'] %}
+          {% set dias_rest = None %}
+          {% if venc %}
+            {# Calcular días en template - aproximación #}
+          {% endif %}
+          <tr>
+            <td style="color:var(--muted);font-size:0.7rem;">{{ loop.index }}</td>
+            <td style="font-weight:500;">{{ s['apellido'] }}, {{ s['nombre'] }}</td>
+            <td style="font-family:monospace;font-size:0.8rem;">{{ s['dni'] or '—' }}</td>
+            <td style="color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ s['diagnostico'] or '' }}">{{ s['diagnostico'] or '—' }}</td>
+            <td style="font-size:0.78rem;">{{ s['medico_prescriptor'] or '—' }}</td>
+            <td>
+              <span style="font-size:0.72rem;color:var(--muted);">{{ tipo_socio_label.get(s['tipo_socio'], s['tipo_socio'] or '—') }}</span>
+            </td>
+            <td style="font-family:monospace;font-size:0.78rem;color:var(--green-mid);">{{ s['reprocann_codigo'] or '—' }}</td>
+            <td>
+              <span class="estado-chip chip-{{ s['reprocann_estado'] or 'sin_registro' }}">
+                {{ (s['reprocann_estado'] or 'sin_registro')|replace('_',' ') }}
+              </span>
+            </td>
+            <td style="font-size:0.78rem;">{{ s['reprocann_vencimiento'] or '—' }}</td>
+            <td style="text-align:center;font-weight:600;">{{ s['plantas_autorizadas'] or 9 }}</td>
+            <td style="font-size:0.72rem;color:var(--muted);">{{ s['created_at'][:10] if s['created_at'] else '—' }}</td>
+            <td>
+              <a href="{{ url_for('admin_socio', sid=s['id']) }}" style="font-size:0.72rem;color:var(--green-mid);">Ver →</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="12" style="text-align:center;padding:2rem;color:var(--muted);">No hay socios activos registrados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="margin-top:1rem;font-size:0.75rem;color:var(--muted);">
+    📅 Generada el {{ hoy }} · Incluye únicamente socios con etapa "activo" ·
+    Para exportar con todos los campos usar <a href="{{ url_for('admin_nomina') }}?formato=csv" style="color:var(--green-mid);">descargar CSV →</a>
+  </div>
+</div>
+{% endblock %}

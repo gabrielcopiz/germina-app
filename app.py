@@ -209,6 +209,7 @@ AGENT_ACTIONS = {
         ('recordatorio_cuota',   'Recordatorio de cuota mensual'),
         ('seguimiento_inactivo', 'Seguimiento de socio inactivo'),
         ('renovacion',           'Gestión de renovación'),
+        ('vencimiento_reprocann','Alerta vencimiento credencial REPROCANN'),
     ],
     'administracion': [
         ('alerta_stock',         'Alerta de stock bajo'),
@@ -650,6 +651,104 @@ def _migrate():
             contenido TEXT,
             status TEXT DEFAULT 'borrador'
         )''')
+    # ── Columnas REPROCANN en socios ────────────────────────────────────────
+    cols_s = {r[1] for r in db.execute("PRAGMA table_info(socios)")}
+    for col, typedef in {
+        'reprocann_codigo':       'TEXT',
+        'reprocann_estado':       "TEXT DEFAULT 'sin_registro'",
+        'reprocann_inicio':       'TEXT',
+        'reprocann_vencimiento':  'TEXT',
+        'plantas_autorizadas':    'INTEGER DEFAULT 9',
+    }.items():
+        if col not in cols_s:
+            try:
+                db.execute(f'ALTER TABLE socios ADD COLUMN {col} {typedef}')
+            except Exception:
+                pass
+
+    # ── Columnas cromatográficas en cosechas ─────────────────────────────────
+    cols_co = {r[1] for r in db.execute("PRAGMA table_info(cosechas)")}
+    for col, typedef in {
+        'thc_real_pct': 'REAL',
+        'cbd_real_pct': 'REAL',
+        'lote_codigo':  'TEXT',
+        'laboratorio':  'TEXT',
+    }.items():
+        if col not in cols_co:
+            try:
+                db.execute(f'ALTER TABLE cosechas ADD COLUMN {col} {typedef}')
+            except Exception:
+                pass
+
+    # ── Columnas m² en cultivos ──────────────────────────────────────────────
+    cols_cu = {r[1] for r in db.execute("PRAGMA table_info(cultivos)")}
+    for col, typedef in {
+        'm2_interior': 'REAL',
+        'm2_exterior': 'REAL',
+    }.items():
+        if col not in cols_cu:
+            try:
+                db.execute(f'ALTER TABLE cultivos ADD COLUMN {col} {typedef}')
+            except Exception:
+                pass
+
+    # ── Tabla checklist documentos REPROCANN (A–I) ───────────────────────────
+    tables3 = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if 'reprocann_docs' not in tables3:
+        db.execute('''CREATE TABLE reprocann_docs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            club_id INTEGER DEFAULT 1,
+            tipo_doc TEXT NOT NULL,
+            descripcion TEXT NOT NULL,
+            estado TEXT DEFAULT 'pendiente',
+            fecha_presentacion TEXT,
+            fecha_vencimiento TEXT,
+            notas TEXT,
+            updated_at TEXT DEFAULT (datetime('now','localtime'))
+        )''')
+        # Seed con los 9 documentos obligatorios
+        _docs_reprocann = [
+            ('A', 'Registro de inscripción ante el organismo de control + objeto social'),
+            ('B', 'Nómina de beneficiarios registrados en la institución'),
+            ('C', 'Declaración Jurada por cada beneficiario'),
+            ('D', 'Nómina de domicilios de cultivo declarados (máx. 3)'),
+            ('E', 'Antecedentes penales de directivos (sin condenas por Ley 23.737)'),
+            ('F', 'Informe Técnico de las actividades de la persona jurídica'),
+            ('G', 'Informe Cromatográfico + genética de semillas (DDJJ)'),
+            ('H', 'Designación Director Médico + informe trimestral de pacientes vinculados'),
+            ('I', 'Designación Responsable Técnico + plan de cultivo (DDJJ)'),
+        ]
+        for tipo, desc in _docs_reprocann:
+            db.execute(
+                "INSERT INTO reprocann_docs (club_id, tipo_doc, descripcion) VALUES (1,?,?)",
+                (tipo, desc)
+            )
+
+    # ── Tabla Cartas de Porte ────────────────────────────────────────────────
+    if 'cartas_porte' not in tables3:
+        db.execute('''CREATE TABLE cartas_porte (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            club_id INTEGER DEFAULT 1,
+            pedido_id INTEGER,
+            numero TEXT NOT NULL,
+            fecha_emision TEXT NOT NULL,
+            tipo_material TEXT DEFAULT 'flores_secas',
+            cantidad REAL NOT NULL,
+            unidad TEXT DEFAULT 'g',
+            socio_nombre TEXT,
+            socio_dni TEXT,
+            direccion_destino TEXT,
+            transportista_nombre TEXT,
+            transportista_dni TEXT,
+            vehiculo_patente TEXT,
+            ruta TEXT,
+            fecha_traslado TEXT,
+            hora_inicio TEXT,
+            hora_fin_estimada TEXT,
+            estado TEXT DEFAULT 'activa',
+            created_at TEXT DEFAULT (datetime('now','localtime'))
+        )''')
+
     # Seed variedades de muestra si el catálogo está vacío
     if db.execute('SELECT COUNT(*) FROM variedades').fetchone()[0] == 0:
         db.executemany(
@@ -2061,6 +2160,13 @@ def admin_socio(sid):
         GROUP BY cu.variedad HAVING disponible_g > 0 ORDER BY cu.variedad
     ''').fetchall()
     member_url = url_for('portal', token=s['token'], _external=True)
+    # Calcular días hasta vencimiento REPROCANN
+    reprocann_dias = None
+    if s['reprocann_vencimiento'] if 'reprocann_vencimiento' in s.keys() else None:
+        try:
+            reprocann_dias = (date.fromisoformat(s['reprocann_vencimiento']) - date.today()).days
+        except Exception:
+            pass
     return render_template('admin/socio.html',
         s=s, notas=notas, docs=docs, cultivos=cultivos,
         pedidos=pedidos, consumido_mes=consumido_mes,
@@ -2068,6 +2174,7 @@ def admin_socio(sid):
         stock_variedades=stock_variedades, member_url=member_url,
         dispensaciones_socio=dispensaciones_socio,
         cuota_actual=cuota_actual, todas_cuotas=todas_cuotas,
+        reprocann_dias=reprocann_dias,
         etapas=ETAPAS, etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR,
         tipo_socio_label=TIPO_SOCIO_LABEL,
         etapas_cultivo=ETAPAS_CULTIVO,
@@ -2107,6 +2214,28 @@ def admin_agregar_nota(sid):
     if texto:
         get_db().execute('INSERT INTO notas (socio_id, texto, profesional) VALUES (?,?,?)', (sid, texto, prof))
         get_db().commit()
+    return redirect(url_for('admin_socio', sid=sid))
+
+@app.route('/admin/socio/<int:sid>/reprocann', methods=['POST'])
+@login_required
+@write_required
+def admin_actualizar_reprocann(sid):
+    f = request.form
+    codigo       = f.get('reprocann_codigo','').strip()
+    estado       = f.get('reprocann_estado','sin_registro')
+    inicio       = f.get('reprocann_inicio','').strip()
+    vencimiento  = f.get('reprocann_vencimiento','').strip()
+    plantas      = f.get('plantas_autorizadas','9').strip()
+    try: plantas = int(plantas)
+    except Exception: plantas = 9
+    db = get_db()
+    db.execute('''UPDATE socios SET
+        reprocann_codigo=?, reprocann_estado=?, reprocann_inicio=?,
+        reprocann_vencimiento=?, plantas_autorizadas=?,
+        updated_at=datetime('now','localtime')
+        WHERE id=?''',
+        (codigo or None, estado, inicio or None, vencimiento or None, plantas, sid))
+    db.commit()
     return redirect(url_for('admin_socio', sid=sid))
 
 @app.route('/admin/socio/<int:sid>/documento', methods=['POST'])
@@ -3407,6 +3536,39 @@ def _agente_socios_scan(db, club_id=1):
             {'nombre': f"{s['nombre']} {s['apellido']}", 'email': s['email']}, rec, lv)
         _log_tarea(db, 'seguimiento_inactivo', actor='Agente Socios', agent_id='socios',
                    entity_type='socio', entity_id=s['id'], result=f'Tarea #{tid}', club_id=club_id)
+        generadas += 1
+
+    # Credenciales REPROCANN por vencer (≤60 días)
+    hoy_d = date.today()
+    proximos_60 = (hoy_d + timedelta(days=60)).isoformat()
+    por_vencer = []
+    try:
+        por_vencer = db.execute('''
+            SELECT id, nombre, apellido, reprocann_vencimiento
+            FROM socios WHERE etapa='activo'
+            AND reprocann_vencimiento IS NOT NULL AND reprocann_vencimiento != ''
+            AND reprocann_vencimiento BETWEEN ? AND ?
+            AND id NOT IN (
+                SELECT entity_id FROM agent_tasks
+                WHERE agent_id='socios' AND task_type='vencimiento_reprocann' AND DATE(timestamp)=?
+            )
+        ''', (hoy, proximos_60, hoy)).fetchall()
+    except Exception:
+        pass
+
+    lv = _level('vencimiento_reprocann')
+    for s in por_vencer:
+        try:
+            dias_rest = (date.fromisoformat(s['reprocann_vencimiento']) - hoy_d).days
+        except Exception:
+            dias_rest = 0
+        rec = (f"La credencial REPROCANN de {s['nombre']} {s['apellido']} vence el "
+               f"{s['reprocann_vencimiento']} ({dias_rest} días restantes). "
+               f"Gestionar renovación con el médico prescriptor cuanto antes.")
+        tid = _crear_tarea_agente(db, 'socios', 'vencimiento_reprocann', 'socio', s['id'],
+            {'nombre': f"{s['nombre']} {s['apellido']}", 'vencimiento': s['reprocann_vencimiento']}, rec, lv)
+        _log_tarea(db, 'vencimiento_reprocann', actor='Agente Socios', agent_id='socios',
+                   entity_type='socio', entity_id=s['id'], result=f'Vence en {dias_rest} días', club_id=club_id)
         generadas += 1
 
     db.commit()
@@ -5015,6 +5177,257 @@ def admin_reprocann():
     return render_template('admin/reprocann.html',
         sem_actual=sem_actual, sem_anterior=sem_anterior, sem_sel=sem_sel,
         desde=desde, hasta=hasta, informe=informe, historial=historial, msg=msg)
+
+
+# ─── Panel de Cumplimiento REPROCANN (checklist 9 documentos A-I) ────────────
+
+@app.route('/admin/cumplimiento', methods=['GET','POST'])
+@login_required
+def admin_cumplimiento():
+    db = get_db()
+    msg = None
+
+    if request.method == 'POST':
+        doc_id  = request.form.get('doc_id', type=int)
+        estado  = request.form.get('estado','pendiente')
+        fecha_p = request.form.get('fecha_presentacion','').strip() or None
+        fecha_v = request.form.get('fecha_vencimiento','').strip() or None
+        notas   = request.form.get('notas','').strip() or None
+        if doc_id:
+            db.execute('''UPDATE reprocann_docs SET estado=?, fecha_presentacion=?,
+                fecha_vencimiento=?, notas=?, updated_at=datetime('now','localtime')
+                WHERE id=? AND club_id=1''',
+                (estado, fecha_p, fecha_v, notas, doc_id))
+            db.commit()
+            msg = 'Documento actualizado.'
+
+    docs = db.execute("SELECT * FROM reprocann_docs WHERE club_id=1 ORDER BY tipo_doc").fetchall()
+
+    # Calcular score de cumplimiento
+    total = len(docs)
+    presentados = sum(1 for d in docs if d['estado'] == 'presentado')
+    pct = round(presentados / total * 100) if total else 0
+
+    # Socios activos con credencial REPROCANN vigente
+    socios_reprocann = db.execute('''
+        SELECT nombre, apellido, reprocann_estado, reprocann_vencimiento, plantas_autorizadas
+        FROM socios WHERE etapa='activo' AND reprocann_codigo IS NOT NULL AND reprocann_codigo != ''
+        ORDER BY apellido
+    ''').fetchall()
+    total_socios_activos = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo'").fetchone()[0]
+    socios_en_reprocann  = len(socios_reprocann)
+
+    # m² totales en cultivos activos
+    m2_total_int = db.execute("SELECT COALESCE(SUM(m2_interior),0) FROM cultivos WHERE estado='activo'").fetchone()[0] or 0
+    m2_total_ext = db.execute("SELECT COALESCE(SUM(m2_exterior),0) FROM cultivos WHERE estado='activo'").fetchone()[0] or 0
+
+    return render_template('admin/cumplimiento.html',
+        docs=docs, pct=pct, presentados=presentados, total_docs=total,
+        socios_reprocann=socios_reprocann,
+        total_socios_activos=total_socios_activos,
+        socios_en_reprocann=socios_en_reprocann,
+        m2_total_int=m2_total_int, m2_total_ext=m2_total_ext,
+        msg=msg)
+
+
+# ─── Generador de Carta de Porte ─────────────────────────────────────────────
+
+@app.route('/admin/carta-porte', methods=['GET','POST'])
+@login_required
+def admin_carta_porte():
+    db = get_db()
+    msg = None
+    carta_nueva = None
+
+    if request.method == 'POST':
+        accion = request.form.get('accion','crear')
+
+        if accion == 'crear':
+            # Número autoincremental
+            ultimo = db.execute("SELECT MAX(id) FROM cartas_porte WHERE club_id=1").fetchone()[0] or 0
+            numero = f"CP-{date.today().year}-{ultimo+1:04d}"
+
+            db.execute('''INSERT INTO cartas_porte
+                (club_id, pedido_id, numero, fecha_emision, tipo_material, cantidad, unidad,
+                 socio_nombre, socio_dni, direccion_destino,
+                 transportista_nombre, transportista_dni, vehiculo_patente,
+                 ruta, fecha_traslado, hora_inicio, hora_fin_estimada)
+                VALUES (1,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
+                request.form.get('pedido_id') or None,
+                numero,
+                date.today().isoformat(),
+                request.form.get('tipo_material','flores_secas'),
+                float(request.form.get('cantidad', 0) or 0),
+                'g' if request.form.get('tipo_material') == 'flores_secas' else 'ml',
+                request.form.get('socio_nombre','').strip() or None,
+                request.form.get('socio_dni','').strip() or None,
+                request.form.get('direccion_destino','').strip() or None,
+                request.form.get('transportista_nombre','').strip() or None,
+                request.form.get('transportista_dni','').strip() or None,
+                request.form.get('vehiculo_patente','').strip() or None,
+                request.form.get('ruta','').strip() or None,
+                request.form.get('fecha_traslado','').strip() or None,
+                request.form.get('hora_inicio','').strip() or None,
+                request.form.get('hora_fin_estimada','').strip() or None,
+            ))
+            db.commit()
+            carta_nueva = db.execute("SELECT * FROM cartas_porte WHERE numero=?", (numero,)).fetchone()
+            msg = f'Carta de Porte {numero} generada.'
+
+        elif accion == 'anular':
+            carta_id = request.form.get('carta_id', type=int)
+            if carta_id:
+                db.execute("UPDATE cartas_porte SET estado='anulada' WHERE id=? AND club_id=1", (carta_id,))
+                db.commit()
+                msg = 'Carta anulada.'
+
+    cartas = db.execute('''
+        SELECT * FROM cartas_porte WHERE club_id=1 ORDER BY created_at DESC LIMIT 50
+    ''').fetchall()
+    socios_activos = db.execute('''
+        SELECT id, nombre, apellido, dni, direccion FROM socios WHERE etapa='activo' ORDER BY apellido
+    ''').fetchall()
+    pedidos_en_camino = db.execute('''
+        SELECT p.id, p.codigo, p.variedad, p.gramos, p.tipo_entrega, p.direccion_entrega,
+               s.nombre, s.apellido, s.dni
+        FROM pedidos p JOIN socios s ON s.id=p.socio_id
+        WHERE p.estado IN ('preparando','en_camino') AND p.tipo_entrega='delivery'
+        ORDER BY p.fecha_pedido DESC
+    ''').fetchall()
+    club = db.execute("SELECT * FROM clubs WHERE id=1").fetchone()
+
+    return render_template('admin/carta-porte.html',
+        cartas=cartas, socios_activos=socios_activos,
+        pedidos_en_camino=pedidos_en_camino, club=club,
+        carta_nueva=carta_nueva, msg=msg)
+
+
+# ─── Informe Trimestral Director Médico ──────────────────────────────────────
+
+@app.route('/admin/informe-director', methods=['GET','POST'])
+@login_required
+def admin_informe_director():
+    db = get_db()
+    from datetime import date, timedelta
+    msg = None
+    informe_texto = None
+
+    hoy = date.today()
+    # Trimestres del año
+    trimestres = [
+        ('T1', f'{hoy.year}-01-01', f'{hoy.year}-03-31'),
+        ('T2', f'{hoy.year}-04-01', f'{hoy.year}-06-30'),
+        ('T3', f'{hoy.year}-07-01', f'{hoy.year}-09-30'),
+        ('T4', f'{hoy.year}-10-01', f'{hoy.year}-12-31'),
+    ]
+    trim_actual = f'T{((hoy.month-1)//3)+1}'
+    trim_sel = request.args.get('trimestre', trim_actual)
+    desde_t, hasta_t = next(((d, h) for t,d,h in trimestres if t == trim_sel), (trimestres[0][1], trimestres[0][2]))
+
+    if request.method == 'POST':
+        director = request.form.get('director_nombre','Dr./Dra.').strip()
+        matricula = request.form.get('matricula','').strip()
+
+        # Recolectar datos del trimestre
+        club = db.execute("SELECT * FROM clubs WHERE id=1").fetchone()
+        nombre_club = club['nombre'] if club else 'Cannabis Social Club'
+
+        socios_activos = db.execute(
+            "SELECT nombre, apellido, dni, diagnostico, medico_prescriptor, reprocann_codigo, reprocann_estado FROM socios WHERE etapa='activo' ORDER BY apellido"
+        ).fetchall()
+
+        # Dispensaciones del trimestre
+        disp_trim = db.execute(
+            "SELECT s.nombre, s.apellido, s.diagnostico, d.variedad, SUM(d.gramos) as total_g "
+            "FROM dispensaciones d JOIN socios s ON s.id=d.socio_id "
+            "WHERE d.fecha BETWEEN ? AND ? GROUP BY d.socio_id, d.variedad ORDER BY s.apellido",
+            (desde_t, hasta_t)
+        ).fetchall()
+        pedidos_trim = db.execute(
+            "SELECT s.nombre, s.apellido, s.diagnostico, p.variedad, SUM(p.gramos) as total_g "
+            "FROM pedidos p JOIN socios s ON s.id=p.socio_id "
+            "WHERE p.estado='entregado' AND p.fecha_entrega BETWEEN ? AND ? GROUP BY p.socio_id, p.variedad ORDER BY s.apellido",
+            (desde_t, hasta_t)
+        ).fetchall()
+
+        total_pacientes = len(socios_activos)
+        total_disp_g = sum(r['total_g'] for r in disp_trim) + sum(r['total_g'] for r in pedidos_trim)
+
+        # Diagnósticos agrupados
+        diagn_raw = db.execute(
+            "SELECT diagnostico, COUNT(*) as cnt FROM socios WHERE etapa='activo' AND diagnostico IS NOT NULL GROUP BY diagnostico ORDER BY cnt DESC"
+        ).fetchall()
+
+        prompt = (
+            f"Sos el Director Médico de '{nombre_club}', un cannabis social club en Argentina habilitado bajo Ley 27.350 y Decreto 883/2020. "
+            f"Tu matrícula es: {_sanitizar_input(matricula, 50) or 'N/A'}. "
+            f"Redactá el informe trimestral {trim_sel} {hoy.year} para presentar al REPROCANN / Ministerio de Salud. "
+            f"Período: {desde_t} al {hasta_t}. "
+            f"Datos: {total_pacientes} pacientes vinculados. "
+            f"Distribución total del trimestre: {total_disp_g:.1f}g. "
+            f"Diagnósticos: {', '.join(f'{d[0]}: {d[1]}' for d in diagn_raw[:5])}. "
+            f"Redactá 7 secciones: 1) Identificación del director médico, 2) Nombre del club y período, "
+            f"3) Nómina de pacientes con diagnóstico y tratamiento, 4) Variedades y dosis por paciente, "
+            f"5) Evolución clínica general (sin revelar datos individuales), "
+            f"6) Conclusiones y adherencia al tratamiento, 7) Declaración de responsabilidad. "
+            f"Formato: texto formal en español, para autoridad sanitaria. Aproximadamente 500 palabras."
+        )
+        try:
+            informe_texto, _, _, _ = _llamar_llm(prompt, 1200)
+        except Exception as e:
+            informe_texto = f"[Error al generar con IA: {e}]\n\nINFORME TRIMESTRAL {trim_sel} {hoy.year}\nClub: {nombre_club}\nDirector Médico: {director}\nPacientes: {total_pacientes}\nDistribución: {total_disp_g:.1f}g"
+        msg = f'Informe {trim_sel} {hoy.year} generado.'
+
+    return render_template('admin/informe-director.html',
+        trimestres=trimestres, trim_sel=trim_sel, trim_actual=trim_actual,
+        desde_t=desde_t, hasta_t=hasta_t,
+        informe_texto=informe_texto, msg=msg)
+
+
+# ─── Nómina de Beneficiarios REPROCANN ───────────────────────────────────────
+
+@app.route('/admin/nomina')
+@login_required
+def admin_nomina():
+    db = get_db()
+    from datetime import date
+
+    socios = db.execute('''
+        SELECT id, nombre, apellido, dni, diagnostico, medico_prescriptor,
+               tipo_socio, etapa, reprocann_codigo, reprocann_estado,
+               reprocann_inicio, reprocann_vencimiento, plantas_autorizadas,
+               created_at
+        FROM socios WHERE etapa='activo'
+        ORDER BY apellido, nombre
+    ''').fetchall()
+
+    club = db.execute("SELECT * FROM clubs WHERE id=1").fetchone()
+    hoy = date.today().isoformat()
+
+    # Si piden CSV
+    if request.args.get('formato') == 'csv':
+        import csv, io
+        output = io.StringIO()
+        w = csv.writer(output)
+        w.writerow(['Apellido','Nombre','DNI','Diagnóstico','Médico prescriptor',
+                    'Tipo socio','Código REPROCANN','Estado REPROCANN',
+                    'Inicio credencial','Vencimiento','Plantas autorizadas','Alta en club'])
+        for s in socios:
+            w.writerow([
+                s['apellido'], s['nombre'], s['dni'] or '', s['diagnostico'] or '',
+                s['medico_prescriptor'] or '', s['tipo_socio'] or '',
+                s['reprocann_codigo'] or '', s['reprocann_estado'] or '',
+                s['reprocann_inicio'] or '', s['reprocann_vencimiento'] or '',
+                s['plantas_autorizadas'] or 9, s['created_at'][:10] if s['created_at'] else ''
+            ])
+        resp = make_response(output.getvalue())
+        resp.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        resp.headers['Content-Disposition'] = f'attachment; filename=nomina-reprocann-{hoy}.csv'
+        return resp
+
+    return render_template('admin/nomina.html',
+        socios=socios, club=club, hoy=hoy,
+        tipo_socio_label=TIPO_SOCIO_LABEL)
 
 
 # Inicializar DB siempre al arrancar — funciona con Gunicorn y ejecución directa

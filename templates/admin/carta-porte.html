@@ -1,0 +1,297 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Carta de Porte — Germina{% endblock %}
+{% block topbar_title %}🚚 Carta de Porte{% endblock %}
+
+{% block extra_head %}
+<style>
+.carta-preview {
+  background:#FAFAF8; border:1px solid var(--border); border-radius:10px;
+  padding:1.8rem; font-family:'Inter',sans-serif; font-size:0.85rem; line-height:1.9;
+}
+.carta-header { text-align:center; margin-bottom:1.5rem; border-bottom:2px solid var(--green-deep); padding-bottom:1rem; }
+.carta-titulo { font-size:1.1rem; font-weight:700; color:var(--green-deep); text-transform:uppercase; letter-spacing:0.05em; }
+.carta-subtitulo { font-size:0.75rem; color:var(--muted); margin-top:0.2rem; }
+.carta-numero { font-size:0.7rem; color:var(--muted); margin-top:0.8rem; font-weight:600; }
+.carta-seccion { margin-bottom:1.2rem; }
+.carta-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; }
+.carta-valor { font-size:0.88rem; color:var(--text); border-bottom:1px solid var(--border); padding:0.2rem 0; margin-bottom:0.6rem; }
+.carta-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.estado-chip {
+  display:inline-block; padding:0.15rem 0.6rem; border-radius:100px;
+  font-size:0.65rem; font-weight:700; text-transform:uppercase;
+}
+.estado-activa   { background:#D4EAD9; color:#1A5C30; }
+.estado-anulada  { background:#FDE8E8; color:#9B2222; }
+.hist-row { display:flex; justify-content:space-between; align-items:center; padding:0.55rem 0; border-bottom:1px solid var(--border); }
+.hist-row:last-child { border-bottom:none; }
+@media print {
+  .no-print { display:none !important; }
+  .carta-preview { border:none; padding:0; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:960px;">
+
+  <!-- Aviso legal -->
+  <div style="background:linear-gradient(135deg,#1A3520,#2D5C38);border-radius:12px;padding:1rem 1.4rem;color:var(--cream);margin-bottom:1.5rem;">
+    <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;opacity:0.6;margin-bottom:0.3rem;">Marco normativo</div>
+    <div style="font-size:0.85rem;line-height:1.6;opacity:0.9;">
+      <strong>Ley 27.350 / Decreto 883/2020 — Anexo IV.</strong>
+      Las Personas Jurídicas Permitidas deben declarar por DDJJ ante TAD cada transporte de material vegetal.
+      La Carta de Porte contiene: emisor, origen, tipo y cantidad de material, destino, ruta, fechas y datos del transportista.
+    </div>
+  </div>
+
+  {% if msg %}
+  <div style="background:#D4EAD9;border:1px solid var(--green-light);border-radius:8px;padding:0.7rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#1A5C30;font-weight:600;">
+    ✅ {{ msg }}
+  </div>
+  {% endif %}
+
+  <div class="grid-2" style="gap:1.5rem;align-items:start;">
+
+    <!-- Formulario -->
+    <div class="card no-print">
+      <div class="card-header"><span class="card-title">Nueva Carta de Porte</span></div>
+      <div class="card-body">
+        <form method="POST">
+          <input type="hidden" name="accion" value="crear">
+
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Socio destinatario</label>
+            <select name="pedido_id" class="form-control" style="width:100%;" onchange="completarSocio(this)">
+              <option value="">— Seleccionar pedido en camino —</option>
+              {% for p in pedidos_en_camino %}
+              <option value="{{ p.id }}"
+                data-nombre="{{ p.nombre }} {{ p.apellido }}"
+                data-dni="{{ p.dni or '' }}"
+                data-dir="{{ p.direccion_entrega or '' }}"
+                data-variedad="{{ p.variedad }}"
+                data-gramos="{{ p.gramos }}">
+                {{ p.codigo }} — {{ p.nombre }} {{ p.apellido }} ({{ p.gramos }}g {{ p.variedad }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="carta-grid" style="margin-bottom:0.9rem;">
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Nombre del socio / destinatario</label>
+              <input type="text" name="socio_nombre" id="f-nombre" class="form-control" style="width:100%;" placeholder="Apellido, Nombre">
+            </div>
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">DNI destinatario</label>
+              <input type="text" name="socio_dni" id="f-dni" class="form-control" style="width:100%;" placeholder="XX.XXX.XXX">
+            </div>
+          </div>
+
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Dirección de destino</label>
+            <input type="text" name="direccion_destino" id="f-dir" class="form-control" style="width:100%;" placeholder="Calle Nº, Ciudad, Provincia">
+          </div>
+
+          <div class="carta-grid" style="margin-bottom:0.9rem;">
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Tipo de material</label>
+              <select name="tipo_material" class="form-control" style="width:100%;">
+                <option value="flores_secas">Flores secas (gramos)</option>
+                <option value="aceite">Aceite (ml)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Cantidad</label>
+              <input type="number" name="cantidad" id="f-cantidad" class="form-control" step="0.1" min="0.1" style="width:100%;" placeholder="ej. 25">
+            </div>
+          </div>
+
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Ruta (descripción del recorrido)</label>
+            <input type="text" name="ruta" class="form-control" style="width:100%;" placeholder="ej. Sede del club → Domicilio del socio, por Av. Corrientes">
+          </div>
+
+          <div class="carta-grid" style="margin-bottom:0.9rem;">
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Fecha de traslado</label>
+              <input type="date" name="fecha_traslado" class="form-control" style="width:100%;" value="{{ now().strftime('%Y-%m-%d') if now else '' }}">
+            </div>
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Hora inicio</label>
+              <input type="time" name="hora_inicio" class="form-control" style="width:100%;">
+            </div>
+          </div>
+
+          <div style="margin-bottom:0.9rem;">
+            <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Nombre del transportista</label>
+            <input type="text" name="transportista_nombre" class="form-control" style="width:100%;" placeholder="Nombre y apellido">
+          </div>
+
+          <div class="carta-grid" style="margin-bottom:0.9rem;">
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">DNI transportista</label>
+              <input type="text" name="transportista_dni" class="form-control" style="width:100%;" placeholder="XX.XXX.XXX">
+            </div>
+            <div>
+              <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:0.3rem;">Patente vehículo</label>
+              <input type="text" name="vehiculo_patente" class="form-control" style="width:100%;" placeholder="AA000AA">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;">📄 Generar Carta de Porte</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Panel derecho -->
+    <div>
+
+      {% if carta_nueva %}
+      <!-- Carta generada -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+          <span class="card-title">{{ carta_nueva['numero'] }}</span>
+          <button onclick="window.print()" class="btn btn-sm btn-outline no-print">🖨️ Imprimir</button>
+        </div>
+        <div class="card-body">
+          <div class="carta-preview">
+            <div class="carta-header">
+              <div class="carta-titulo">Declaración Jurada — Carta de Porte</div>
+              <div class="carta-subtitulo">Cannabis medicinal — Uso exclusivo para traslado autorizado<br>Ley 27.350 / Decreto 883/2020 / Anexo IV</div>
+              <div class="carta-numero">Nº {{ carta_nueva['numero'] }} — Emitida: {{ carta_nueva['fecha_emision'] }}</div>
+            </div>
+
+            <div class="carta-seccion">
+              <div class="carta-label">Emisor (Persona Jurídica Permitida)</div>
+              <div class="carta-valor">{{ club['nombre'] if club else '—' }}</div>
+            </div>
+
+            <div class="carta-grid">
+              <div class="carta-seccion">
+                <div class="carta-label">Destinatario</div>
+                <div class="carta-valor">{{ carta_nueva['socio_nombre'] or '—' }}</div>
+              </div>
+              <div class="carta-seccion">
+                <div class="carta-label">DNI destinatario</div>
+                <div class="carta-valor">{{ carta_nueva['socio_dni'] or '—' }}</div>
+              </div>
+            </div>
+
+            <div class="carta-seccion">
+              <div class="carta-label">Dirección de destino</div>
+              <div class="carta-valor">{{ carta_nueva['direccion_destino'] or '—' }}</div>
+            </div>
+
+            <div class="carta-grid">
+              <div class="carta-seccion">
+                <div class="carta-label">Tipo de material</div>
+                <div class="carta-valor">{{ 'Flores secas' if carta_nueva['tipo_material'] == 'flores_secas' else 'Aceite de cannabis' }}</div>
+              </div>
+              <div class="carta-seccion">
+                <div class="carta-label">Cantidad</div>
+                <div class="carta-valor"><strong>{{ carta_nueva['cantidad'] }} {{ carta_nueva['unidad'] }}</strong></div>
+              </div>
+            </div>
+
+            <div class="carta-seccion">
+              <div class="carta-label">Ruta de traslado</div>
+              <div class="carta-valor">{{ carta_nueva['ruta'] or '—' }}</div>
+            </div>
+
+            <div class="carta-grid">
+              <div class="carta-seccion">
+                <div class="carta-label">Fecha de traslado</div>
+                <div class="carta-valor">{{ carta_nueva['fecha_traslado'] or '—' }}</div>
+              </div>
+              <div class="carta-seccion">
+                <div class="carta-label">Hora inicio</div>
+                <div class="carta-valor">{{ carta_nueva['hora_inicio'] or '—' }}</div>
+              </div>
+            </div>
+
+            <div class="carta-grid">
+              <div class="carta-seccion">
+                <div class="carta-label">Transportista</div>
+                <div class="carta-valor">{{ carta_nueva['transportista_nombre'] or '—' }}</div>
+              </div>
+              <div class="carta-seccion">
+                <div class="carta-label">DNI transportista</div>
+                <div class="carta-valor">{{ carta_nueva['transportista_dni'] or '—' }}</div>
+              </div>
+            </div>
+
+            {% if carta_nueva['vehiculo_patente'] %}
+            <div class="carta-seccion">
+              <div class="carta-label">Vehículo (patente)</div>
+              <div class="carta-valor">{{ carta_nueva['vehiculo_patente'] }}</div>
+            </div>
+            {% endif %}
+
+            <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.75rem;color:var(--muted);line-height:1.7;">
+              El abajo firmante declara bajo juramento que los datos contenidos en el presente documento son verídicos
+              y que el traslado se realiza en el marco de la Ley 27.350 y el Decreto 883/2020, para uso medicinal
+              exclusivo del destinatario, dentro de los límites autorizados (hasta 40g de flores secas o 6 frascos de 30ml de aceite por paciente).
+            </div>
+            <div style="margin-top:2rem;display:flex;gap:3rem;">
+              <div style="text-align:center;flex:1;">
+                <div style="border-top:1px solid var(--text);padding-top:0.3rem;font-size:0.7rem;color:var(--muted);">Firma del responsable</div>
+              </div>
+              <div style="text-align:center;flex:1;">
+                <div style="border-top:1px solid var(--text);padding-top:0.3rem;font-size:0.7rem;color:var(--muted);">Aclaración y cargo</div>
+              </div>
+              <div style="text-align:center;flex:1;">
+                <div style="border-top:1px solid var(--text);padding-top:0.3rem;font-size:0.7rem;color:var(--muted);">Sello de la organización</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Historial -->
+      <div class="card no-print">
+        <div class="card-header"><span class="card-title">Historial de Cartas</span></div>
+        <div class="card-body">
+          {% if cartas %}
+          {% for c in cartas %}
+          <div class="hist-row">
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;">{{ c['numero'] }}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">{{ c['socio_nombre'] or '—' }} · {{ c['cantidad'] }}{{ c['unidad'] }} {{ 'flores' if c['tipo_material'] == 'flores_secas' else 'aceite' }}</div>
+              <div style="font-size:0.68rem;color:var(--muted);">{{ c['fecha_traslado'] or c['fecha_emision'] }}</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <span class="estado-chip estado-{{ c['estado'] }}">{{ c['estado'] }}</span>
+              {% if c['estado'] == 'activa' %}
+              <form method="POST" style="display:inline;">
+                <input type="hidden" name="accion" value="anular">
+                <input type="hidden" name="carta_id" value="{{ c['id'] }}">
+                <button type="submit" class="btn btn-sm" style="font-size:0.65rem;padding:0.15rem 0.5rem;border:1px solid #C23B3B;color:#C23B3B;background:none;border-radius:100px;cursor:pointer;"
+                  onclick="return confirm('¿Anular esta carta?')">Anular</button>
+              </form>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.84rem;">No hay cartas generadas aún.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function completarSocio(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  document.getElementById('f-nombre').value = opt.dataset.nombre || '';
+  document.getElementById('f-dni').value    = opt.dataset.dni || '';
+  document.getElementById('f-dir').value    = opt.dataset.dir || '';
+  document.getElementById('f-cantidad').value = opt.dataset.gramos || '';
+}
+</script>
+{% endblock %}

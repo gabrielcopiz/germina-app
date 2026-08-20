@@ -134,6 +134,91 @@
       </div>
     </div>
 
+    <!-- REPROCANN del socio -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <span class="card-title">Credencial REPROCANN</span>
+        {% if s.reprocann_estado and s.reprocann_estado != 'sin_registro' %}
+        <span style="font-size:0.68rem;font-weight:700;padding:0.15rem 0.6rem;border-radius:100px;text-transform:uppercase;
+          background:{% if s.reprocann_estado == 'vigente' %}#D4EAD9{% elif s.reprocann_estado == 'vencido' %}#FDE8E8{% else %}#FEF3CD{% endif %};
+          color:{% if s.reprocann_estado == 'vigente' %}#1A5C30{% elif s.reprocann_estado == 'vencido' %}#9B2222{% else %}#7A5C00{% endif %};">
+          {{ s.reprocann_estado|replace('_',' ') }}
+        </span>
+        {% else %}
+        <span style="font-size:0.68rem;color:var(--muted);">Sin registro</span>
+        {% endif %}
+      </div>
+      <div class="card-body">
+        {% if s.reprocann_codigo %}
+        <div style="background:var(--green-pale);border-radius:8px;padding:0.8rem 1rem;margin-bottom:1rem;display:flex;gap:1.5rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.2rem;">Código vinculación</div>
+            <div style="font-family:monospace;font-size:0.95rem;font-weight:700;color:var(--green-deep);">{{ s.reprocann_codigo }}</div>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.2rem;">Plantas autorizadas</div>
+            <div style="font-size:0.95rem;font-weight:700;color:var(--green-deep);">{{ s.plantas_autorizadas or 9 }}</div>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.2rem;">Inicio</div>
+            <div style="font-size:0.88rem;font-weight:500;">{{ s.reprocann_inicio or '—' }}</div>
+          </div>
+          <div>
+            <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.2rem;">Vencimiento</div>
+            <div style="font-size:0.88rem;font-weight:500;
+              color:{% if reprocann_dias is not none and reprocann_dias < 30 %}#C23B3B{% elif reprocann_dias is not none and reprocann_dias < 90 %}#C8A44A{% else %}var(--text){% endif %};">
+              {{ s.reprocann_vencimiento or '—' }}
+              {% if reprocann_dias is not none %}
+              <span style="font-size:0.7rem;margin-left:0.3rem;">({{ reprocann_dias }} días)</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">Este socio no tiene código REPROCANN registrado.</p>
+        {% endif %}
+
+        <!-- Formulario actualizar REPROCANN -->
+        <form method="POST" action="{{ url_for('admin_actualizar_reprocann', sid=s.id) }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:0.8rem;">
+            <div class="form-group-a">
+              <label>Código de vinculación REPROCANN</label>
+              <input type="text" name="reprocann_codigo" class="form-control-a"
+                value="{{ s.reprocann_codigo or '' }}" placeholder="ej. ttA4ntJ383">
+            </div>
+            <div class="form-group-a">
+              <label>Plantas autorizadas (1–9)</label>
+              <input type="number" name="plantas_autorizadas" class="form-control-a"
+                value="{{ s.plantas_autorizadas or 9 }}" min="1" max="9">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.8rem;margin-bottom:0.8rem;">
+            <div class="form-group-a">
+              <label>Estado</label>
+              <select name="reprocann_estado" class="form-control-a">
+                <option value="sin_registro" {% if not s.reprocann_estado or s.reprocann_estado == 'sin_registro' %}selected{% endif %}>Sin registro</option>
+                <option value="pendiente" {% if s.reprocann_estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="vigente" {% if s.reprocann_estado == 'vigente' %}selected{% endif %}>Vigente</option>
+                <option value="proximo_vencer" {% if s.reprocann_estado == 'proximo_vencer' %}selected{% endif %}>Próximo a vencer</option>
+                <option value="vencido" {% if s.reprocann_estado == 'vencido' %}selected{% endif %}>Vencido</option>
+              </select>
+            </div>
+            <div class="form-group-a">
+              <label>Inicio credencial</label>
+              <input type="date" name="reprocann_inicio" class="form-control-a"
+                value="{{ s.reprocann_inicio or '' }}">
+            </div>
+            <div class="form-group-a">
+              <label>Vencimiento (3 años)</label>
+              <input type="date" name="reprocann_vencimiento" class="form-control-a"
+                value="{{ s.reprocann_vencimiento or '' }}">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-outline" style="font-size:0.8rem;">Guardar datos REPROCANN</button>
+        </form>
+      </div>
+    </div>
+
     <!-- Documentación -->
     <div class="card">
       <div class="card-header">
