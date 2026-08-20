@@ -198,6 +198,8 @@ TIPO_ENTREGA_LABEL = {
 AGENTS = {
     'socios':         'Agente Socios',
     'administracion': 'Agente Administración',
+    'patrones':       'Agente Patrones de Consumo',
+    'reprocann':      'Agente REPROCANN',
     'whatsapp':       'Agente WhatsApp',
 }
 AGENT_ACTIONS = {
@@ -211,8 +213,18 @@ AGENT_ACTIONS = {
     'administracion': [
         ('alerta_stock',         'Alerta de stock bajo'),
         ('reporte_diario',       'Reporte diario automático'),
+        ('prediccion_stock',     'Predicción de agotamiento de stock'),
         ('cuota_vencida',        'Seguimiento de cuota vencida'),
         ('pendientes_revision',  'Pendientes de revisión'),
+    ],
+    'patrones': [
+        ('aumento_consumo',      'Aumento rápido de consumo detectado'),
+        ('inactividad_prolongada','Inactividad prolongada de socio'),
+        ('cese_abrupto',         'Cese abrupto de consumo'),
+        ('recomendacion_variedad','Recomendación de variedad personalizada'),
+    ],
+    'reprocann': [
+        ('informe_semestral',    'Informe semestral REPROCANN'),
     ],
     'whatsapp': [
         ('responder_consulta',   'Responder consultas de socios'),
@@ -625,6 +637,19 @@ def _migrate():
                 db.execute(f'ALTER TABLE clubs ADD COLUMN {col} {typedef}')
             except Exception:
                 pass
+    # tabla de informes REPROCANN
+    tables2 = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if 'reprocann_reports' not in tables2:
+        db.execute('''CREATE TABLE reprocann_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            club_id INTEGER DEFAULT 1,
+            semestre TEXT NOT NULL,
+            fecha_desde TEXT NOT NULL,
+            fecha_hasta TEXT NOT NULL,
+            generado_at TEXT DEFAULT (datetime('now','localtime')),
+            contenido TEXT,
+            status TEXT DEFAULT 'borrador'
+        )''')
     # Seed variedades de muestra si el catálogo está vacío
     if db.execute('SELECT COUNT(*) FROM variedades').fetchone()[0] == 0:
         db.executemany(
@@ -3426,6 +3451,50 @@ def _agente_admin_scan(db, club_id=1):
                            result=f'{v}: {disp_g}g disponibles', club_id=club_id)
                 generadas += 1
 
+    # Predicción de agotamiento de stock (días restantes por variedad)
+    lv_pred = _level('prediccion_stock')
+    for row in db.execute('''
+        SELECT cu.variedad, COALESCE(SUM(co.peso_seco_g),0) as total_g
+        FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
+        GROUP BY cu.variedad
+    ''').fetchall():
+        v = row['variedad']
+        entregado = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado='entregado'", (v,)
+        ).fetchone()[0]
+        reservado = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado IN ('pendiente','preparando','en_camino')", (v,)
+        ).fetchone()[0]
+        disp_g = round((row['total_g'] or 0) - entregado - reservado, 1)
+        if disp_g <= 0:
+            continue
+        # Consumo últimos 30 días
+        consumo_30d = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado='entregado' AND fecha_pedido>=date('now','-30 days')", (v,)
+        ).fetchone()[0] or 0
+        consumo_30d += db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE variedad=? AND fecha>=date('now','-30 days')", (v,)
+        ).fetchone()[0] or 0
+        if consumo_30d <= 0:
+            continue
+        tasa_diaria = consumo_30d / 30.0
+        dias_rest = int(disp_g / tasa_diaria)
+        if dias_rest < 30:
+            ya_pred = db.execute(
+                "SELECT id FROM agent_tasks WHERE agent_id='administracion' AND task_type='prediccion_stock' AND DATE(timestamp)=? AND input_data LIKE ?",
+                (hoy, f'%{v}%')
+            ).fetchone()
+            if not ya_pred:
+                rec_pred = (f"ALERTA PREDICTIVA: la variedad {v} se agotaría en aproximadamente {dias_rest} días "
+                            f"(stock: {disp_g}g, tasa de consumo: {tasa_diaria:.1f}g/día). "
+                            f"Revisá el cronograma de cosechas o ajustá el cupo mensual por socio.")
+                _crear_tarea_agente(db, 'administracion', 'prediccion_stock', 'variedad', None,
+                    {'variedad': v, 'disponible_g': disp_g, 'tasa_diaria_g': round(tasa_diaria,1),
+                     'dias_restantes': dias_rest}, rec_pred, lv_pred)
+                _log_tarea(db, 'prediccion_stock', actor='Agente Administración', agent_id='administracion',
+                           result=f'{v}: {dias_rest} días restantes', club_id=club_id)
+                generadas += 1
+
     # Reporte diario (una vez por día)
     ya_reporte = db.execute(
         "SELECT id FROM agent_tasks WHERE agent_id='administracion' AND task_type='reporte_diario' AND DATE(timestamp)=?",
@@ -3443,6 +3512,192 @@ def _agente_admin_scan(db, club_id=1):
                    result=rec, club_id=club_id)
         generadas += 1
 
+    db.commit()
+    return generadas
+
+def _agente_patrones_scan(db, club_id=1):
+    """Detecta patrones anómalos de consumo usando IA real (Claude Haiku)."""
+    from datetime import date, timedelta
+    hoy = date.today()
+    hoy_s = hoy.isoformat()
+    hace30 = (hoy - timedelta(days=30)).isoformat()
+    hace60 = (hoy - timedelta(days=60)).isoformat()
+    generadas = 0
+
+    def _level(action_id):
+        r = db.execute(
+            "SELECT level FROM autopilot_config WHERE club_id=? AND agent_id='patrones' AND action_id=?",
+            (club_id, action_id)).fetchone()
+        return r['level'] if r else 'RECOMENDAR'
+
+    socios_activos = db.execute(
+        "SELECT id, nombre, apellido, diagnostico, cupo_mensual_g FROM socios WHERE etapa='activo'"
+    ).fetchall()
+
+    for s in socios_activos:
+        sid = s['id']
+        nombre = f"{s['nombre']} {s['apellido']}"
+
+        # Consumo período actual (últimos 30 días)
+        actual = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND estado='entregado' AND fecha_pedido>=?",
+            (sid, hace30)).fetchone()[0] or 0
+        actual += db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=? AND fecha>=?",
+            (sid, hace30)).fetchone()[0] or 0
+
+        # Consumo período anterior (30-60 días atrás)
+        anterior = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND estado='entregado' AND fecha_pedido>=? AND fecha_pedido<?",
+            (sid, hace60, hace30)).fetchone()[0] or 0
+        anterior += db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=? AND fecha>=? AND fecha<?",
+            (sid, hace60, hace30)).fetchone()[0] or 0
+
+        ya_hoy = db.execute(
+            "SELECT id FROM agent_tasks WHERE agent_id='patrones' AND entity_id=? AND DATE(timestamp)=?",
+            (sid, hoy_s)).fetchone()
+        if ya_hoy:
+            continue
+
+        tipo_alerta = None
+        # Aumento rápido: consumo actual más del 50% mayor que anterior (y anterior > 0)
+        if anterior > 0 and actual > anterior * 1.5 and actual > 5:
+            tipo_alerta = 'aumento_consumo'
+        # Inactividad prolongada: activo en período anterior pero nada en los últimos 30 días
+        elif anterior > 0 and actual == 0:
+            tipo_alerta = 'inactividad_prolongada'
+        # Cese abrupto: consumía con regularidad (>10g en período anterior) y paró
+        elif anterior >= 10 and actual == 0:
+            tipo_alerta = 'cese_abrupto'
+
+        if not tipo_alerta:
+            continue
+
+        diagnostico = s['diagnostico'] or 'no registrado'
+        prompt = (
+            f"Sos el asistente clínico de un cannabis social club en Argentina bajo la Ley 27.350.\n"
+            f"Detectaste el siguiente patrón en el socio {nombre} (diagnóstico: {diagnostico}):\n"
+            f"- Consumo últimos 30 días: {actual:.1f}g\n"
+            f"- Consumo 30-60 días previos: {anterior:.1f}g\n"
+            f"- Tipo de alerta: {tipo_alerta.replace('_',' ')}\n\n"
+            f"Redactá una recomendación breve (2-3 oraciones) para el administrador del club sobre "
+            f"qué acción tomar. Tono profesional y clínico. Solo la recomendación, sin saludos."
+        )
+        try:
+            rec, tin, tout, cost = _llamar_llm(prompt, 200)
+        except Exception:
+            variaciones = {
+                'aumento_consumo': f"{nombre} aumentó su consumo un {((actual-anterior)/anterior*100):.0f}% respecto al mes anterior ({anterior:.1f}g → {actual:.1f}g). Considerar una entrevista de seguimiento.",
+                'inactividad_prolongada': f"{nombre} no registra consumo en los últimos 30 días (consumía {anterior:.1f}g en el período anterior). Podría haber abandonado el club.",
+                'cese_abrupto': f"{nombre} cesó abruptamente su consumo (de {anterior:.1f}g a {actual:.1f}g). Verificar estado y continuidad del tratamiento.",
+            }
+            rec = variaciones.get(tipo_alerta, f"Patrón anómalo detectado en {nombre}.")
+            tin = tout = cost = 0
+
+        lv = _level(tipo_alerta)
+        tid = _crear_tarea_agente(db, 'patrones', tipo_alerta, 'socio', sid,
+            {'nombre': nombre, 'consumo_actual_g': actual, 'consumo_anterior_g': anterior,
+             'diagnostico': diagnostico}, rec, lv)
+        _log_tarea(db, tipo_alerta, actor='Agente Patrones', agent_id='patrones',
+                   entity_type='socio', entity_id=sid, result=f'Tarea #{tid}', club_id=club_id)
+        generadas += 1
+
+    # Recomendaciones de variedades personalizadas (una vez por día por club)
+    ya_rec = db.execute(
+        "SELECT id FROM agent_tasks WHERE agent_id='patrones' AND task_type='recomendacion_variedad' AND DATE(timestamp)=?",
+        (hoy_s,)).fetchone()
+    if not ya_rec:
+        lv = _level('recomendacion_variedad')
+        # Socios con diagnóstico y ratings registrados
+        candidatos = db.execute('''
+            SELECT s.id, s.nombre, s.apellido, s.diagnostico,
+                   GROUP_CONCAT(DISTINCT vr.sabores) as sabores_hist,
+                   GROUP_CONCAT(DISTINCT vr.efectos_sentidos) as efectos_hist
+            FROM socios s
+            JOIN variedad_ratings vr ON vr.socio_id = s.id
+            WHERE s.etapa='activo' AND s.diagnostico IS NOT NULL
+              AND vr.lo_repetiria IN ('Sí','si','yes')
+            GROUP BY s.id
+            LIMIT 5
+        ''').fetchall()
+
+        for c in candidatos:
+            variedades_disp = db.execute(
+                "SELECT nombre, genetica, efectos, indicaciones, sabor FROM variedades WHERE activa=1 LIMIT 10"
+            ).fetchall()
+            vars_texto = '; '.join([f"{v['nombre']} ({v['genetica']}, efectos: {v['efectos']}, indicaciones: {v['indicaciones']})" for v in variedades_disp])
+            prompt2 = (
+                f"Sos asesor de un cannabis social club en Argentina (Ley 27.350).\n"
+                f"Socio: {c['nombre']} {c['apellido']}, diagnóstico: {c['diagnostico']}.\n"
+                f"Historial de sabores que le gustaron: {c['sabores_hist'] or 'sin datos'}.\n"
+                f"Efectos que reportó positivamente: {c['efectos_hist'] or 'sin datos'}.\n"
+                f"Variedades disponibles: {vars_texto}.\n"
+                f"Recomendá 1-2 variedades específicas para este socio con justificación clínica breve. "
+                f"Solo la recomendación, sin saludos ni intro."
+            )
+            try:
+                rec2, tin2, tout2, cost2 = _llamar_llm(prompt2, 200)
+            except Exception:
+                rec2 = f"Recomendación basada en perfil de {c['nombre']} {c['apellido']} (diagnóstico: {c['diagnostico']}). Revisar historial de ratings para sugerencia manual."
+            _crear_tarea_agente(db, 'patrones', 'recomendacion_variedad', 'socio', c['id'],
+                {'nombre': f"{c['nombre']} {c['apellido']}", 'diagnostico': c['diagnostico']},
+                rec2, lv)
+            generadas += 1
+
+    db.commit()
+    return generadas
+
+def _agente_reprocann_scan(db, club_id=1):
+    """Genera alerta si se acerca el semestre y no hay informe REPROCANN registrado."""
+    from datetime import date
+    hoy = date.today()
+    hoy_s = hoy.isoformat()
+    generadas = 0
+
+    def _level(action_id):
+        r = db.execute(
+            "SELECT level FROM autopilot_config WHERE club_id=? AND agent_id='reprocann' AND action_id=?",
+            (club_id, action_id)).fetchone()
+        return r['level'] if r else 'RECOMENDAR'
+
+    # Determinar semestre actual
+    if hoy.month <= 6:
+        sem_label = f"{hoy.year}-S1"
+        sem_fin = date(hoy.year, 6, 30)
+    else:
+        sem_label = f"{hoy.year}-S2"
+        sem_fin = date(hoy.year, 12, 31)
+
+    dias_para_fin = (sem_fin - hoy).days
+
+    # Alertar si faltan ≤45 días para el cierre del semestre y no hay informe generado
+    if dias_para_fin > 45:
+        return 0
+
+    ya_informe = db.execute(
+        "SELECT id FROM reprocann_reports WHERE club_id=? AND semestre=?",
+        (club_id, sem_label)).fetchone()
+
+    ya_tarea = db.execute(
+        "SELECT id FROM agent_tasks WHERE agent_id='reprocann' AND task_type='informe_semestral' AND input_data LIKE ?",
+        (f'%{sem_label}%',)).fetchone()
+
+    if ya_informe or ya_tarea:
+        return 0
+
+    lv = _level('informe_semestral')
+    rec = (f"Faltan {dias_para_fin} días para cerrar el semestre {sem_label}. "
+           f"La Ley 27.350 y el Decreto 883/2020 exigen presentar el informe semestral al REPROCANN "
+           f"con datos de socios, diagnósticos, producción y distribución. "
+           f"Entrá a Agentes → REPROCANN para generar el informe automáticamente.")
+    _crear_tarea_agente(db, 'reprocann', 'informe_semestral', 'club', club_id,
+        {'semestre': sem_label, 'dias_restantes': dias_para_fin, 'fecha_limite': sem_fin.isoformat()},
+        rec, lv)
+    _log_tarea(db, 'informe_semestral', actor='Agente REPROCANN', agent_id='reprocann',
+               entity_type='club', entity_id=club_id,
+               result=f'Alerta semestre {sem_label}', club_id=club_id)
+    generadas += 1
     db.commit()
     return generadas
 
@@ -3470,6 +3725,39 @@ def _ejecutar_tarea_agente(db, task):
 
     if task_type == 'alta_socio':
         return 'Revisá el socio en el panel de socios para completar el alta manualmente'
+
+    if task_type in ('aumento_consumo', 'inactividad_prolongada', 'cese_abrupto'):
+        email  = input_data.get('email', '')
+        nombre = input_data.get('nombre', '')
+        if email:
+            try:
+                asunto_map = {
+                    'aumento_consumo': f'Seguimiento de consumo — {CLUB_NOMBRE}',
+                    'inactividad_prolongada': f'Te extrañamos en {CLUB_NOMBRE}',
+                    'cese_abrupto': f'¿Todo bien? Te contactamos desde {CLUB_NOMBRE}',
+                }
+                cuerpo_map = {
+                    'aumento_consumo': f"Hola {nombre},\n\nNuestro equipo registró un cambio en tu patrón de consumo y queremos hacer un seguimiento.\nSi tenés alguna consulta o necesitás ajustar tu plan, no dudes en contactarnos.\n\nSaludos,\n{CLUB_NOMBRE}",
+                    'inactividad_prolongada': f"Hola {nombre},\n\nHace un tiempo que no te vemos por el club. Esperamos que estés bien.\nSi necesitás algo, respondé este email o acercate cuando puedas.\n\nSaludos,\n{CLUB_NOMBRE}",
+                    'cese_abrupto': f"Hola {nombre},\n\nNotamos que no has retirado producto últimamente y queremos asegurarnos de que todo esté bien.\nSi tomaste la decisión de pausar tu tratamiento, podemos ayudarte a documentarlo correctamente.\n\nSaludos,\n{CLUB_NOMBRE}",
+                }
+                _send_email_simple(email, asunto_map[task_type], cuerpo_map[task_type])
+                return 'Email de seguimiento enviado correctamente'
+            except Exception as e:
+                return f'Error al enviar email: {e}'
+        return 'Recomendación registrada. El socio no tiene email para notificar.'
+
+    if task_type == 'recomendacion_variedad':
+        return 'Recomendación de variedad generada. Podés comunicársela al socio en su próxima visita.'
+
+    if task_type == 'prediccion_stock':
+        return 'Alerta de predicción registrada. Revisá el stock y el cronograma de cosechas.'
+
+    if task_type == 'alerta_stock':
+        return 'Alerta de stock bajo registrada. Revisá el inventario en el panel de stock.'
+
+    if task_type == 'informe_semestral':
+        return 'Alerta REPROCANN registrada. Generá el informe desde Configuración → REPROCANN.'
 
     if task_type == 'seguimiento_inactivo':
         email  = input_data.get('email', '')
@@ -3765,10 +4053,14 @@ def api_agentes_scan():
     if secret != CRM_PASS:
         return jsonify({'ok': False, 'error': 'unauthorized'}), 403
     db = get_db()
-    socios_n = _agente_socios_scan(db)
-    admin_n  = _agente_admin_scan(db)
-    return jsonify({'ok': True, 'tareas_generadas': socios_n + admin_n,
-                    'agente_socios': socios_n, 'agente_admin': admin_n})
+    socios_n   = _agente_socios_scan(db)
+    admin_n    = _agente_admin_scan(db)
+    patrones_n = _agente_patrones_scan(db)
+    repro_n    = _agente_reprocann_scan(db)
+    total = socios_n + admin_n + patrones_n + repro_n
+    return jsonify({'ok': True, 'tareas_generadas': total,
+                    'agente_socios': socios_n, 'agente_admin': admin_n,
+                    'agente_patrones': patrones_n, 'agente_reprocann': repro_n})
 
 # ─── Importar socios CSV ──────────────────────────────────────────────────────
 
@@ -4538,6 +4830,191 @@ def admin_configuracion():
         club = db.execute('SELECT * FROM clubs WHERE id=1').fetchone()
         msg = 'Configuración guardada correctamente.'
     return render_template('admin/configuracion.html', club=club, msg=msg)
+
+
+@app.route('/admin/reprocann', methods=['GET', 'POST'])
+@login_required
+def admin_reprocann():
+    db = get_db()
+    from datetime import date, timedelta
+
+    # Determinar semestre actual y anterior
+    hoy = date.today()
+    if hoy.month <= 6:
+        sem_actual   = f"{hoy.year}-S1"
+        desde_actual = date(hoy.year, 1, 1).isoformat()
+        hasta_actual = date(hoy.year, 6, 30).isoformat()
+        sem_anterior = f"{hoy.year-1}-S2"
+        desde_ant    = date(hoy.year-1, 7, 1).isoformat()
+        hasta_ant    = date(hoy.year-1, 12, 31).isoformat()
+    else:
+        sem_actual   = f"{hoy.year}-S2"
+        desde_actual = date(hoy.year, 7, 1).isoformat()
+        hasta_actual = date(hoy.year, 12, 31).isoformat()
+        sem_anterior = f"{hoy.year}-S1"
+        desde_ant    = date(hoy.year, 1, 1).isoformat()
+        hasta_ant    = date(hoy.year, 6, 30).isoformat()
+
+    # Seleccionar semestre a mostrar
+    sem_sel = request.args.get('semestre', sem_actual)
+    if sem_sel == sem_actual:
+        desde, hasta = desde_actual, hasta_actual
+    else:
+        desde, hasta = desde_ant, hasta_ant
+
+    informe = None
+    msg = None
+
+    if request.method == 'POST':
+        accion = request.form.get('accion', 'generar')
+
+        if accion == 'generar':
+            # Recolectar datos del período
+            club = db.execute('SELECT * FROM clubs WHERE id=1').fetchone()
+            nombre_club = club['nombre'] if club else 'Cannabis Social Club'
+
+            socios_activos = db.execute(
+                "SELECT nombre, apellido, dni, diagnostico, medico_prescriptor, tipo_socio "
+                "FROM socios WHERE etapa='activo' ORDER BY apellido"
+            ).fetchall()
+            total_socios = len(socios_activos)
+
+            # Diagnósticos agrupados
+            diagn_raw = db.execute(
+                "SELECT diagnostico, COUNT(*) as cnt FROM socios WHERE etapa='activo' AND diagnostico IS NOT NULL GROUP BY diagnostico ORDER BY cnt DESC"
+            ).fetchall()
+            diagnosticos = [{'nombre': d['diagnostico'], 'cantidad': d['cnt']} for d in diagn_raw]
+
+            # Médicos prescriptores
+            medicos_raw = db.execute(
+                "SELECT medico_prescriptor, COUNT(*) as cnt FROM socios WHERE etapa='activo' AND medico_prescriptor IS NOT NULL GROUP BY medico_prescriptor ORDER BY cnt DESC"
+            ).fetchall()
+            medicos = [{'nombre': m['medico_prescriptor'], 'pacientes': m['cnt']} for m in medicos_raw]
+
+            # Producción: cosechas en el período
+            cosechas_raw = db.execute('''
+                SELECT cu.variedad, COUNT(co.id) as num_cosechas,
+                       COALESCE(SUM(co.peso_seco_g),0) as total_seco_g,
+                       COALESCE(SUM(co.peso_humedo_g),0) as total_humedo_g,
+                       COALESCE(SUM(co.num_plantas),0) as plantas
+                FROM cosechas co JOIN cultivos cu ON cu.id=co.cultivo_id
+                WHERE co.fecha>=? AND co.fecha<=?
+                GROUP BY cu.variedad ORDER BY total_seco_g DESC
+            ''', (desde, hasta)).fetchall()
+            produccion = [{'variedad': c['variedad'], 'cosechas': c['num_cosechas'],
+                           'gramos_secos': round(c['total_seco_g'],1),
+                           'gramos_humedos': round(c['total_humedo_g'],1),
+                           'plantas': c['plantas']} for c in cosechas_raw]
+            total_produccion_g = sum(p['gramos_secos'] for p in produccion)
+
+            # Distribución: pedidos+dispensaciones en el período
+            dist_raw = db.execute('''
+                SELECT variedad, COALESCE(SUM(gramos),0) as total_g, COUNT(*) as cant
+                FROM pedidos WHERE estado='entregado' AND fecha_pedido>=? AND fecha_pedido<=?
+                GROUP BY variedad
+            ''', (desde, hasta)).fetchall()
+            disp_raw = db.execute('''
+                SELECT variedad, COALESCE(SUM(gramos),0) as total_g, COUNT(*) as cant
+                FROM dispensaciones WHERE fecha>=? AND fecha<=?
+                GROUP BY variedad
+            ''', (desde, hasta)).fetchall()
+            dist_dict = {}
+            for r in dist_raw:
+                dist_dict[r['variedad']] = {'variedad': r['variedad'], 'gramos': r['total_g'], 'entregas': r['cant']}
+            for r in disp_raw:
+                v = r['variedad']
+                if v in dist_dict:
+                    dist_dict[v]['gramos'] += r['total_g']
+                    dist_dict[v]['entregas'] += r['cant']
+                else:
+                    dist_dict[v] = {'variedad': v, 'gramos': r['total_g'], 'entregas': r['cant']}
+            distribucion = sorted(dist_dict.values(), key=lambda x: x['gramos'], reverse=True)
+            total_distribucion_g = sum(d['gramos'] for d in distribucion)
+
+            # Stock actual
+            stock_actual = []
+            for row in db.execute('''
+                SELECT cu.variedad, COALESCE(SUM(co.peso_seco_g),0) as total_g
+                FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
+                GROUP BY cu.variedad
+            ''').fetchall():
+                v = row['variedad']
+                entregado = db.execute(
+                    "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado='entregado'", (v,)
+                ).fetchone()[0]
+                reservado = db.execute(
+                    "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado IN ('pendiente','preparando','en_camino')", (v,)
+                ).fetchone()[0]
+                disp_g = round((row['total_g'] or 0) - entregado - reservado, 1)
+                stock_actual.append({'variedad': v, 'disponible_g': disp_g})
+
+            # Cultivos activos
+            cultivos_activos = db.execute(
+                "SELECT COUNT(*) FROM cultivos WHERE estado='activo'"
+            ).fetchone()[0]
+            plantas_activas = db.execute(
+                "SELECT COALESCE(SUM(num_plantas),0) FROM cultivos WHERE estado='activo'"
+            ).fetchone()[0]
+
+            # Generar texto con IA
+            socios_texto = '\n'.join([f"  - {s['apellido']}, {s['nombre']} (DNI: {s['dni'] or 'N/D'}) — {s['diagnostico'] or 'sin diagnóstico'} — Dr/a. {s['medico_prescriptor'] or 'sin prescriptor'}" for s in socios_activos[:20]])
+            if len(socios_activos) > 20:
+                socios_texto += f"\n  ... y {len(socios_activos)-20} socios más"
+
+            prompt = (
+                f"Sos el asesor legal de un Cannabis Social Club en Argentina, registrado bajo la Ley 27.350 y el Decreto 883/2020.\n"
+                f"Generá el INFORME SEMESTRAL para el REPROCANN correspondiente al período {desde} al {hasta} ({sem_sel}).\n\n"
+                f"DATOS DEL CLUB: {nombre_club}\n"
+                f"PERÍODO: {desde} al {hasta}\n\n"
+                f"SOCIOS ACTIVOS ({total_socios}):\n{socios_texto}\n\n"
+                f"PRODUCCIÓN DEL PERÍODO:\n"
+                + '\n'.join([f"  - {p['variedad']}: {p['gramos_secos']}g secos ({p['cosechas']} cosechas, {p['plantas']} plantas)" for p in produccion])
+                + f"\n  TOTAL: {total_produccion_g:.1f}g\n\n"
+                f"DISTRIBUCIÓN DEL PERÍODO:\n"
+                + '\n'.join([f"  - {d['variedad']}: {d['gramos']:.1f}g en {d['entregas']} entregas" for d in distribucion])
+                + f"\n  TOTAL DISTRIBUIDO: {total_distribucion_g:.1f}g\n\n"
+                f"STOCK ACTUAL:\n"
+                + '\n'.join([f"  - {s['variedad']}: {s['disponible_g']}g disponibles" for s in stock_actual])
+                + f"\n\nCULTIVOS ACTIVOS: {cultivos_activos} cultivos, {plantas_activas} plantas en curso.\n\n"
+                f"Redactá el informe completo con las secciones que exige el REPROCANN:\n"
+                f"1. Datos del club\n2. Registro de pacientes del período\n3. Diagnósticos y médicos prescriptores\n"
+                f"4. Datos de producción (cultivo y cosecha)\n5. Datos de distribución\n6. Stock actual\n"
+                f"7. Declaración de cumplimiento normativo\n\n"
+                f"Formato: texto formal, en español, listo para presentar ante autoridad sanitaria argentina."
+            )
+
+            try:
+                contenido, tin, tout, cost = _llamar_llm(prompt, 1500)
+            except Exception as e:
+                contenido = f"[Error al generar con IA: {e}]\n\nINFORME SEMESTRAL {sem_sel}\nClub: {nombre_club}\nSocios activos: {total_socios}\nProducción total: {total_produccion_g:.1f}g\nDistribución total: {total_distribucion_g:.1f}g"
+
+            # Guardar en DB (reemplazar si ya existe)
+            ya = db.execute("SELECT id FROM reprocann_reports WHERE club_id=1 AND semestre=?", (sem_sel,)).fetchone()
+            if ya:
+                db.execute("UPDATE reprocann_reports SET contenido=?, generado_at=datetime('now','localtime'), status='generado' WHERE id=?",
+                           (contenido, ya['id']))
+            else:
+                db.execute("INSERT INTO reprocann_reports (club_id,semestre,fecha_desde,fecha_hasta,contenido,status) VALUES (1,?,?,?,?,'generado')",
+                           (sem_sel, desde, hasta, contenido))
+            db.commit()
+            msg = f'Informe {sem_sel} generado con IA.'
+
+        elif accion == 'cerrar':
+            db.execute("UPDATE reprocann_reports SET status='presentado' WHERE club_id=1 AND semestre=?", (sem_sel,))
+            db.commit()
+            msg = f'Informe {sem_sel} marcado como presentado.'
+
+    informe = db.execute(
+        "SELECT * FROM reprocann_reports WHERE club_id=1 AND semestre=? ORDER BY generado_at DESC LIMIT 1",
+        (sem_sel,)).fetchone()
+
+    historial = db.execute(
+        "SELECT semestre, generado_at, status FROM reprocann_reports WHERE club_id=1 ORDER BY semestre DESC LIMIT 10"
+    ).fetchall()
+
+    return render_template('admin/reprocann.html',
+        sem_actual=sem_actual, sem_anterior=sem_anterior, sem_sel=sem_sel,
+        desde=desde, hasta=hasta, informe=informe, historial=historial, msg=msg)
 
 
 # Inicializar DB siempre al arrancar — funciona con Gunicorn y ejecución directa

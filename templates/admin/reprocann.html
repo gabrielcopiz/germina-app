@@ -1,0 +1,166 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}REPROCANN — Germina{% endblock %}
+{% block topbar_title %}📄 Informes REPROCANN{% endblock %}
+
+{% block extra_head %}
+<style>
+.sem-tabs { display:flex; gap:0.5rem; margin-bottom:1.5rem; }
+.sem-tab {
+  padding:0.5rem 1.2rem; border-radius:8px; font-size:0.82rem; font-weight:600;
+  border:1.5px solid var(--border); cursor:pointer; background:var(--white); color:var(--muted);
+  text-decoration:none; transition:all 0.15s;
+}
+.sem-tab.active { background:var(--green-deep); color:var(--cream); border-color:var(--green-deep); }
+.sem-tab:hover:not(.active) { border-color:var(--green-mid); color:var(--green-deep); }
+
+.informe-box {
+  background:var(--cream); border:1px solid var(--border); border-radius:10px;
+  padding:1.5rem; font-size:0.86rem; line-height:1.8; white-space:pre-wrap;
+  font-family:'Inter',sans-serif; color:var(--text); max-height:600px; overflow-y:auto;
+}
+.status-chip {
+  display:inline-block; padding:0.2rem 0.7rem; border-radius:100px;
+  font-size:0.68rem; font-weight:700; letter-spacing:0.03em;
+}
+.status-generado   { background:#D4EAD9; color:#1A5C30; }
+.status-presentado { background:#C8F0D0; color:#0A4020; }
+.status-borrador   { background:#F0EDEA; color:var(--muted); }
+
+.law-box {
+  background:linear-gradient(135deg,#1A3520,#2D5C38);
+  border-radius:12px; padding:1.2rem 1.5rem; color:var(--cream); margin-bottom:1.5rem;
+}
+.law-title { font-size:0.75rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; opacity:0.6; margin-bottom:0.4rem; }
+.law-text { font-size:0.88rem; line-height:1.6; opacity:0.9; }
+
+.hist-row { display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid var(--border); }
+.hist-row:last-child { border-bottom:none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;">
+
+  <!-- Marco legal -->
+  <div class="law-box">
+    <div class="law-title">Marco normativo</div>
+    <div class="law-text">
+      <strong>Ley 27.350</strong> (Investigación Médica y Científica del Uso Medicinal de la Planta de Cannabis) +
+      <strong>Decreto 883/2020</strong> (Cannabis social club — autoculivo y asociaciones).
+      Los cannabis social clubs deben presentar al REPROCANN un informe semestral con datos de socios,
+      diagnósticos, médicos prescriptores, producción y distribución.
+    </div>
+  </div>
+
+  <!-- Selector de semestre -->
+  <div class="sem-tabs">
+    <a href="?semestre={{ sem_actual }}" class="sem-tab {% if sem_sel == sem_actual %}active{% endif %}">
+      Semestre actual — {{ sem_actual }}
+    </a>
+    <a href="?semestre={{ sem_anterior }}" class="sem-tab {% if sem_sel == sem_anterior %}active{% endif %}">
+      Semestre anterior — {{ sem_anterior }}
+    </a>
+  </div>
+
+  {% if msg %}
+  <div style="background:#D4EAD9;border:1px solid var(--green-light);border-radius:8px;padding:0.7rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#1A5C30;font-weight:600;">
+    ✅ {{ msg }}
+  </div>
+  {% endif %}
+
+  <div class="grid-2" style="gap:1.5rem;align-items:start;">
+
+    <!-- Panel izquierdo: acciones -->
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+          <span class="card-title">Semestre {{ sem_sel }}</span>
+          {% if informe %}
+          <span class="status-chip status-{{ informe['status'] }}">{{ informe['status'].upper() }}</span>
+          {% else %}
+          <span class="status-chip status-borrador">SIN GENERAR</span>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;">
+            Período: <strong>{{ desde }}</strong> al <strong>{{ hasta }}</strong>
+          </p>
+
+          <form method="POST" style="margin-bottom:0.8rem;">
+            <input type="hidden" name="accion" value="generar">
+            <input type="hidden" name="semestre" value="{{ sem_sel }}">
+            <button type="submit" class="btn btn-primary" style="width:100%;" onclick="this.innerHTML='Generando con IA...';this.disabled=true;this.form.submit();">
+              🧠 {% if informe %}Regenerar{% else %}Generar{% endif %} informe con IA
+            </button>
+          </form>
+
+          {% if informe and informe['status'] != 'presentado' %}
+          <form method="POST">
+            <input type="hidden" name="accion" value="cerrar">
+            <input type="hidden" name="semestre" value="{{ sem_sel }}">
+            <button type="submit" class="btn btn-outline" style="width:100%;">
+              ✅ Marcar como presentado al REPROCANN
+            </button>
+          </form>
+          {% endif %}
+
+          {% if informe %}
+          <div style="margin-top:1rem;font-size:0.75rem;color:var(--muted);">
+            Generado: {{ informe['generado_at'] }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Historial de informes -->
+      {% if historial %}
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Historial</span>
+        </div>
+        <div class="card-body">
+          {% for h in historial %}
+          <div class="hist-row">
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;">{{ h['semestre'] }}</div>
+              <div style="font-size:0.7rem;color:var(--muted);">{{ h['generado_at'][:10] if h['generado_at'] else '—' }}</div>
+            </div>
+            <span class="status-chip status-{{ h['status'] }}">{{ h['status'].upper() }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Panel derecho: contenido del informe -->
+    <div>
+      {% if informe and informe['contenido'] %}
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Informe {{ sem_sel }}</span>
+          <button onclick="navigator.clipboard.writeText(document.getElementById('informe-texto').innerText)" class="btn btn-sm btn-outline">
+            📋 Copiar
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="informe-box" id="informe-texto">{{ informe['contenido'] }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-body" style="text-align:center;padding:3rem;color:var(--muted);">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">📄</div>
+          <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.4rem;">Sin informe generado</div>
+          <div style="font-size:0.8rem;">
+            Hacé clic en "Generar informe con IA" para que el sistema analice los datos del semestre
+            y redacte automáticamente el informe requerido por el REPROCANN.
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
