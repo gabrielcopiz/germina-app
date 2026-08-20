@@ -315,6 +315,11 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     </a>
   </nav>
   <div class="sidebar-footer">
+    <a href="{{ url_for('manual_usuario') }}" target="_blank"
+       class="nav-item"
+       style="background:rgba(200,164,74,0.12);border:1px solid rgba(200,164,74,0.25);margin-bottom:0.5rem;color:var(--gold);">
+      <span class="nav-icon">📖</span> Manual de uso
+    </a>
     <a href="{{ url_for('admin_logout') }}" class="nav-item" style="color:rgba(255,255,255,0.4);">
       <span class="nav-icon">←</span> Salir
     </a>
@@ -337,6 +342,15 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
       {% elif session.get('user_role') == 'operador' %}
       <span style="font-size:0.68rem;background:var(--green-pale);color:var(--green-mid);padding:0.25rem 0.6rem;border-radius:100px;border:1px solid var(--green-light);">Operador</span>
       {% endif %}
+      <a href="{{ url_for('manual_usuario') }}" target="_blank"
+         style="display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:600;
+                color:var(--green-deep);background:var(--cream);border:1px solid var(--border);
+                padding:0.28rem 0.75rem;border-radius:100px;text-decoration:none;
+                transition:all 0.15s;"
+         onmouseover="this.style.background='var(--green-pale)'"
+         onmouseout="this.style.background='var(--cream)'">
+        📖 Manual
+      </a>
       <span class="topbar-club">🌿 {{ session.get('user_nombre', 'Admin') }}</span>
     </div>
   </div>
