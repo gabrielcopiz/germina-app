@@ -559,7 +559,7 @@ tbody tr:hover { background: var(--cream); }
   <div class="sidebar-logo">
     <div class="brand">Germi<span>na</span></div>
     <div class="subtitle">Panel de Gestión</div>
-    <div class="badge">Manual de Usuario v2.0</div>
+    <div class="badge">Manual de Usuario v3.0</div>
   </div>
 
   <nav class="sidebar-nav">
@@ -588,6 +588,11 @@ tbody tr:hover { background: var(--cream); }
 
     <div class="nav-section-title">Configuración</div>
     <a href="#reprocann" class="nav-item"><span class="icon">📄</span> REPROCANN</a>
+    <a href="#credencial-reprocann" class="nav-item"><span class="icon">🪪</span> Credencial del socio</a>
+    <a href="#cumplimiento" class="nav-item"><span class="icon">✅</span> Panel Cumplimiento</a>
+    <a href="#carta-porte" class="nav-item"><span class="icon">🚚</span> Carta de Porte</a>
+    <a href="#informe-director" class="nav-item"><span class="icon">🩺</span> Informe Director</a>
+    <a href="#nomina" class="nav-item"><span class="icon">📋</span> Nómina REPROCANN</a>
     <a href="#importar" class="nav-item"><span class="icon">⬆️</span> Importar Socios</a>
     <a href="#whatsapp" class="nav-item"><span class="icon">💬</span> WhatsApp</a>
     <a href="#usuarios" class="nav-item"><span class="icon">👤</span> Usuarios</a>
@@ -605,7 +610,7 @@ tbody tr:hover { background: var(--cream); }
   <div class="topbar">
     <div class="topbar-title">Manual de Usuario — Germina Panel de Gestión</div>
     <div class="topbar-actions">
-      <span class="version-badge">Versión 2.0 · Agosto 2026</span>
+      <span class="version-badge">Versión 3.0 · Agosto 2026</span>
       <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
     </div>
   </div>
@@ -617,7 +622,7 @@ tbody tr:hover { background: var(--cream); }
     <p>Todo lo que necesitás saber para gestionar tu club con Germina: socios, cultivos, dispensaciones, e inteligencia artificial que trabaja por vos.</p>
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="num">17</div>
+        <div class="num">22</div>
         <div class="label">Secciones cubiertas</div>
       </div>
       <div class="hero-stat">
@@ -676,8 +681,8 @@ tbody tr:hover { background: var(--cream); }
         </div>
         <div class="card">
           <div class="card-icon">📄</div>
-          <div class="card-title">REPROCANN automático</div>
-          <p>El sistema genera el informe semestral obligatorio con un solo clic, listo para presentar.</p>
+          <div class="card-title">Cumplimiento legal completo</div>
+          <p>Informe semestral REPROCANN, informe trimestral del Director Médico, Carta de Porte, nómina de beneficiarios y checklist de los 9 documentos obligatorios.</p>
         </div>
       </div>
 
@@ -1851,34 +1856,32 @@ tbody tr:hover { background: var(--cream); }
       <div class="section-header">
         <div class="section-icon">📄</div>
         <div>
-          <div class="section-title">REPROCANN — Informes Semestrales</div>
+          <div class="section-title">REPROCANN — Informe Semestral</div>
           <div class="section-sub">Cumplí con la Ley 27.350 y el Decreto 883/2020 con un clic</div>
         </div>
       </div>
 
       <div class="callout info">
         <span class="callout-icon">⚖️</span>
-        <p><strong>Marco legal:</strong> La Ley 27.350 (Cannabis medicinal en Argentina) y el Decreto 883/2020 (Cannabis social club y autocultivo) obligan a los clubes registrados a presentar un informe semestral al REPROCANN con datos de socios, diagnósticos, médicos prescriptores, producción y distribución.</p>
+        <p><strong>Marco legal:</strong> La Ley 27.350 (Cannabis medicinal en Argentina) y el Decreto 883/2020 (Cannabis social club y autocultivo) obligan a los clubes registrados como Persona Jurídica Permitida a presentar un informe semestral al REPROCANN. Germina genera ese informe automáticamente con IA y además ofrece todas las herramientas de cumplimiento legal que la ley exige.</p>
       </div>
 
-      <h3>¿Qué información contiene el informe?</h3>
+      <h3>¿Qué información contiene el informe semestral?</h3>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr>
-              <th>Sección del informe</th>
-              <th>Dato incluido</th>
-            </tr>
+            <tr><th>Sección del informe</th><th>Dato incluido</th></tr>
           </thead>
           <tbody>
             <tr><td><strong>Datos del club</strong></td><td>Nombre, período del semestre, fecha de generación</td></tr>
-            <tr><td><strong>Registro de socios</strong></td><td>Listado completo de socios activos con apellido, nombre, DNI, diagnóstico y médico prescriptor</td></tr>
-            <tr><td><strong>Diagnósticos</strong></td><td>Condiciones de salud declaradas agrupadas por cantidad de pacientes</td></tr>
+            <tr><td><strong>Registro de socios</strong></td><td>Listado completo de activos con apellido, nombre, DNI, diagnóstico y médico prescriptor</td></tr>
+            <tr><td><strong>Diagnósticos</strong></td><td>Condiciones de salud agrupadas por cantidad de pacientes</td></tr>
             <tr><td><strong>Médicos prescriptores</strong></td><td>Listado de profesionales y cuántos pacientes tienen a cargo</td></tr>
-            <tr><td><strong>Producción del semestre</strong></td><td>Variedades cultivadas, cantidad de cosechas, gramos secos obtenidos, plantas involucradas</td></tr>
-            <tr><td><strong>Distribución del semestre</strong></td><td>Gramos dispensados por variedad y número de entregas realizadas en el período</td></tr>
+            <tr><td><strong>Producción del semestre</strong></td><td>Variedades cultivadas, cosechas, gramos secos y plantas involucradas</td></tr>
+            <tr><td><strong>Distribución del semestre</strong></td><td>Gramos dispensados por variedad y número de entregas en el período</td></tr>
             <tr><td><strong>Stock actual</strong></td><td>Gramos disponibles de cada variedad al momento de generar el informe</td></tr>
             <tr><td><strong>Cultivos activos</strong></td><td>Cantidad de cultivos en curso y plantas en crecimiento</td></tr>
+            <tr><td><strong>Declaración de cumplimiento</strong></td><td>Declaración formal de adhesión a la normativa vigente</td></tr>
           </tbody>
         </table>
       </div>
@@ -1903,14 +1906,14 @@ tbody tr:hover { background: var(--cream); }
           <div class="step-num">3</div>
           <div class="step-body">
             <div class="step-title">Hacer clic en "Generar informe con IA"</div>
-            <p>El sistema recolecta todos los datos del período (socios, cosechas, dispensaciones, stock) y llama a Claude para redactar el informe completo en formato formal, listo para presentar ante la autoridad sanitaria.</p>
+            <p>El sistema recolecta todos los datos del período y llama a Claude (IA real) para redactar el informe completo en formato formal, listo para presentar ante la autoridad sanitaria.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num">4</div>
           <div class="step-body">
             <div class="step-title">Revisar y copiar</div>
-            <p>El informe aparece en pantalla. Podés copiarlo con el botón "Copiar" y pegarlo en el sistema del REPROCANN o en un documento Word.</p>
+            <p>El informe aparece en pantalla. Copialo con el botón "Copiar" y pegalo en el sistema del REPROCANN o en un documento Word.</p>
           </div>
         </div>
         <div class="step">
@@ -1923,11 +1926,328 @@ tbody tr:hover { background: var(--cream); }
       </div>
 
       <h3>El Agente REPROCANN te avisa antes</h3>
-      <p>No tenés que acordarte de los plazos. El Agente REPROCANN monitorea el calendario y cuando <strong>faltan 45 días o menos para cerrar el semestre</strong> sin informe presentado, genera automáticamente una alerta en la cola de tareas con el detalle de la fecha límite.</p>
+      <p>No tenés que acordarte de los plazos. El Agente REPROCANN monitorea el calendario y cuando <strong>faltan 45 días o menos para cerrar el semestre</strong> sin informe presentado, genera automáticamente una alerta en la cola de tareas.</p>
 
       <div class="callout warning">
         <span class="callout-icon">⚠️</span>
-        <p>El informe es generado por IA con los datos que el club tiene cargados en el sistema. Si los datos de socios, cosechas o dispensaciones están incompletos, el informe también lo estará. Para que el REPROCANN sea correcto, el sistema tiene que estar al día.</p>
+        <p>El informe se genera con los datos que el club tiene cargados. Si los datos de socios, cosechas o dispensaciones están incompletos, el informe también lo estará. Para que el REPROCANN sea correcto, el sistema tiene que estar al día.</p>
+      </div>
+    </section>
+
+    <!-- CREDENCIAL REPROCANN DEL SOCIO -->
+    <section class="section" id="credencial-reprocann">
+      <div class="section-header">
+        <div class="section-icon">🪪</div>
+        <div>
+          <div class="section-title">Credencial REPROCANN del socio</div>
+          <div class="section-sub">Registrá y controlá el estado legal de cada socio</div>
+        </div>
+      </div>
+
+      <p>Cada socio que cultiva o recibe cannabis medicinal en Argentina debe tener una credencial REPROCANN vigente. Esa credencial se obtiene en el sistema del Ministerio de Salud de la Nación y tiene <strong>3 años de vigencia</strong>. Germina ahora permite registrar y controlar el estado de esa credencial para cada socio.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">📋</span>
+        <p><strong>Dónde encontrarlo:</strong> En la ficha de cada socio (Socios → hacer clic en un socio), aparece la sección <strong>"Credencial REPROCANN"</strong> con todos los campos para completar y actualizar.</p>
+      </div>
+
+      <h3>Qué se registra por socio</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Campo</th><th>Qué es</th><th>Para qué sirve</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Código de vinculación</strong></td><td>El código único que el REPROCANN le asigna a cada paciente (ej. ttA4ntJ383)</td><td>Es el identificador oficial del paciente en el sistema. Lo necesitás para vincularlo a la ONG</td></tr>
+            <tr><td><strong>Estado</strong></td><td>Sin registro / Pendiente / Vigente / Próximo a vencer / Vencido</td><td>Para saber de un vistazo qué socios están en regla y cuáles tienen un problema</td></tr>
+            <tr><td><strong>Inicio de la credencial</strong></td><td>Fecha en que fue aprobada</td><td>Referencia para calcular el vencimiento (3 años desde el inicio)</td></tr>
+            <tr><td><strong>Vencimiento</strong></td><td>Fecha exacta de vencimiento</td><td>El sistema calcula los días restantes y avisa antes de que venza</td></tr>
+            <tr><td><strong>Plantas autorizadas</strong></td><td>Número de 1 a 9 según lo que especifica la credencial</td><td>Límite legal por socio. La ley permite entre 1 y 9 plantas florecidas</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Alerta automática de vencimiento</h3>
+      <p>El <strong>Agente Socios</strong> revisa periódicamente las fechas de vencimiento de las credenciales. Cuando un socio tiene su credencial a <strong>60 días o menos de vencer</strong>, el agente genera una tarea automática avisando para que se gestione la renovación con el médico prescriptor a tiempo.</p>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>La credencial vencida no solo es un problema legal para el socio: si la ONG sigue entregando cannabis a un socio con credencial vencida, la ONG también incurre en incumplimiento. Por eso es importante tenerlas actualizadas en el sistema.</p>
+      </div>
+    </section>
+
+    <!-- PANEL DE CUMPLIMIENTO -->
+    <section class="section" id="cumplimiento">
+      <div class="section-header">
+        <div class="section-icon">✅</div>
+        <div>
+          <div class="section-title">Panel de Cumplimiento REPROCANN</div>
+          <div class="section-sub">Los 9 documentos obligatorios, de un vistazo</div>
+        </div>
+      </div>
+
+      <p>Para estar inscripta como Persona Jurídica Permitida en el REPROCANN, la ONG debe presentar y mantener actualizados <strong>9 documentos específicos</strong>. El Panel de Cumplimiento es el lugar de Germina donde controlás el estado de cada uno de esos documentos con un semáforo de colores.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">📋</span>
+        <p><strong>Dónde encontrarlo:</strong> Configuración → Cumplimiento (en el menú lateral).</p>
+      </div>
+
+      <h3>Los 9 documentos obligatorios (A–I)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Doc.</th><th>Qué es</th><th>Observaciones</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>A</strong></td><td>Registro de inscripción ante el organismo de control + objeto social</td><td>Personería jurídica ante IGJ o equivalente provincial</td></tr>
+            <tr><td><strong>B</strong></td><td>Nómina de beneficiarios registrados en la institución</td><td>Germina genera esta nómina automáticamente desde la sección Nómina REPROCANN</td></tr>
+            <tr><td><strong>C</strong></td><td>Declaración Jurada por cada beneficiario</td><td>Una DDJJ por cada socio</td></tr>
+            <tr><td><strong>D</strong></td><td>Nómina de domicilios de cultivo declarados</td><td>Máximo 3 domicilios georreferenciados</td></tr>
+            <tr><td><strong>E</strong></td><td>Antecedentes penales de directivos</td><td>Sin condenas por Ley 23.737 de estupefacientes</td></tr>
+            <tr><td><strong>F</strong></td><td>Informe Técnico de las actividades de la persona jurídica</td><td>Descripción del proceso productivo</td></tr>
+            <tr><td><strong>G</strong></td><td>Informe Cromatográfico + genética de semillas (DDJJ)</td><td>Análisis de laboratorio del producto (THC/CBD %)</td></tr>
+            <tr><td><strong>H</strong></td><td>Designación del Director Médico + informe trimestral de pacientes vinculados</td><td>Germina genera el informe trimestral con IA</td></tr>
+            <tr><td><strong>I</strong></td><td>Designación del Responsable Técnico + plan de cultivo (DDJJ)</td><td>La persona que responde técnicamente por el cultivo</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cómo usar el panel</h3>
+      <p>Para cada documento podés registrar: su <strong>estado</strong> (Pendiente / Presentado / Observado / Vencido), la <strong>fecha en que lo presentaste</strong>, la <strong>fecha de vencimiento</strong> si corresponde, y <strong>notas</strong> (número de expediente, observaciones recibidas, etc.).</p>
+
+      <p>El panel también muestra en tiempo real:</p>
+      <ul class="checklist">
+        <li>Porcentaje de cumplimiento (documentos presentados vs. total)</li>
+        <li>Socios activos con credencial REPROCANN registrada</li>
+        <li>Metros cuadrados totales de cultivo activos vs. el límite legal (6m² interior / 15m² exterior por socio)</li>
+        <li>Cantidad de socios activos vs. el límite de 150 que permite la ley</li>
+      </ul>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p><strong>Límite de 150 socios:</strong> La ley argentina establece que una Persona Jurídica Permitida (Asociación Civil o Fundación) puede representar hasta 150 pacientes. Si superás ese número, el sistema te lo indica en rojo y es necesario tramitar una ampliación ante el REPROCANN.</p>
+      </div>
+    </section>
+
+    <!-- CARTA DE PORTE -->
+    <section class="section" id="carta-porte">
+      <div class="section-header">
+        <div class="section-icon">🚚</div>
+        <div>
+          <div class="section-title">Carta de Porte</div>
+          <div class="section-sub">Declaración Jurada obligatoria para cada envío a domicilio</div>
+        </div>
+      </div>
+
+      <p>Cuando un club hace una entrega de cannabis a domicilio, la ley exige acompañar el material con una <strong>Carta de Porte</strong>: una Declaración Jurada que detalla quién envía, qué material, en qué cantidad, hacia dónde, por qué ruta y con qué transportista. Germina genera esa carta en segundos.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">📋</span>
+        <p><strong>Dónde encontrarlo:</strong> Configuración → Carta de Porte (en el menú lateral). También está disponible como acceso rápido desde el Panel de Cumplimiento.</p>
+      </div>
+
+      <h3>Qué contiene la Carta de Porte</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Dato</th><th>Descripción</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Número de carta</strong></td><td>Se genera automáticamente con el formato CP-AÑO-XXXX</td></tr>
+            <tr><td><strong>Emisor</strong></td><td>El nombre del club (Persona Jurídica Permitida)</td></tr>
+            <tr><td><strong>Destinatario</strong></td><td>Nombre y DNI del socio que recibe el material</td></tr>
+            <tr><td><strong>Dirección de destino</strong></td><td>Domicilio al que se realiza el envío</td></tr>
+            <tr><td><strong>Tipo de material</strong></td><td>Flores secas (gramos) o Aceite de cannabis (ml)</td></tr>
+            <tr><td><strong>Cantidad</strong></td><td>Dentro del límite legal: hasta 40g de flores secas o 6 frascos de 30ml por socio</td></tr>
+            <tr><td><strong>Ruta</strong></td><td>Descripción del recorrido desde el club al domicilio</td></tr>
+            <tr><td><strong>Fecha y hora de traslado</strong></td><td>Cuándo se realiza el envío</td></tr>
+            <tr><td><strong>Transportista</strong></td><td>Nombre, DNI y patente del vehículo del repartidor</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cómo generar una Carta de Porte</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Ir a Configuración → Carta de Porte</div>
+            <p>Si tenés pedidos en camino (estado "En camino"), aparecen listados en el formulario para pre-completar los datos automáticamente.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Seleccionar el pedido o completar manualmente</div>
+            <p>Elegís el pedido de la lista y los datos del socio (nombre, DNI, dirección y gramos) se completan solos. También podés ingresarlos a mano si es un caso especial.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Completar datos del transporte</div>
+            <p>Agregás la ruta, fecha, hora de salida, nombre del transportista, su DNI y la patente del vehículo.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Generar e imprimir</div>
+            <p>Hacés clic en "Generar Carta de Porte". La carta aparece en pantalla con formato oficial, lista para imprimir. El transportista lleva una copia firmada.</p>
+          </div>
+        </div>
+      </div>
+
+      <p>Todas las cartas generadas quedan guardadas en el historial y podés anular una carta si el envío no se realizó.</p>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p>El límite legal por socio es de <strong>40g de flores secas</strong> o <strong>6 frascos de 30ml de aceite</strong> por traslado. No se puede combinar flores y aceite en la misma carta superando esos límites.</p>
+      </div>
+    </section>
+
+    <!-- INFORME TRIMESTRAL DIRECTOR MÉDICO -->
+    <section class="section" id="informe-director">
+      <div class="section-header">
+        <div class="section-icon">🩺</div>
+        <div>
+          <div class="section-title">Informe Trimestral del Director Médico</div>
+          <div class="section-sub">El Documento H del REPROCANN, generado con IA</div>
+        </div>
+      </div>
+
+      <p>El <strong>Decreto 883/2020</strong> exige que cada Persona Jurídica Permitida designe un Director Médico que elabore y presente al REPROCANN un <strong>informe trimestral</strong> con datos clínicos de los pacientes vinculados. Germina genera ese informe con IA usando todos los datos del sistema.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">📋</span>
+        <p><strong>Dónde encontrarlo:</strong> Configuración → Informe Director (en el menú lateral).</p>
+      </div>
+
+      <h3>Qué contiene el informe trimestral</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">1️⃣</div>
+          <div class="card-title">Identificación del Director Médico</div>
+          <p>Nombre completo y número de matrícula profesional.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">2️⃣</div>
+          <div class="card-title">Nombre del club y período</div>
+          <p>Trimestre cubierto y fechas exactas del período informado.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">3️⃣</div>
+          <div class="card-title">Nómina de pacientes</div>
+          <p>Lista de pacientes con diagnóstico y tratamiento activo en el período.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">4️⃣</div>
+          <div class="card-title">Variedades y dosis</div>
+          <p>Cepas entregadas y dosis promedio por perfil de paciente.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">5️⃣</div>
+          <div class="card-title">Evolución clínica general</div>
+          <p>Análisis general del período sin revelar datos individuales sensibles.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">6️⃣</div>
+          <div class="card-title">Conclusiones y declaración</div>
+          <p>Adherencia al tratamiento y declaración de responsabilidad profesional firmada.</p>
+        </div>
+      </div>
+
+      <h3>Cómo generar el informe</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Seleccionar el trimestre</div>
+            <p>El sistema muestra T1, T2, T3 y T4 del año. Elegís el que necesitás reportar.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Ingresar los datos del Director Médico</div>
+            <p>Nombre completo y número de matrícula. Estos datos van encabezando el informe oficial.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Hacer clic en "Generar informe con IA"</div>
+            <p>El sistema toma los datos del trimestre (socios, diagnósticos, dispensaciones) y Claude redacta las 7 secciones del informe formal en lenguaje técnico-sanitario.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Revisar, copiar y presentar</div>
+            <p>El Director Médico revisa el borrador, lo completa si necesita agregar datos clínicos individuales, lo firma y lo presenta al REPROCANN.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p>Este informe es un <strong>borrador asistido por IA</strong>. Siempre debe ser revisado y firmado por el Director Médico designado antes de presentarlo. La responsabilidad profesional es del médico, no del sistema.</p>
+      </div>
+    </section>
+
+    <!-- NÓMINA DE BENEFICIARIOS -->
+    <section class="section" id="nomina">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <div>
+          <div class="section-title">Nómina de Beneficiarios REPROCANN</div>
+          <div class="section-sub">El Documento B del REPROCANN, siempre actualizado</div>
+        </div>
+      </div>
+
+      <p>La nómina de beneficiarios es el listado formal de todos los socios activos que el club representa ante el REPROCANN. Es el <strong>Documento B</strong> de los 9 documentos obligatorios. Germina la genera automáticamente con todos los datos requeridos y permite descargarla en CSV listo para presentar.</p>
+
+      <div class="callout info">
+        <span class="callout-icon">📋</span>
+        <p><strong>Dónde encontrarlo:</strong> Configuración → Nómina REPROCANN (en el menú lateral).</p>
+      </div>
+
+      <h3>Qué incluye la nómina</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Columna</th><th>Descripción</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Apellido y Nombre</strong></td><td>Ordenados alfabéticamente</td></tr>
+            <tr><td><strong>DNI</strong></td><td>Documento Nacional de Identidad</td></tr>
+            <tr><td><strong>Diagnóstico</strong></td><td>Condición de salud declarada</td></tr>
+            <tr><td><strong>Médico prescriptor</strong></td><td>Profesional que indica el tratamiento</td></tr>
+            <tr><td><strong>Tipo de socio</strong></td><td>Paciente / Autocultivador / Cuidador / Investigador</td></tr>
+            <tr><td><strong>Código REPROCANN</strong></td><td>Código de vinculación oficial del paciente en el sistema</td></tr>
+            <tr><td><strong>Estado de la credencial</strong></td><td>Vigente / Pendiente / Sin registro / Vencido</td></tr>
+            <tr><td><strong>Fecha de inicio y vencimiento</strong></td><td>Vigencia de la credencial REPROCANN</td></tr>
+            <tr><td><strong>Plantas autorizadas</strong></td><td>Cantidad autorizada por la credencial (1–9)</td></tr>
+            <tr><td><strong>Alta en el club</strong></td><td>Fecha en que se registró como socio</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>KPIs que muestra la nómina</h3>
+      <ul class="checklist">
+        <li><strong>Total de socios activos</strong> — con alerta si supera los 150 permitidos por la ley</li>
+        <li><strong>Socios con código REPROCANN</strong> registrado en Germina</li>
+        <li><strong>Credenciales vigentes</strong> — cuántos tienen el trámite aprobado y al día</li>
+        <li><strong>Sin registro</strong> — socios que todavía no tienen su código REPROCANN ingresado</li>
+      </ul>
+
+      <h3>Exportar a CSV</h3>
+      <p>Con el botón <strong>"Exportar CSV"</strong>, bajás la nómina completa en formato planilla. Ese archivo es el que podés usar para presentar el Documento B ante el REPROCANN o para compartirlo con el Director Médico para su informe trimestral.</p>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>Para que la nómina esté completa y sea presentable ante el REPROCANN, cada socio activo debería tener registrado su código de vinculación y el estado de su credencial. Podés actualizarlos desde la ficha individual de cada socio.</p>
       </div>
     </section>
 
@@ -2264,7 +2584,7 @@ tbody tr:hover { background: var(--cream); }
       <div style="text-align:center; padding: 2rem 0 1rem;">
         <div style="font-size: 2rem; margin-bottom: 0.8rem;">🌿</div>
         <div style="font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--green-deep); margin-bottom:0.4rem;">Germina — Panel de Gestión</div>
-        <div style="font-size:0.8rem; color:var(--muted);">Manual de Usuario v2.0 · Agosto 2026</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Manual de Usuario v3.0 · Agosto 2026</div>
         <div style="font-size:0.75rem; color:var(--muted); margin-top:0.3rem;">Para soporte técnico escribí a <strong>besparkcreativa@gmail.com</strong></div>
       </div>
 
