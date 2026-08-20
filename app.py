@@ -593,8 +593,28 @@ def _migrate():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             variedad_id INTEGER NOT NULL, socio_id INTEGER NOT NULL,
             rating INTEGER NOT NULL, comentario TEXT,
+            sabores TEXT, efectos_sentidos TEXT,
+            intensidad TEXT, lo_repetiria TEXT,
             fecha TEXT DEFAULT (date('now')),
             UNIQUE(variedad_id, socio_id))''')
+    else:
+        vr_cols = {r[1] for r in db.execute("PRAGMA table_info(variedad_ratings)")}
+        for col, typedef in {
+            'sabores': 'TEXT', 'efectos_sentidos': 'TEXT',
+            'intensidad': 'TEXT', 'lo_repetiria': 'TEXT',
+        }.items():
+            if col not in vr_cols:
+                try:
+                    db.execute(f'ALTER TABLE variedad_ratings ADD COLUMN {col} {typedef}')
+                except Exception:
+                    pass
+    # origen del pedido (portal vs admin)
+    ped_cols = {r[1] for r in db.execute("PRAGMA table_info(pedidos)")}
+    if 'origen' not in ped_cols:
+        try:
+            db.execute("ALTER TABLE pedidos ADD COLUMN origen TEXT DEFAULT 'admin'")
+        except Exception:
+            pass
     # Seed variedades de muestra si el catálogo está vacío
     if db.execute('SELECT COUNT(*) FROM variedades').fetchone()[0] == 0:
         db.executemany(
@@ -1262,7 +1282,7 @@ def portal(token):
     variedades = []
     for v in variedades_raw:
         avg_row = db.execute('SELECT AVG(rating), COUNT(*) FROM variedad_ratings WHERE variedad_id=?', (v['id'],)).fetchone()
-        mi_r = db.execute('SELECT rating, comentario FROM variedad_ratings WHERE variedad_id=? AND socio_id=?',
+        mi_r = db.execute('SELECT rating, comentario, sabores, efectos_sentidos, intensidad, lo_repetiria FROM variedad_ratings WHERE variedad_id=? AND socio_id=?',
                           (v['id'], s['id'])).fetchone()
         variedades.append({
             **dict(v),
@@ -1270,13 +1290,70 @@ def portal(token):
             'rating_count': avg_row[1] or 0,
             'mi_rating': mi_r['rating'] if mi_r else 0,
             'mi_comentario': mi_r['comentario'] if mi_r else '',
+            'mi_sabores': mi_r['sabores'] if mi_r else '',
+            'mi_efectos': mi_r['efectos_sentidos'] if mi_r else '',
+            'mi_intensidad': mi_r['intensidad'] if mi_r else '',
+            'mi_lo_repetiria': mi_r['lo_repetiria'] if mi_r else '',
             'puede_votar': v['nombre'] in variedades_set,
         })
+    # Pedidos activos del socio
+    pedidos_activos = db.execute(
+        "SELECT * FROM pedidos WHERE socio_id=? AND estado IN ('pendiente','preparando') ORDER BY fecha_pedido DESC",
+        (s['id'],)).fetchall()
+    pedidos_activos = [dict(p) for p in pedidos_activos]
+    # Perfil de paladar
+    all_ratings = db.execute(
+        'SELECT sabores, efectos_sentidos, intensidad, lo_repetiria, rating FROM variedad_ratings WHERE socio_id=?',
+        (s['id'],)).fetchall()
+    sabores_count, efectos_count, intensidad_count = {}, {}, {}
+    rep_si = rep_total = 0
+    for r in all_ratings:
+        if r['sabores']:
+            for t in r['sabores'].split(','):
+                t = t.strip()
+                if t: sabores_count[t] = sabores_count.get(t, 0) + 1
+        if r['efectos_sentidos']:
+            for t in r['efectos_sentidos'].split(','):
+                t = t.strip()
+                if t: efectos_count[t] = efectos_count.get(t, 0) + 1
+        if r['intensidad']:
+            intensidad_count[r['intensidad']] = intensidad_count.get(r['intensidad'], 0) + 1
+        if r['lo_repetiria']:
+            rep_total += 1
+            if r['lo_repetiria'] == 'si': rep_si += 1
+    top_sabores = sorted(sabores_count.items(), key=lambda x: -x[1])[:6]
+    top_efectos = sorted(efectos_count.items(), key=lambda x: -x[1])[:6]
+    paladar = {
+        'top_sabores': top_sabores,
+        'top_efectos': top_efectos,
+        'intensidad': max(intensidad_count, key=intensidad_count.get) if intensidad_count else None,
+        'pct_repetiria': round(rep_si / rep_total * 100) if rep_total > 0 else None,
+        'total_catas': len(all_ratings),
+    }
+    # Recomendaciones simples por tags
+    rated_ids = {r['variedad_id'] for r in db.execute(
+        'SELECT variedad_id FROM variedad_ratings WHERE socio_id=?', (s['id'],)).fetchall()}
+    top_sab_set = {t.lower() for t, _ in top_sabores[:3]}
+    top_ef_set = {t.lower() for t, _ in top_efectos[:3]}
+    recomendaciones = []
+    for v in variedades_raw:
+        if v['id'] in rated_ids: continue
+        score = 0
+        for tag in (v['sabor'] or '').split(','):
+            if tag.strip().lower() in top_sab_set: score += 2
+        for tag in (v['efectos'] or '').split(','):
+            if tag.strip().lower() in top_ef_set: score += 1.5
+        if score > 0:
+            recomendaciones.append({'id': v['id'], 'nombre': v['nombre'], 'genetica': v['genetica'], 'score': score})
+    recomendaciones.sort(key=lambda x: -x['score'])
+    recomendaciones = recomendaciones[:3]
     return render_template('portal.html',
         s=s, docs=docs, cuota_actual=cuota_actual, hoy=hoy,
         consumido_mes=round(consumido_mes,1),
         total_consumido=round(total_consumido,1),
         historial=historial, variedades=variedades,
+        pedidos_activos=pedidos_activos,
+        paladar=paladar, recomendaciones=recomendaciones,
         token=token,
         etapa_label=ETAPA_LABEL, etapa_color=ETAPA_COLOR)
 
@@ -1285,20 +1362,59 @@ def portal_rating(token, vid):
     db = get_db()
     s = db.execute('SELECT * FROM socios WHERE token=?', (token,)).fetchone()
     if not s: return jsonify(ok=False), 403
-    rating = int(request.json.get('rating', 0) if request.is_json else request.form.get('rating', 0))
-    comentario = (request.json.get('comentario','') if request.is_json else request.form.get('comentario','')).strip()[:400]
+    data = request.json if request.is_json else request.form
+    rating = int(data.get('rating', 0))
+    comentario = (data.get('comentario', '') or '').strip()[:400]
+    sabores = (data.get('sabores', '') or '').strip()[:200]
+    efectos_sentidos = (data.get('efectos_sentidos', '') or '').strip()[:200]
+    intensidad = (data.get('intensidad', '') or '').strip()[:20]
+    lo_repetiria = (data.get('lo_repetiria', '') or '').strip()[:20]
     if not 1 <= rating <= 5: return jsonify(ok=False, msg='Rating inválido'), 400
     existing = db.execute('SELECT id FROM variedad_ratings WHERE variedad_id=? AND socio_id=?', (vid, s['id'])).fetchone()
     today = date.today().isoformat()
     if existing:
-        db.execute('UPDATE variedad_ratings SET rating=?,comentario=?,fecha=? WHERE id=?',
-                   (rating, comentario, today, existing['id']))
+        db.execute(
+            'UPDATE variedad_ratings SET rating=?,comentario=?,sabores=?,efectos_sentidos=?,intensidad=?,lo_repetiria=?,fecha=? WHERE id=?',
+            (rating, comentario, sabores or None, efectos_sentidos or None, intensidad or None, lo_repetiria or None, today, existing['id']))
     else:
-        db.execute('INSERT INTO variedad_ratings (variedad_id,socio_id,rating,comentario) VALUES (?,?,?,?)',
-                   (vid, s['id'], rating, comentario))
+        db.execute(
+            'INSERT INTO variedad_ratings (variedad_id,socio_id,rating,comentario,sabores,efectos_sentidos,intensidad,lo_repetiria) VALUES (?,?,?,?,?,?,?,?)',
+            (vid, s['id'], rating, comentario, sabores or None, efectos_sentidos or None, intensidad or None, lo_repetiria or None))
     db.commit()
     avg = db.execute('SELECT AVG(rating), COUNT(*) FROM variedad_ratings WHERE variedad_id=?', (vid,)).fetchone()
     return jsonify(ok=True, avg=round(avg[0] or 0, 1), count=avg[1] or 0)
+
+@app.route('/mi-estado/<token>/pedido', methods=['POST'])
+def portal_pedido(token):
+    db = get_db()
+    s = db.execute('SELECT * FROM socios WHERE token=?', (token,)).fetchone()
+    if not s: return jsonify(ok=False, msg='Sesión inválida'), 403
+    if s['etapa'] not in ('activo', 'aprobado', 'pleno'):
+        return jsonify(ok=False, msg='Tu cuenta no está activa para realizar pedidos'), 403
+    data = request.json if request.is_json else request.form
+    variedad = (data.get('variedad', '') or '').strip()[:100]
+    gramos = float(data.get('gramos', 0) or 0)
+    forma_pago = (data.get('forma_pago', 'efectivo') or 'efectivo').strip()[:30]
+    notas = (data.get('notas', '') or '').strip()[:300]
+    if not variedad or gramos <= 0:
+        return jsonify(ok=False, msg='Datos incompletos'), 400
+    cupo = s['cupo_mensual_g'] or 30
+    mes_inicio = date.today().replace(day=1).isoformat()
+    consumido = (db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=? AND fecha>=?",
+        (s['id'], mes_inicio)).fetchone()[0] or 0)
+    consumido += (db.execute(
+        "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE socio_id=? AND fecha_pedido>=? AND estado IN ('pendiente','preparando','entregado')",
+        (s['id'], mes_inicio)).fetchone()[0] or 0)
+    if consumido + gramos > cupo:
+        disponible = max(0, cupo - consumido)
+        return jsonify(ok=False, msg=f'Superás tu cupo mensual. Disponible: {disponible:.1f}g'), 400
+    codigo = 'PED-' + ''.join(__import__('random').choices('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', k=6))
+    db.execute(
+        "INSERT INTO pedidos (codigo,socio_id,variedad,gramos,forma_pago,estado,tipo_entrega,notas,registrado_por,origen) VALUES (?,?,?,?,?,'pendiente','retiro_club',?,?,?)",
+        (codigo, s['id'], variedad, gramos, forma_pago, notas, s['nombre'], 'portal'))
+    db.commit()
+    return jsonify(ok=True, codigo=codigo, msg=f'Pedido {codigo} registrado. El club lo confirmará pronto.')
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  ADMIN

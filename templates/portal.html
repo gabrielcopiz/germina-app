@@ -114,6 +114,22 @@ a { color: inherit; text-decoration: none; }
 .disp-fecha { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
 .disp-g { font-size: 0.88rem; color: var(--green-light); font-weight: 600; }
 
+/* ── PEDIDOS ACTIVOS ── */
+.pedido-activo-row {
+  background: var(--card); border: 1px solid rgba(200,164,74,0.2); border-radius: 12px;
+  padding: 0.85rem 1rem; margin-bottom: 0.5rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.pedido-codigo { font-size: 0.65rem; color: var(--gold); font-weight: 700; letter-spacing: 0.08em; }
+.pedido-var { font-size: 0.88rem; font-weight: 500; margin-top: 2px; }
+.pedido-estado {
+  font-size: 0.62rem; font-weight: 700; padding: 3px 9px; border-radius: 100px;
+  background: rgba(200,164,74,0.15); color: var(--gold); border: 1px solid rgba(200,164,74,0.25);
+}
+.pedido-estado.preparando {
+  background: rgba(90,174,116,0.15); color: var(--green-light); border-color: rgba(90,174,116,0.25);
+}
+
 /* ── FLORES ── */
 .flor-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 1rem; }
 .flor-img { width: 100%; height: 160px; object-fit: cover; display: block; }
@@ -137,24 +153,62 @@ a { color: inherit; text-decoration: none; }
 .tags-row { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem; }
 .tag { font-size: 0.65rem; padding: 3px 8px; border-radius: 100px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--text2); }
 .tag-gold { color: var(--gold); border-color: rgba(200,164,74,0.2); }
+
+/* ── BOTON PEDIR ── */
+.btn-pedir {
+  width: 100%; padding: 0.75rem; border-radius: 10px;
+  background: rgba(200,164,74,0.15); color: var(--gold); font-size: 0.85rem; font-weight: 600;
+  border: 1px solid rgba(200,164,74,0.3); cursor: pointer; font-family: inherit;
+  transition: background 0.2s; margin-bottom: 0.75rem; -webkit-tap-highlight-color: transparent;
+}
+.btn-pedir:active { background: rgba(200,164,74,0.25); }
+
+/* ── CATA / RATING ── */
 .rating-section { border-top: 1px solid var(--border); padding-top: 0.85rem; margin-top: 0.75rem; }
 .rating-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
 .rating-avg { display: flex; align-items: center; gap: 0.35rem; }
 .rating-avg-num { font-size: 1rem; font-weight: 700; color: var(--gold); }
 .rating-avg-stars { font-size: 0.8rem; color: var(--gold); }
 .rating-count { font-size: 0.68rem; color: var(--text3); }
-.stars-input { display: flex; gap: 6px; margin-bottom: 0.6rem; }
+.stars-input { display: flex; gap: 6px; margin-bottom: 0.85rem; }
 .star { font-size: 1.6rem; cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; color: rgba(255,255,255,0.15); }
 .star.lit { color: var(--gold); }
 .star:active { transform: scale(1.25); }
+
+/* ── TAG CHIPS (cata) ── */
+.cata-section { margin-bottom: 0.85rem; }
+.cata-titulo { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); font-weight: 600; margin-bottom: 0.5rem; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip {
+  font-size: 0.72rem; padding: 5px 11px; border-radius: 100px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.chip.selected-sabor { background: rgba(200,164,74,0.2); color: var(--gold); border-color: rgba(200,164,74,0.4); }
+.chip.selected-efecto { background: rgba(90,174,116,0.2); color: var(--green-light); border-color: rgba(90,174,116,0.4); }
+
+/* ── PILLS (intensidad / repetiría) ── */
+.pill-row { display: flex; gap: 0.4rem; }
+.pill {
+  flex: 1; text-align: center; font-size: 0.75rem; padding: 7px 4px; border-radius: 8px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; user-select: none;
+}
+.pill.sel-int { background: rgba(90,174,116,0.2); color: var(--green-light); border-color: rgba(90,174,116,0.4); }
+.pill.sel-rep-si { background: rgba(90,174,116,0.2); color: var(--green-light); border-color: rgba(90,174,116,0.4); }
+.pill.sel-rep-talvez { background: rgba(240,192,64,0.15); color: var(--yellow); border-color: rgba(240,192,64,0.3); }
+.pill.sel-rep-no { background: rgba(224,92,92,0.15); color: var(--red); border-color: rgba(224,92,92,0.3); }
+
 .comment-input {
   width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
   padding: 0.6rem 0.8rem; font-size: 0.82rem; color: var(--text); font-family: inherit;
-  resize: none; outline: none; transition: border-color 0.2s;
+  resize: none; outline: none; transition: border-color 0.2s; margin-bottom: 0.5rem;
 }
 .comment-input:focus { border-color: var(--green); }
 .btn-rate {
-  margin-top: 0.5rem; width: 100%; padding: 0.7rem; border-radius: 10px;
+  width: 100%; padding: 0.7rem; border-radius: 10px;
   background: var(--green); color: var(--cream); font-size: 0.85rem; font-weight: 600;
   border: none; cursor: pointer; font-family: inherit; transition: background 0.2s; -webkit-tap-highlight-color: transparent;
 }
@@ -204,6 +258,24 @@ a { color: inherit; text-decoration: none; }
 #qr-container { display: flex; justify-content: center; padding: 0.75rem 0; }
 #qr-container canvas, #qr-container img { border-radius: 8px; }
 
+/* ── PALADAR ── */
+.paladar-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+.paladar-tag {
+  font-size: 0.72rem; padding: 4px 12px; border-radius: 100px; font-weight: 500;
+}
+.paladar-tag.sabor { background: rgba(200,164,74,0.15); color: var(--gold); border: 1px solid rgba(200,164,74,0.25); }
+.paladar-tag.efecto { background: rgba(90,174,116,0.15); color: var(--green-light); border: 1px solid rgba(90,174,116,0.25); }
+.paladar-empty { font-size: 0.8rem; color: var(--text3); font-style: italic; }
+.recom-card {
+  background: linear-gradient(135deg, var(--card2) 0%, var(--bg3) 100%);
+  border: 1px solid rgba(90,174,116,0.15); border-radius: 12px;
+  padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.recom-nombre { font-size: 0.9rem; font-weight: 500; }
+.recom-gen { font-size: 0.65rem; color: var(--text3); margin-top: 2px; }
+.recom-match { font-size: 0.7rem; color: var(--green-light); font-weight: 600; }
+
 /* ── EMPTY / TOAST ── */
 .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); }
 .empty-state .icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
@@ -214,6 +286,50 @@ a { color: inherit; text-decoration: none; }
   opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999; white-space: nowrap;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── MODAL PEDIDO ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.65); -webkit-tap-highlight-color: transparent;
+}
+.modal-overlay.open { display: flex; align-items: flex-end; }
+.modal-sheet {
+  width: 100%; max-width: 400px; margin: 0 auto;
+  background: var(--bg2); border-radius: 24px 24px 0 0;
+  border: 1px solid var(--border); padding: 1.5rem 1.25rem 2.5rem;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 100px; margin: 0 auto 1.25rem; }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 1.25rem; }
+.modal-variedad { font-size: 0.75rem; color: var(--gold); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.4rem; }
+.field-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); font-weight: 600; margin-bottom: 0.4rem; display: block; }
+.field-input {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.65rem 0.9rem; font-size: 0.9rem; color: var(--text); font-family: inherit;
+  outline: none; transition: border-color 0.2s; margin-bottom: 1rem;
+}
+.field-input:focus { border-color: var(--green); }
+.pago-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 1.25rem; }
+.pago-opt {
+  padding: 0.6rem 0.4rem; border-radius: 10px; text-align: center; font-size: 0.75rem; font-weight: 600;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text2);
+  cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.pago-opt.selected { background: rgba(200,164,74,0.2); color: var(--gold); border-color: rgba(200,164,74,0.4); }
+.pago-icon { font-size: 1.2rem; display: block; margin-bottom: 3px; }
+.btn-confirmar {
+  width: 100%; padding: 0.85rem; border-radius: 12px;
+  background: var(--green); color: var(--cream); font-size: 0.9rem; font-weight: 700;
+  border: none; cursor: pointer; font-family: inherit; transition: background 0.2s;
+}
+.btn-confirmar:active { background: var(--green-light); }
+.btn-confirmar:disabled { opacity: 0.5; cursor: default; }
+.btn-cancelar {
+  width: 100%; padding: 0.7rem; border-radius: 12px; margin-top: 0.5rem;
+  background: transparent; color: var(--text3); font-size: 0.85rem; font-weight: 500;
+  border: 1px solid var(--border); cursor: pointer; font-family: inherit;
+}
 
 @media (min-width: 600px) {
   html { background: #020905; }
@@ -230,6 +346,7 @@ a { color: inherit; text-decoration: none; }
   .header  { max-width: 400px; left: 50%; transform: translateX(-50%); }
   .tab-bar { max-width: 400px; left: 50%; transform: translateX(-50%); }
   .pages   { max-width: 400px; left: 50%; transform: translateX(-50%); }
+  .modal-overlay { max-width: 400px; left: 50%; transform: translateX(-50%); }
 }
 </style>
 </head>
@@ -289,6 +406,19 @@ a { color: inherit; text-decoration: none; }
         <div class="stat-label">gramos retirados</div>
       </div>
     </div>
+
+    {% if pedidos_activos %}
+    <div class="section-title">Pedidos en curso</div>
+    {% for p in pedidos_activos %}
+    <div class="pedido-activo-row">
+      <div>
+        <div class="pedido-codigo">{{ p.codigo }}</div>
+        <div class="pedido-var">{{ p.variedad }} · {{ p.gramos }}g</div>
+      </div>
+      <span class="pedido-estado {{ p.estado }}">{{ 'Preparando' if p.estado == 'preparando' else 'Pendiente' }}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
 
     {% set ultimas = historial[:5] %}
     {% if ultimas %}
@@ -353,6 +483,12 @@ a { color: inherit; text-decoration: none; }
           <div class="tags-row">{% for ind in v.indicaciones.split(',') %}{% if ind.strip() %}<span class="tag tag-gold">{{ ind.strip() }}</span>{% endif %}{% endfor %}</div>
           {% endif %}
 
+          {% if s.etapa in ('activo', 'aprobado', 'pleno') %}
+          <button class="btn-pedir" onclick="abrirPedido('{{ v.nombre }}')">
+            Pedir esta flor
+          </button>
+          {% endif %}
+
           <div class="rating-section">
             <div class="rating-header">
               <div class="rating-avg">
@@ -362,19 +498,64 @@ a { color: inherit; text-decoration: none; }
               </div>
               {% if v.sabor %}<span style="font-size:0.7rem;color:var(--text3);">{{ v.sabor }}</span>{% endif %}
             </div>
+
             {% if v.puede_votar %}
+            <div class="label" style="margin-bottom:0.4rem">Tu calificación general</div>
             <div class="stars-input" id="stars-{{ v.id }}">
               {% for i in range(1,6) %}
               <span class="star {% if i <= v.mi_rating %}lit{% endif %}" data-star="{{ i }}" onclick="setStar({{ v.id }},{{ i }})">★</span>
               {% endfor %}
             </div>
-            <textarea class="comment-input" id="comment-{{ v.id }}" rows="2" placeholder="Tu experiencia (opcional)...">{{ v.mi_comentario }}</textarea>
+
+            <div class="cata-section">
+              <div class="cata-titulo">¿Qué sabores detectaste?</div>
+              <div class="chip-row" id="sabores-{{ v.id }}">
+                {% set saved_sab = (v.mi_sabores or '').split(',') %}
+                {% for tag in ['Cítrico','Dulce','Frutal','Floral','Pino','Terroso','Mentol','Herbáceo','Especiado','Chocolate'] %}
+                <span class="chip {% if tag in saved_sab %}selected-sabor{% endif %}"
+                      onclick="toggleChip(this,'{{ v.id }}','sabor')" data-val="{{ tag }}">{{ tag }}</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="cata-section">
+              <div class="cata-titulo">¿Qué efectos sentiste?</div>
+              <div class="chip-row" id="efectos-{{ v.id }}">
+                {% set saved_ef = (v.mi_efectos or '').split(',') %}
+                {% for tag in ['Relajante','Energizante','Creativo','Analgésico','Sedante','Eufórico','Social','Enfocado','Ansiolítico','Somnolientro'] %}
+                <span class="chip {% if tag in saved_ef %}selected-efecto{% endif %}"
+                      onclick="toggleChip(this,'{{ v.id }}','efecto')" data-val="{{ tag }}">{{ tag }}</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="cata-section">
+              <div class="cata-titulo">Intensidad del efecto</div>
+              <div class="pill-row" id="int-{{ v.id }}">
+                {% set saved_int = v.mi_intensidad or '' %}
+                <span class="pill {% if saved_int == 'suave' %}sel-int{% endif %}" onclick="setPill(this,'{{ v.id }}','int')" data-val="suave">Suave</span>
+                <span class="pill {% if saved_int == 'moderada' %}sel-int{% endif %}" onclick="setPill(this,'{{ v.id }}','int')" data-val="moderada">Moderada</span>
+                <span class="pill {% if saved_int == 'intensa' %}sel-int{% endif %}" onclick="setPill(this,'{{ v.id }}','int')" data-val="intensa">Intensa</span>
+              </div>
+            </div>
+
+            <div class="cata-section">
+              <div class="cata-titulo">¿La repetirías?</div>
+              <div class="pill-row" id="rep-{{ v.id }}">
+                {% set saved_rep = v.mi_lo_repetiria or '' %}
+                <span class="pill {% if saved_rep == 'si' %}sel-rep-si{% endif %}" onclick="setPill(this,'{{ v.id }}','rep')" data-val="si">Sí</span>
+                <span class="pill {% if saved_rep == 'tal_vez' %}sel-rep-talvez{% endif %}" onclick="setPill(this,'{{ v.id }}','rep')" data-val="tal_vez">Tal vez</span>
+                <span class="pill {% if saved_rep == 'no' %}sel-rep-no{% endif %}" onclick="setPill(this,'{{ v.id }}','rep')" data-val="no">No</span>
+              </div>
+            </div>
+
+            <textarea class="comment-input" id="comment-{{ v.id }}" rows="2" placeholder="Comentario libre (opcional)...">{{ v.mi_comentario }}</textarea>
             <button class="btn-rate" id="btn-{{ v.id }}" onclick="enviarRating({{ v.id }})">
-              {% if v.mi_rating > 0 %}Actualizar calificación{% else %}Calificar{% endif %}
+              {% if v.mi_rating > 0 %}Actualizar cata{% else %}Guardar cata{% endif %}
             </button>
-            <div class="rate-success" id="ok-{{ v.id }}">✓ ¡Gracias por tu calificación!</div>
+            <div class="rate-success" id="ok-{{ v.id }}">✓ ¡Cata guardada! Tu perfil de paladar fue actualizado.</div>
             {% else %}
-            <div class="no-votar-msg">Retirá esta variedad para poder calificarla.</div>
+            <div class="no-votar-msg">Retirá esta variedad para poder calificarla y agregar tu cata.</div>
             {% endif %}
           </div>
         </div>
@@ -461,6 +642,59 @@ a { color: inherit; text-decoration: none; }
     </div>
     {% endif %}
 
+    <!-- ─── MI PALADAR ─── -->
+    <div class="card">
+      <div class="label" style="margin-bottom:0.75rem">Mi perfil de paladar</div>
+      {% if paladar.total_catas > 0 %}
+        {% if paladar.top_sabores %}
+        <div style="margin-bottom:0.85rem">
+          <div style="font-size:0.72rem;color:var(--text3);margin-bottom:0.4rem">Sabores que más detectás</div>
+          <div class="paladar-tags">
+            {% for tag, cnt in paladar.top_sabores %}
+            <span class="paladar-tag sabor">{{ tag }} <span style="opacity:0.6">×{{ cnt }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% if paladar.top_efectos %}
+        <div style="margin-bottom:0.85rem">
+          <div style="font-size:0.72rem;color:var(--text3);margin-bottom:0.4rem">Efectos que más buscás</div>
+          <div class="paladar-tags">
+            {% for tag, cnt in paladar.top_efectos %}
+            <span class="paladar-tag efecto">{{ tag }} <span style="opacity:0.6">×{{ cnt }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+          {% if paladar.intensidad %}
+          <div style="font-size:0.78rem;color:var(--text2)">Intensidad preferida: <strong style="color:var(--green-light)">{{ paladar.intensidad|capitalize }}</strong></div>
+          {% endif %}
+          {% if paladar.pct_repetiria is not none %}
+          <div style="font-size:0.78rem;color:var(--text2)">Lo repetiría: <strong style="color:var(--green-light)">{{ paladar.pct_repetiria }}%</strong> de las catas</div>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="paladar-empty">Todavía no realizaste ninguna cata. Calificá las flores que probaste para conocer tu paladar.</div>
+      {% endif %}
+    </div>
+
+    {% if recomendaciones %}
+    <div class="card">
+      <div class="label" style="margin-bottom:0.75rem">Flores recomendadas para vos</div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:0.75rem">Basado en tus sabores y efectos preferidos</div>
+      {% for r in recomendaciones %}
+      <div class="recom-card">
+        <div>
+          <div class="recom-nombre">{{ r.nombre }}</div>
+          <div class="recom-gen">{{ r.genetica or '—' }}</div>
+        </div>
+        <div class="recom-match">Match ✓</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card">
       <div class="label" style="margin-bottom:0.75rem">Tu código QR</div>
       <div id="qr-container"></div>
@@ -484,6 +718,37 @@ a { color: inherit; text-decoration: none; }
     <span class="tab-icon">👤</span><span class="tab-label">Perfil</span>
   </button>
 </nav>
+
+<!-- ─── MODAL PEDIDO ─── -->
+<div class="modal-overlay" id="modal-pedido" onclick="cerrarPedido(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-variedad" id="modal-var-label">—</div>
+    <div class="modal-title">Hacer un pedido</div>
+
+    <label class="field-label">Gramos que querés pedir</label>
+    <input class="field-input" type="number" id="pedido-gramos" min="0.5" max="30" step="0.5" value="3" placeholder="ej: 3">
+
+    <label class="field-label" style="margin-bottom:0.5rem">Forma de pago</label>
+    <div class="pago-grid" id="pago-grid">
+      <div class="pago-opt selected" data-val="efectivo" onclick="selPago(this)">
+        <span class="pago-icon">💵</span>Efectivo
+      </div>
+      <div class="pago-opt" data-val="transferencia" onclick="selPago(this)">
+        <span class="pago-icon">🏦</span>Transferencia
+      </div>
+      <div class="pago-opt" data-val="mercadopago" onclick="selPago(this)">
+        <span class="pago-icon">📱</span>Mercado Pago
+      </div>
+    </div>
+
+    <label class="field-label">Notas para el club (opcional)</label>
+    <input class="field-input" type="text" id="pedido-notas" placeholder="ej: sin semillas" style="margin-bottom:1.25rem">
+
+    <button class="btn-confirmar" id="btn-confirmar-pedido" onclick="confirmarPedido()">Confirmar pedido</button>
+    <button class="btn-cancelar" onclick="document.getElementById('modal-pedido').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -536,6 +801,8 @@ function goTab(name) {
 
 // ── Ratings ──
 var pendingRatings = {};
+var pendingIntensidad = {};
+var pendingRepetiria = {};
 
 function setStar(vid, star) {
   pendingRatings[vid] = star;
@@ -544,17 +811,59 @@ function setStar(vid, star) {
   });
 }
 
+function toggleChip(el, vid, tipo) {
+  var cls = tipo === 'sabor' ? 'selected-sabor' : 'selected-efecto';
+  el.classList.toggle(cls);
+}
+
+function setPill(el, vid, grupo) {
+  var container = document.getElementById((grupo === 'int' ? 'int-' : 'rep-') + vid);
+  container.querySelectorAll('.pill').forEach(function(p){ p.className = 'pill'; });
+  if (grupo === 'int') {
+    el.classList.add('sel-int');
+    pendingIntensidad[vid] = el.getAttribute('data-val');
+  } else {
+    var val = el.getAttribute('data-val');
+    el.classList.add(val === 'si' ? 'sel-rep-si' : val === 'tal_vez' ? 'sel-rep-talvez' : 'sel-rep-no');
+    pendingRepetiria[vid] = val;
+  }
+}
+
+function getChips(containerId, selectedClass) {
+  var vals = [];
+  document.getElementById(containerId).querySelectorAll('.' + selectedClass).forEach(function(c){
+    vals.push(c.getAttribute('data-val'));
+  });
+  return vals.join(',');
+}
+
+function getPillVal(containerId, cls) {
+  var el = document.getElementById(containerId);
+  if (!el) return '';
+  var sel = el.querySelector('.pill.sel-int, .pill.sel-rep-si, .pill.sel-rep-talvez, .pill.sel-rep-no');
+  return sel ? sel.getAttribute('data-val') : '';
+}
+
 function enviarRating(vid) {
   var rating = pendingRatings[vid];
+  if (!rating) {
+    var litStars = document.querySelectorAll('#stars-' + vid + ' .star.lit');
+    if (litStars.length > 0) rating = litStars.length;
+  }
   if (!rating) { showToast('Seleccioná una calificación (1-5 ★)'); return; }
-  var commentEl = document.getElementById('comment-' + vid);
-  var comentario = commentEl ? commentEl.value : '';
+  var comentario = (document.getElementById('comment-' + vid) || {}).value || '';
+  var sabores = getChips('sabores-' + vid, 'selected-sabor');
+  var efectos = getChips('efectos-' + vid, 'selected-efecto');
+  var intensidad = getPillVal('int-' + vid, 'sel-int');
+  if (!intensidad) intensidad = pendingIntensidad[vid] || '';
+  var lo_repetiria = getPillVal('rep-' + vid);
+  if (!lo_repetiria) lo_repetiria = pendingRepetiria[vid] || '';
   var btn = document.getElementById('btn-' + vid);
   if (btn) btn.disabled = true;
   fetch('/mi-estado/{{ token }}/rating/' + vid, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rating: rating, comentario: comentario })
+    body: JSON.stringify({ rating: rating, comentario: comentario, sabores: sabores, efectos_sentidos: efectos, intensidad: intensidad, lo_repetiria: lo_repetiria })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -564,8 +873,8 @@ function enviarRating(vid) {
       if (avgEl) avgEl.textContent = data.avg.toFixed(1);
       if (cntEl) cntEl.textContent = data.count;
       var ok = document.getElementById('ok-' + vid);
-      if (ok) { ok.style.display = 'block'; setTimeout(function(){ ok.style.display='none'; }, 3000); }
-      if (btn) { btn.textContent = 'Actualizar calificación'; btn.disabled = false; }
+      if (ok) { ok.style.display = 'block'; setTimeout(function(){ ok.style.display='none'; }, 3500); }
+      if (btn) { btn.textContent = 'Actualizar cata'; btn.disabled = false; }
     } else {
       showToast(data.msg || 'Error al guardar');
       if (btn) btn.disabled = false;
@@ -574,10 +883,60 @@ function enviarRating(vid) {
   .catch(function() { showToast('Error de conexión'); if (btn) btn.disabled = false; });
 }
 
+// ── Modal Pedido ──
+var pedidoVariedad = '';
+
+function abrirPedido(nombre) {
+  pedidoVariedad = nombre;
+  document.getElementById('modal-var-label').textContent = nombre;
+  document.getElementById('pedido-gramos').value = '3';
+  document.getElementById('pedido-notas').value = '';
+  document.querySelectorAll('.pago-opt').forEach(function(p){ p.classList.remove('selected'); });
+  document.querySelector('.pago-opt[data-val="efectivo"]').classList.add('selected');
+  document.getElementById('modal-pedido').classList.add('open');
+}
+
+function cerrarPedido(e) {
+  if (e.target === document.getElementById('modal-pedido')) {
+    document.getElementById('modal-pedido').classList.remove('open');
+  }
+}
+
+function selPago(el) {
+  document.querySelectorAll('.pago-opt').forEach(function(p){ p.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function confirmarPedido() {
+  var gramos = parseFloat(document.getElementById('pedido-gramos').value || 0);
+  if (!gramos || gramos <= 0) { showToast('Ingresá los gramos que querés'); return; }
+  var formaPago = (document.querySelector('.pago-opt.selected') || {}).getAttribute('data-val') || 'efectivo';
+  var notas = document.getElementById('pedido-notas').value || '';
+  var btn = document.getElementById('btn-confirmar-pedido');
+  if (btn) btn.disabled = true;
+  fetch('/mi-estado/{{ token }}/pedido', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ variedad: pedidoVariedad, gramos: gramos, forma_pago: formaPago, notas: notas })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    document.getElementById('modal-pedido').classList.remove('open');
+    if (data.ok) {
+      showToast('✓ ' + data.msg);
+      setTimeout(function(){ goTab('inicio'); location.reload(); }, 1800);
+    } else {
+      showToast(data.msg || 'Error al procesar el pedido');
+    }
+    if (btn) btn.disabled = false;
+  })
+  .catch(function() { showToast('Error de conexión'); if (btn) btn.disabled = false; });
+}
+
 function showToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(function(){ t.classList.remove('show'); }, 2800);
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
 }
 </script>
 </body>
