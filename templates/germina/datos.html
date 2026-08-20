@@ -19,15 +19,28 @@
 {% endblock %}
 
 {% block content %}
-<!-- EXPORT -->
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.8rem;">
+<!-- HEADER + EXPORTS -->
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.8rem;">
   <div>
     <div class="section-title">Analítica de consumo</div>
-    <div class="section-sub">Datos anonimizados agregados de todos los clubes · Listos para presentar a terceros</div>
+    <div class="section-sub">Panel interno Germina · Datos reales + export para terceros</div>
   </div>
-  <a href="{{ url_for('germina_datos_export') }}" class="btn btn-gold" download>
-    ⬇ Exportar CSV anonimizado
-  </a>
+  <div style="display:flex;gap:0.7rem;flex-wrap:wrap;">
+    <a href="{{ url_for('germina_datos_export_completo') }}" class="btn btn-outline" download>
+      🔒 Datos completos (uso interno)
+    </a>
+    <a href="{{ url_for('germina_datos_export') }}" class="btn btn-gold" download>
+      ⬇ CSV anonimizado (terceros)
+    </a>
+  </div>
+</div>
+
+<div class="alert alert-warning" style="margin-bottom:1.5rem;">
+  <span>🔒</span>
+  <span style="font-size:0.78rem;">
+    <strong>Datos completos:</strong> incluye nombre, DNI, email y todos los campos. Solo para uso interno de Germina.
+    <strong style="margin-left:0.8rem;">CSV anonimizado:</strong> sin datos personales. Apto para terceros, farmacéuticas e investigadores.
+  </span>
 </div>
 
 <!-- KPIs -->
@@ -221,12 +234,89 @@
 
 </div>
 
+<!-- TABLA SOCIOS COMPLETA (USO INTERNO) -->
+<div style="margin-top:1.5rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem;">
+    <div>
+      <div class="section-title" style="font-size:1.1rem;">Base de socios — datos completos</div>
+      <div class="section-sub" style="font-size:0.75rem;margin-bottom:0;">Vista interna Germina · Acceso restringido</div>
+    </div>
+    <span style="font-size:0.7rem;color:var(--red);background:rgba(224,112,112,0.1);border:1px solid rgba(224,112,112,0.25);padding:0.2rem 0.7rem;border-radius:100px;">🔒 Confidencial</span>
+  </div>
+
+  <div class="table-wrap" style="overflow-x:auto;">
+    <table style="min-width:900px;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre completo</th>
+          <th>DNI</th>
+          <th>Email</th>
+          <th>Teléfono</th>
+          <th>Edad</th>
+          <th>Género</th>
+          <th>Provincia</th>
+          <th>Diagnóstico</th>
+          <th>Motivo</th>
+          <th>Método</th>
+          <th>Frecuencia</th>
+          <th>Dosis/ses.</th>
+          <th>Disp.</th>
+          <th>Etapa</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in socios_completos %}
+        {% set edad = '' %}
+        {% if s.fecha_nac %}
+          {# calcular edad aproximada #}
+        {% endif %}
+        <tr>
+          <td style="color:var(--muted);font-size:0.7rem;">#{{ s.id }}</td>
+          <td style="font-weight:600;">{{ s.nombre }} {{ s.apellido }}</td>
+          <td style="font-size:0.78rem;">{{ s.dni or '—' }}</td>
+          <td style="font-size:0.72rem;color:var(--muted);">{{ s.email or '—' }}</td>
+          <td style="font-size:0.72rem;">{{ s.telefono or '—' }}</td>
+          <td style="font-size:0.75rem;">
+            {% if s.fecha_nac %}
+              {{ s.fecha_nac[:4] }}
+            {% else %}—{% endif %}
+          </td>
+          <td style="font-size:0.75rem;">{{ s.genero or '—' }}</td>
+          <td style="font-size:0.75rem;">{{ s.provincia or '—' }}</td>
+          <td style="font-size:0.72rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ s.diagnostico or '' }}">{{ s.diagnostico or '—' }}</td>
+          <td>
+            {% if s.motivo_consumo %}
+            {% set mc = {'medicinal':'🏥 Med','bienestar':'🌿 Bien','recreativo':'🎯 Rec','mixto':'🔀 Mix'} %}
+            <span style="font-size:0.68rem;color:{% if s.motivo_consumo=='medicinal' %}var(--green){% elif s.motivo_consumo=='bienestar' %}var(--gold){% else %}var(--muted){% endif %};">
+              {{ mc.get(s.motivo_consumo, s.motivo_consumo) }}
+            </span>
+            {% else %}<span style="color:var(--muted);">—</span>{% endif %}
+          </td>
+          <td style="font-size:0.72rem;">{{ s.metodo_consumo or '—' }}</td>
+          <td style="font-size:0.72rem;">{{ s.frecuencia_uso or '—' }}</td>
+          <td style="font-size:0.75rem;text-align:right;">{{ s.dosis_habitual_g or '—' }}{% if s.dosis_habitual_g %}g{% endif %}</td>
+          <td style="font-size:0.75rem;text-align:center;">{{ s.n_disp }}</td>
+          <td>
+            {% set colores = {'activo':'var(--green)','solicitud':'var(--gold)','inactivo':'var(--muted)'} %}
+            <span style="font-size:0.65rem;color:{{ colores.get(s.etapa, 'var(--muted)') }};">{{ s.etapa }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="15" style="text-align:center;color:var(--muted);padding:2rem;">Sin socios todavía</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <!-- NOTA LEGAL -->
-<div class="alert alert-warning" style="margin-top:1rem;">
+<div class="alert alert-warning" style="margin-top:1.5rem;">
   <span>⚠️</span>
   <span style="font-size:0.78rem;">
-    <strong>Datos anonimizados.</strong> El CSV exportado no contiene nombre, DNI, email ni teléfono de ningún socio.
-    Cada fila es identificada solo por un código interno (SOC-XXXX). Apto para compartir con terceros, investigadores o farmacéuticas.
+    <strong>Datos anonimizados (CSV terceros):</strong> no contiene nombre, DNI, email ni teléfono.
+    Cada fila usa solo un código interno (SOC-XXXX). Apto para compartir con farmacéuticas, investigadores o inversores.
+    Los <strong>datos completos</strong> son exclusivos del equipo Germina y no deben compartirse externamente.
   </span>
 </div>
 

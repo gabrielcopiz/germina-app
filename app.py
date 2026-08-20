@@ -4203,6 +4203,14 @@ def germina_datos():
     max_var = max((r['gramos_total'] for r in top_variedades), default=1) or 1
     max_evo = max((e['gramos'] for e in evolucion), default=1) or 1
 
+    # Tabla interna completa con dispensaciones por socio
+    socios_raw = db.execute("SELECT * FROM socios ORDER BY id").fetchall()
+    socios_completos = []
+    for s in socios_raw:
+        n_disp = db.execute(
+            "SELECT COUNT(*) FROM dispensaciones WHERE socio_id=?", (s['id'],)).fetchone()[0]
+        socios_completos.append({**dict(s), 'n_disp': n_disp})
+
     return render_template('germina/datos.html',
         total_socios=total_socios, total_activos=total_activos,
         total_disp=total_disp, total_g=total_g, prom_g=prom_g,
@@ -4211,7 +4219,62 @@ def germina_datos():
         motivos=motivos, tipos=tipos, diagnosticos=diagnosticos,
         metodos=metodos, frecuencias=frecuencias,
         generos=generos, provincias=provincias, rangos_etarios=rangos_etarios,
+        socios_completos=socios_completos,
     )
+
+
+@app.route('/germina/datos/export-completo')
+@germina_login_required
+def germina_datos_export_completo():
+    db = get_db()
+    hoy = date.today().isoformat()
+    socios = db.execute("SELECT * FROM socios ORDER BY id").fetchall()
+
+    output = io.StringIO()
+    w = csv.writer(output)
+    w.writerow([
+        'id','nombre','apellido','dni','email','telefono','fecha_nac','genero',
+        'barrio','provincia','tipo_socio','diagnostico','patologia_especifica',
+        'tiempo_condicion','medico_prescriptor','especialidad_medico','tiene_receta',
+        'experiencia_cannabis','metodo_consumo','frecuencia_uso','motivo_consumo',
+        'dosis_habitual_g','como_nos_conocio','referido_por','etapa',
+        'gramos_historico','num_dispensaciones','variedad_principal',
+        'dias_en_club','created_at'
+    ])
+    for s in socios:
+        dias = ''
+        if s['created_at']:
+            try: dias = (date.today() - date.fromisoformat(s['created_at'][:10])).days
+            except: pass
+
+        row_d = db.execute(
+            "SELECT COUNT(*), COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=?",
+            (s['id'],)).fetchone()
+        n_disp, g_hist = row_d[0], round(row_d[1], 1)
+
+        var_row = db.execute(
+            "SELECT variedad FROM dispensaciones WHERE socio_id=? GROUP BY variedad ORDER BY SUM(gramos) DESC LIMIT 1",
+            (s['id'],)).fetchone()
+        variedad_p = var_row[0] if var_row else ''
+
+        w.writerow([
+            s['id'], s['nombre'] or '', s['apellido'] or '', s['dni'] or '',
+            s['email'] or '', s['telefono'] or '', s['fecha_nac'] or '',
+            s['genero'] or '', s['barrio'] or '', s['provincia'] or '',
+            s['tipo_socio'] or '', s['diagnostico'] or '', s['patologia_especifica'] or '',
+            s['tiempo_condicion'] or '', s['medico_prescriptor'] or '',
+            s['especialidad_medico'] or '', s['tiene_receta'] or '',
+            s['experiencia_cannabis'] or '', s['metodo_consumo'] or '',
+            s['frecuencia_uso'] or '', s['motivo_consumo'] or '',
+            s['dosis_habitual_g'] or '', s['como_nos_conocio'] or '',
+            s['referido_por'] or '', s['etapa'] or '',
+            g_hist, n_disp, variedad_p, dias, s['created_at'] or ''
+        ])
+
+    resp = make_response(output.getvalue())
+    resp.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    resp.headers['Content-Disposition'] = f'attachment; filename=germina_datos_completos_{hoy}.csv'
+    return resp
 
 
 @app.route('/germina/datos/export')
