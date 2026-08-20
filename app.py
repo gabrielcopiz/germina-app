@@ -1118,6 +1118,11 @@ def _sanitizar_input(texto, max_len=200):
 def landing():
     return render_template('landing.html')
 
+@app.route('/manual')
+def manual_usuario():
+    from flask import send_from_directory
+    return send_from_directory('.', 'manual-usuario.html')
+
 @app.route('/unirme', methods=['GET','POST'])
 @limiter.limit('5 per hour', methods=['POST'])
 def solicitud():
