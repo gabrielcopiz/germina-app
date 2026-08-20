@@ -590,6 +590,9 @@ tbody tr:hover { background: var(--cream); }
     <a href="#whatsapp" class="nav-item"><span class="icon">💬</span> WhatsApp</a>
     <a href="#usuarios" class="nav-item"><span class="icon">👤</span> Usuarios</a>
     <a href="#registro" class="nav-item"><span class="icon">📜</span> Registro</a>
+
+    <div class="nav-section-title">Panel Germina HQ</div>
+    <a href="#datos-analitica" class="nav-item"><span class="icon">📊</span> Datos & Analítica</a>
   </nav>
 </aside>
 
@@ -1862,6 +1865,100 @@ tbody tr:hover { background: var(--cream); }
       <div class="callout info">
         <span class="callout-icon">ℹ️</span>
         <p>El registro es útil en caso de disputas, auditorías o para investigar qué pasó en un momento específico. Conserva toda la actividad desde el primer día de uso.</p>
+      </div>
+
+    </section>
+
+    <!-- DATOS & ANALÍTICA -->
+    <section class="section" id="datos-analitica">
+      <div class="section-header">
+        <div class="section-icon">📊</div>
+        <div>
+          <div class="section-title">Datos & Analítica</div>
+          <div class="section-sub">Panel interno Germina HQ · Acceso exclusivo del equipo Germina</div>
+        </div>
+      </div>
+
+      <p>La sección Datos & Analítica es parte del <strong>Panel Germina HQ</strong> (acceso en <code>/germina/login</code>) y no es visible para los clubes. Desde acá el equipo de Germina puede ver, analizar y exportar los datos de consumo de todos los clubes en la plataforma.</p>
+
+      <div class="callout warning">
+        <span class="callout-icon">🔒</span>
+        <p>Esta sección es <strong>exclusiva del equipo Germina</strong>. Los clubes no tienen acceso a los datos de otros clubes ni a esta vista.</p>
+      </div>
+
+      <h3>Métricas generales</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">👥</div>
+          <div class="card-title">Personas en plataforma</div>
+          <p>Total de socios registrados en todos los clubes activos.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">✅</div>
+          <div class="card-title">Consumidores activos</div>
+          <p>Socios con estado "Activo" que pueden recibir dispensaciones.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚖️</div>
+          <div class="card-title">Gramos dispensados</div>
+          <p>Total histórico y promedio por socio activo.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📦</div>
+          <div class="card-title">Dispensaciones</div>
+          <p>Cantidad total de entregas registradas en el sistema.</p>
+        </div>
+      </div>
+
+      <h3>Gráficos y distribuciones</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Gráfico</th><th>Qué muestra</th><th>Para qué sirve</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Evolución mensual</strong></td><td>Gramos dispensados por mes, últimos 12 meses</td><td>Ver estacionalidad y tendencia de consumo</td></tr>
+            <tr><td><strong>Top variedades</strong></td><td>Las cepas más consumidas por volumen de gramos</td><td>Identificar productos con mayor demanda</td></tr>
+            <tr><td><strong>Motivo de consumo</strong></td><td>Medicinal / Bienestar / Recreativo / Mixto</td><td>Dato clave para presentar a farmacéuticas</td></tr>
+            <tr><td><strong>Top condiciones de salud</strong></td><td>Diagnósticos declarados por los socios</td><td>Perfilar el uso medicinal por patología</td></tr>
+            <tr><td><strong>Método de consumo</strong></td><td>Aceite, flores, comestibles, tópico, etc.</td><td>Entender formas de administración preferidas</td></tr>
+            <tr><td><strong>Frecuencia de uso</strong></td><td>Diario, semanal, quincenal, mensual</td><td>Calcular demanda proyectada</td></tr>
+            <tr><td><strong>Género</strong></td><td>Distribución masculino / femenino / no binario</td><td>Datos demográficos para estudios</td></tr>
+            <tr><td><strong>Rango etario</strong></td><td>18-25, 26-35, 36-45, 46-55, 55+</td><td>Perfil de edad del consumidor</td></tr>
+            <tr><td><strong>Provincia / Región</strong></td><td>Top 10 provincias de origen de los socios</td><td>Distribución geográfica del consumo</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Tabla interna de socios</h3>
+      <p>Debajo de los gráficos hay una tabla con <strong>todos los socios y sus datos completos</strong>: nombre, DNI, email, diagnóstico, motivo de consumo, método, frecuencia, dosis habitual y cantidad de dispensaciones. Esta vista es exclusiva del equipo Germina y no la ve el club.</p>
+
+      <h3>Exportar datos</h3>
+      <p>Hay dos botones de exportación con propósitos distintos:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Export</th><th>Contiene</th><th>Para quién</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>🔒 Datos completos<br><span style="font-weight:400;font-size:0.85em;">(uso interno)</span></strong></td>
+              <td>Nombre, apellido, DNI, email, teléfono, diagnóstico, motivo, método, frecuencia, dosis, historial de dispensaciones, variedad principal, días en el club</td>
+              <td>Solo para el equipo Germina. No compartir externamente.</td>
+            </tr>
+            <tr>
+              <td><strong>⬇ CSV anonimizado<br><span style="font-weight:400;font-size:0.85em;">(terceros)</span></strong></td>
+              <td>Código interno (SOC-XXXX), rango de edad, género, provincia, diagnóstico, motivo, método, frecuencia, dosis, gramos históricos, variedad principal. <strong>Sin nombre, DNI, email ni teléfono.</strong></td>
+              <td>Farmacéuticas, investigadores, inversores, estudios de mercado.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info" style="background:rgba(82,183,136,0.08);border-left:3px solid #52B788;padding:0.9rem 1.1rem;border-radius:0 8px 8px 0;margin:1rem 0;">
+        <span class="callout-icon">💡</span>
+        <p>El CSV anonimizado cumple con los principios de privacidad por diseño: ningún dato permite identificar a una persona específica. Es apto para compartir con terceros sin requerir consentimiento adicional de los socios, ya que los datos son agregados y disociados de identidad.</p>
       </div>
 
       <div class="divider"></div>
