@@ -471,6 +471,9 @@ def _migrate():
         'cupo_mensual_g': 'REAL DEFAULT 30',
         'direccion': 'TEXT',
         'referencias_entrega': 'TEXT',
+        'motivo_consumo': 'TEXT',
+        'dosis_habitual_g': 'REAL',
+        'frecuencia_uso': 'TEXT',
     }.items():
         if col not in cols:
             db.execute(f'ALTER TABLE socios ADD COLUMN {col} {typedef}')
@@ -958,8 +961,9 @@ def solicitud():
              tipo_socio, diagnostico, patologia_especifica, tiempo_condicion,
              medico_prescriptor, especialidad_medico, tiene_receta,
              experiencia_cannabis, metodo_consumo, frecuencia_uso,
+             motivo_consumo, dosis_habitual_g,
              como_nos_conocio, referido_por, canal_detalle, notas_solicitud)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ''', (
             token,
             f.get('nombre','').strip(), f.get('apellido','').strip(),
@@ -974,6 +978,8 @@ def solicitud():
             f.get('tiene_receta',''),
             f.get('experiencia_cannabis',''), f.get('metodo_consumo',''),
             f.get('frecuencia_uso',''),
+            f.get('motivo_consumo',''),
+            float(f.get('dosis_habitual_g',0) or 0),
             f.get('como_nos_conocio',''), f.get('referido_por','').strip(),
             f.get('canal_detalle','').strip(), f.get('notas_solicitud','').strip(),
         ))
@@ -4105,6 +4111,170 @@ def germina_salir_soporte():
     if session.get('germina_admin'):
         return redirect(url_for('germina_dashboard'))
     return redirect(url_for('germina_login'))
+
+
+@app.route('/germina/datos')
+@germina_login_required
+def germina_datos():
+    db = get_db()
+    hoy = date.today()
+    mes_inicio = hoy.replace(day=1).isoformat()
+
+    # KPIs globales
+    total_socios    = db.execute("SELECT COUNT(*) FROM socios").fetchone()[0]
+    total_activos   = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo'").fetchone()[0]
+    row = db.execute("SELECT COUNT(*), COALESCE(SUM(gramos),0) FROM dispensaciones").fetchone()
+    total_disp, total_g = row[0], round(row[1], 1)
+    prom_g = round(total_g / total_activos, 1) if total_activos else 0
+
+    # Top variedades (por gramos dispensados)
+    top_variedades = db.execute("""
+        SELECT variedad, COUNT(*) n, COALESCE(SUM(gramos),0) gramos_total
+        FROM dispensaciones GROUP BY variedad ORDER BY gramos_total DESC LIMIT 10
+    """).fetchall()
+
+    # Evolución mensual — últimos 12 meses
+    evolucion = []
+    for i in range(11, -1, -1):
+        d = hoy.replace(day=1) - timedelta(days=i*28)
+        mes_str = d.strftime('%Y-%m')
+        n = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE strftime('%Y-%m',fecha)=?",
+            (mes_str,)).fetchone()[0]
+        evolucion.append({'mes': d.strftime('%b %y'), 'gramos': round(n, 1)})
+
+    # Distribución por motivo_consumo
+    motivos = db.execute("""
+        SELECT COALESCE(motivo_consumo,'no_informado') motivo, COUNT(*) n
+        FROM socios GROUP BY motivo ORDER BY n DESC
+    """).fetchall()
+
+    # Distribución por tipo_socio
+    tipos = db.execute("""
+        SELECT COALESCE(tipo_socio,'no_informado') tipo, COUNT(*) n
+        FROM socios GROUP BY tipo ORDER BY n DESC
+    """).fetchall()
+
+    # Top diagnósticos / condiciones
+    diagnosticos = db.execute("""
+        SELECT diagnostico, COUNT(*) n FROM socios
+        WHERE diagnostico IS NOT NULL AND diagnostico != ''
+        GROUP BY diagnostico ORDER BY n DESC LIMIT 12
+    """).fetchall()
+
+    # Distribución por método de consumo
+    metodos = db.execute("""
+        SELECT COALESCE(metodo_consumo,'no_informado') metodo, COUNT(*) n
+        FROM socios WHERE metodo_consumo IS NOT NULL AND metodo_consumo != ''
+        GROUP BY metodo ORDER BY n DESC
+    """).fetchall()
+
+    # Distribución por frecuencia de uso
+    frecuencias = db.execute("""
+        SELECT COALESCE(frecuencia_uso,'no_informado') frecuencia, COUNT(*) n
+        FROM socios WHERE frecuencia_uso IS NOT NULL AND frecuencia_uso != ''
+        GROUP BY frecuencia ORDER BY n DESC
+    """).fetchall()
+
+    # Distribución por género
+    generos = db.execute("""
+        SELECT COALESCE(genero,'no_informado') genero, COUNT(*) n
+        FROM socios GROUP BY genero ORDER BY n DESC
+    """).fetchall()
+
+    # Distribución por provincia (top 10)
+    provincias = db.execute("""
+        SELECT COALESCE(provincia,'no_informada') provincia, COUNT(*) n
+        FROM socios GROUP BY provincia ORDER BY n DESC LIMIT 10
+    """).fetchall()
+
+    # Distribución por rango etario
+    rangos_etarios = []
+    rangos = [('18-25',18,25),('26-35',26,35),('36-45',36,45),('46-55',46,55),('55+',55,120)]
+    for label, min_a, max_a in rangos:
+        n = db.execute("""
+            SELECT COUNT(*) FROM socios
+            WHERE fecha_nac IS NOT NULL AND fecha_nac != ''
+            AND (strftime('%Y','now') - strftime('%Y',fecha_nac)) >= ?
+            AND (strftime('%Y','now') - strftime('%Y',fecha_nac)) < ?
+        """, (min_a, max_a)).fetchone()[0]
+        rangos_etarios.append({'label': label, 'n': n})
+
+    max_var = max((r['gramos_total'] for r in top_variedades), default=1) or 1
+    max_evo = max((e['gramos'] for e in evolucion), default=1) or 1
+
+    return render_template('germina/datos.html',
+        total_socios=total_socios, total_activos=total_activos,
+        total_disp=total_disp, total_g=total_g, prom_g=prom_g,
+        top_variedades=top_variedades, max_var=max_var,
+        evolucion=evolucion, max_evo=max_evo,
+        motivos=motivos, tipos=tipos, diagnosticos=diagnosticos,
+        metodos=metodos, frecuencias=frecuencias,
+        generos=generos, provincias=provincias, rangos_etarios=rangos_etarios,
+    )
+
+
+@app.route('/germina/datos/export')
+@germina_login_required
+def germina_datos_export():
+    db = get_db()
+    hoy = date.today().isoformat()
+    socios = db.execute("SELECT * FROM socios").fetchall()
+
+    output = io.StringIO()
+    w = csv.writer(output)
+    w.writerow([
+        'id_anonimo','rango_edad','genero','provincia','tipo_socio',
+        'diagnostico','patologia_especifica','motivo_consumo',
+        'metodo_consumo','frecuencia_uso','dosis_habitual_g',
+        'tiene_receta','experiencia_cannabis',
+        'gramos_historico','num_dispensaciones','variedad_principal',
+        'dias_en_club','etapa_actual'
+    ])
+    for s in socios:
+        # calcular edad
+        rango = ''
+        if s['fecha_nac']:
+            try:
+                edad = (date.today() - date.fromisoformat(s['fecha_nac'][:10])).days // 365
+                if edad < 26: rango = '18-25'
+                elif edad < 36: rango = '26-35'
+                elif edad < 46: rango = '36-45'
+                elif edad < 56: rango = '46-55'
+                else: rango = '55+'
+            except Exception: rango = ''
+
+        # días en el club
+        dias = ''
+        if s['created_at']:
+            try:
+                dias = (date.today() - date.fromisoformat(s['created_at'][:10])).days
+            except Exception: pass
+
+        # dispensaciones
+        row_d = db.execute(
+            "SELECT COUNT(*), COALESCE(SUM(gramos),0) FROM dispensaciones WHERE socio_id=?",
+            (s['id'],)).fetchone()
+        n_disp, g_hist = row_d[0], round(row_d[1], 1)
+
+        # variedad principal
+        var_row = db.execute(
+            "SELECT variedad FROM dispensaciones WHERE socio_id=? GROUP BY variedad ORDER BY SUM(gramos) DESC LIMIT 1",
+            (s['id'],)).fetchone()
+        variedad_p = var_row[0] if var_row else ''
+
+        w.writerow([
+            f"SOC-{s['id']:04d}", rango, s['genero'] or '', s['provincia'] or '',
+            s['tipo_socio'] or '', s['diagnostico'] or '', s['patologia_especifica'] or '',
+            s['motivo_consumo'] or '', s['metodo_consumo'] or '', s['frecuencia_uso'] or '',
+            s['dosis_habitual_g'] or '', s['tiene_receta'] or '', s['experiencia_cannabis'] or '',
+            g_hist, n_disp, variedad_p, dias, s['etapa'] or ''
+        ])
+
+    resp = make_response(output.getvalue())
+    resp.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    resp.headers['Content-Disposition'] = f'attachment; filename=germina_datos_{hoy}.csv'
+    return resp
 
 
 if __name__ == '__main__':

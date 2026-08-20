@@ -1,0 +1,233 @@
+{% extends "germina/base_germina.html" %}
+{% block title %}Datos & Analítica — Germina HQ{% endblock %}
+{% block topbar_title %}📊 Datos & Analítica de consumo{% endblock %}
+
+{% block extra_style %}
+.chart-bar-h { display:flex; align-items:center; gap:0.7rem; margin-bottom:0.55rem; }
+.chart-bar-h .bar-label { width:130px; font-size:0.75rem; color:var(--text); text-align:right; flex-shrink:0; }
+.chart-bar-h .bar-track { flex:1; height:14px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; }
+.chart-bar-h .bar-fill  { height:100%; border-radius:4px; background:var(--green); }
+.chart-bar-h .bar-n     { width:36px; font-size:0.72rem; color:var(--muted); text-align:right; flex-shrink:0; }
+.evo-chart { display:flex; align-items:flex-end; gap:5px; height:80px; margin-top:1rem; }
+.evo-col   { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.evo-fill  { width:100%; border-radius:3px 3px 0 0; background:var(--gold); opacity:0.75; min-height:2px; }
+.evo-lbl   { font-size:0.58rem; color:var(--muted); margin-top:2px; }
+.evo-val   { font-size:0.6rem; color:var(--text); }
+.two-col   { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.2rem; }
+.pill { display:inline-block; padding:0.18rem 0.55rem; border-radius:100px; font-size:0.68rem; font-weight:700; background:rgba(255,255,255,0.07); color:var(--muted); margin:0.15rem; }
+{% endblock %}
+
+{% block content %}
+<!-- EXPORT -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.8rem;">
+  <div>
+    <div class="section-title">Analítica de consumo</div>
+    <div class="section-sub">Datos anonimizados agregados de todos los clubes · Listos para presentar a terceros</div>
+  </div>
+  <a href="{{ url_for('germina_datos_export') }}" class="btn btn-gold" download>
+    ⬇ Exportar CSV anonimizado
+  </a>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:1.5rem;">
+  <div class="kpi-card">
+    <div class="kpi-val">{{ total_socios }}</div>
+    <div class="kpi-label">Personas en la plataforma</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--green);">
+    <div class="kpi-val" style="color:var(--green);">{{ total_activos }}</div>
+    <div class="kpi-label">Consumidores activos</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ total_disp }}</div>
+    <div class="kpi-label">Dispensaciones totales</div>
+  </div>
+  <div class="kpi-card" style="border-top-color:var(--gold);">
+    <div class="kpi-val" style="color:var(--gold);">{{ total_g }}g</div>
+    <div class="kpi-label">Gramos dispensados total</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-val">{{ prom_g }}g</div>
+    <div class="kpi-label">Promedio por socio activo</div>
+  </div>
+</div>
+
+<!-- EVOLUCIÓN MENSUAL -->
+<div class="card" style="margin-bottom:1.2rem;">
+  <div class="card-header">
+    <div class="card-title">Evolución mensual de consumo (gramos dispensados)</div>
+    <span style="font-size:0.72rem;color:var(--muted);">Últimos 12 meses</span>
+  </div>
+  <div class="evo-chart">
+    {% for e in evolucion %}
+    <div class="evo-col">
+      <div class="evo-val">{{ e.gramos if e.gramos > 0 else '' }}</div>
+      <div class="evo-fill" style="height:{{ ((e.gramos / max_evo) * 64)|int if max_evo > 0 else 2 }}px;"></div>
+      <div class="evo-lbl">{{ e.mes }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- TOP VARIEDADES + MOTIVO -->
+<div class="two-col" style="margin-bottom:1.2rem;">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Top variedades por volumen</div>
+      <span style="font-size:0.72rem;color:var(--muted);">Gramos dispensados</span>
+    </div>
+    {% if top_variedades %}
+      {% for v in top_variedades %}
+      <div class="chart-bar-h">
+        <div class="bar-label" title="{{ v.variedad }}">{{ v.variedad[:18] }}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:{{ ((v.gramos_total / max_var) * 100)|int }}%;"></div>
+        </div>
+        <div class="bar-n">{{ v.gramos_total|int }}g</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--muted);font-size:0.82rem;text-align:center;padding:1rem;">Sin dispensaciones todavía</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Motivo de consumo</div>
+    </div>
+    {% set total_m = motivos|sum(attribute='n') or 1 %}
+    {% for m in motivos %}
+    {% set labels = {'medicinal':'Medicinal','bienestar':'Bienestar','recreativo':'Recreativo','mixto':'Mixto — ambos','no_informado':'No informado'} %}
+    <div class="chart-bar-h">
+      <div class="bar-label">{{ labels.get(m.motivo, m.motivo) }}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:{{ ((m.n / total_m) * 100)|int }}%;background:{% if m.motivo=='medicinal' %}var(--green){% elif m.motivo=='bienestar' %}var(--gold){% elif m.motivo=='recreativo' %}#7B9E6B{% else %}var(--muted){% endif %};"></div>
+      </div>
+      <div class="bar-n">{{ m.n }}</div>
+    </div>
+    {% endfor %}
+    <div style="margin-top:0.8rem;font-size:0.7rem;color:var(--muted);">
+      % medicinal = <strong style="color:var(--green);">
+        {% set med = motivos|selectattr('motivo','eq','medicinal')|list %}
+        {% if med %}{{ ((med[0].n / total_m) * 100)|int }}%{% else %}0%{% endif %}
+      </strong>
+    </div>
+  </div>
+
+</div>
+
+<!-- DIAGNÓSTICOS + MÉTODO + FRECUENCIA -->
+<div class="three-col" style="margin-bottom:1.2rem;">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Top condiciones de salud</div>
+      <span style="font-size:0.68rem;color:var(--muted);">Tal como lo declararon</span>
+    </div>
+    {% if diagnosticos %}
+      {% set max_d = diagnosticos[0].n or 1 %}
+      {% for d in diagnosticos %}
+      <div class="chart-bar-h">
+        <div class="bar-label" style="font-size:0.68rem;" title="{{ d.diagnostico }}">{{ d.diagnostico[:20] }}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:{{ ((d.n / max_d) * 100)|int }}%;background:var(--gold);"></div></div>
+        <div class="bar-n">{{ d.n }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--muted);font-size:0.82rem;text-align:center;padding:1rem;">Sin datos</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Método de consumo</div>
+    </div>
+    {% set labels_m = {'aceite':'Aceite / tintura','flores':'Flores (vapeo/pipa)','comestible':'Comestibles','topico':'Tópico','multiple':'Múltiples','no_informado':'No informado'} %}
+    {% set max_met = (metodos[0].n if metodos else 1) or 1 %}
+    {% for m in metodos %}
+    <div class="chart-bar-h">
+      <div class="bar-label" style="font-size:0.68rem;">{{ labels_m.get(m.metodo, m.metodo) }}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:{{ ((m.n / max_met) * 100)|int }}%;"></div></div>
+      <div class="bar-n">{{ m.n }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Frecuencia de uso</div>
+    </div>
+    {% set labels_f = {'diario':'Diario','varios_semana':'Varios/semana','semanal':'Semanal','quincenal':'Quincenal','mensual':'Mensual o menos','no_informado':'No informado'} %}
+    {% set max_fr = (frecuencias[0].n if frecuencias else 1) or 1 %}
+    {% for f in frecuencias %}
+    <div class="chart-bar-h">
+      <div class="bar-label" style="font-size:0.68rem;">{{ labels_f.get(f.frecuencia, f.frecuencia) }}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:{{ ((f.n / max_fr) * 100)|int }}%;background:var(--gold);"></div></div>
+      <div class="bar-n">{{ f.n }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- DEMOGRAFÍA: GÉNERO + EDAD + PROVINCIA -->
+<div class="three-col" style="margin-bottom:2rem;">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Distribución por género</div>
+    </div>
+    {% set labels_g = {'masculino':'Masculino','femenino':'Femenino','no_binario':'No binario','prefiero_no':'Prefiero no decir','no_informado':'No informado'} %}
+    {% set max_g = (generos[0].n if generos else 1) or 1 %}
+    {% for g in generos %}
+    <div class="chart-bar-h">
+      <div class="bar-label">{{ labels_g.get(g.genero, g.genero) }}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:{{ ((g.n / max_g) * 100)|int }}%;background:var(--green);"></div></div>
+      <div class="bar-n">{{ g.n }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Rango etario</div>
+    </div>
+    {% set max_re = (rangos_etarios|map(attribute='n')|max) or 1 %}
+    {% for r in rangos_etarios %}
+    <div class="chart-bar-h">
+      <div class="bar-label">{{ r.label }} años</div>
+      <div class="bar-track"><div class="bar-fill" style="width:{{ ((r.n / max_re) * 100)|int if max_re > 0 else 0 }}%;background:var(--gold);"></div></div>
+      <div class="bar-n">{{ r.n }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Top provincias / regiones</div>
+    </div>
+    {% set max_p = (provincias[0].n if provincias else 1) or 1 %}
+    {% for p in provincias %}
+    <div class="chart-bar-h">
+      <div class="bar-label" style="font-size:0.7rem;">{{ p.provincia }}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:{{ ((p.n / max_p) * 100)|int }}%;background:var(--green);"></div></div>
+      <div class="bar-n">{{ p.n }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- NOTA LEGAL -->
+<div class="alert alert-warning" style="margin-top:1rem;">
+  <span>⚠️</span>
+  <span style="font-size:0.78rem;">
+    <strong>Datos anonimizados.</strong> El CSV exportado no contiene nombre, DNI, email ni teléfono de ningún socio.
+    Cada fila es identificada solo por un código interno (SOC-XXXX). Apto para compartir con terceros, investigadores o farmacéuticas.
+  </span>
+</div>
+
+{% endblock %}

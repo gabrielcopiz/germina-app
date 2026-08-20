@@ -178,6 +178,9 @@ select.form-control option { background:#1A2E1C; }
     <a href="{{ url_for('germina_dashboard') }}" class="nav-link {% if request.endpoint == 'germina_dashboard' %}active{% endif %}">
       <span class="nav-icon">🏢</span> Todos los clubes
     </a>
+    <a href="{{ url_for('germina_datos') }}" class="nav-link {% if request.endpoint == 'germina_datos' %}active{% endif %}">
+      <span class="nav-icon">📊</span> Datos & Analítica
+    </a>
     <div class="nav-section" style="margin-top:0.5rem;">Cuenta</div>
     <a href="{{ url_for('germina_logout') }}" class="nav-link">
       <span class="nav-icon">←</span> Cerrar sesión
