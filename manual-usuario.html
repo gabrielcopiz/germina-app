@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Usuario — Germina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green-deep: #1A3520;
+  --green-mid: #2D6A4F;
+  --green-light: #52B788;
+  --green-pale: #D8F3DC;
+  --gold: #B8860B;
+  --gold-light: #FEF3CD;
+  --cream: #F5F2EC;
+  --cream-dark: #EDE8DF;
+  --white: #FFFFFF;
+  --border: #E0DBD3;
+  --text: #1E1E1E;
+  --muted: #6B6560;
+  --sidebar-w: 280px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--green-deep);
+  overflow-y: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 1.8rem 1.5rem 1.2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-logo .brand {
+  font-family: 'Playfair Display', serif;
+  color: #F5F2EC;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-logo .brand span { color: #B8A878; }
+
+.sidebar-logo .subtitle {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+.sidebar-logo .badge {
+  display: inline-block;
+  margin-top: 0.6rem;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-nav { padding: 1rem 0; flex: 1; }
+
+.nav-section-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.8rem 1.5rem 0.3rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.5rem;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.95);
+  border-left-color: var(--green-light);
+}
+
+.nav-item .icon { font-size: 0.9rem; width: 1.2rem; text-align: center; }
+.nav-item .num {
+  margin-left: auto;
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.5);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 100px;
+}
+
+/* MAIN */
+.main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+}
+
+/* HERO */
+.hero {
+  background: var(--green-deep);
+  padding: 4rem 3rem 3.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 280px; height: 280px;
+  background: rgba(82, 183, 136, 0.06);
+  border-radius: 50%;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: 20%;
+  width: 180px; height: 180px;
+  background: rgba(184, 134, 11, 0.05);
+  border-radius: 50%;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(82,183,136,0.15);
+  border: 1px solid rgba(82,183,136,0.3);
+  color: var(--green-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.8rem;
+  border-radius: 100px;
+  margin-bottom: 1.2rem;
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem;
+  color: var(--cream);
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.hero h1 span { color: #B8A878; }
+
+.hero p {
+  color: rgba(255,255,255,0.6);
+  font-size: 1rem;
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.hero-stat .num {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--cream);
+  font-weight: 700;
+}
+
+.hero-stat .label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  margin-top: 0.1rem;
+}
+
+/* CONTENT */
+.content { padding: 0 3rem 4rem; }
+
+/* SECTION */
+.section {
+  padding-top: 3.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3rem;
+}
+
+.section:last-child { border-bottom: none; }
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-icon {
+  width: 48px; height: 48px;
+  background: var(--green-pale);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.section-icon.gold { background: var(--gold-light); }
+.section-icon.dark { background: var(--green-deep); }
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--green-deep);
+  line-height: 1.2;
+}
+
+.section-sub {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-top: 0.3rem;
+}
+
+h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--green-deep);
+  margin: 1.5rem 0 0.6rem;
+}
+
+h3:first-child { margin-top: 0; }
+
+p { font-size: 0.9rem; color: var(--text); margin-bottom: 0.8rem; line-height: 1.7; }
+p:last-child { margin-bottom: 0; }
+
+/* STEPS */
+.steps { counter-reset: steps; display: flex; flex-direction: column; gap: 1rem; margin: 1rem 0; }
+
+.step {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+}
+
+.step-num {
+  counter-increment: steps;
+  min-width: 28px; height: 28px;
+  background: var(--green-deep);
+  color: var(--cream);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.step-body .step-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--green-deep);
+  margin-bottom: 0.2rem;
+}
+
+.step-body p { font-size: 0.83rem; color: var(--muted); margin: 0; }
+
+/* CARDS GRID */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin: 1rem 0; }
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.2rem;
+}
+
+.card-icon { font-size: 1.4rem; margin-bottom: 0.6rem; }
+.card-title { font-weight: 600; font-size: 0.88rem; color: var(--green-deep); margin-bottom: 0.3rem; }
+.card p { font-size: 0.78rem; color: var(--muted); margin: 0; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; margin: 1rem 0; border-radius: 12px; border: 1px solid var(--border); }
+
+table { width: 100%; border-collapse: collapse; background: var(--white); font-size: 0.83rem; }
+thead { background: var(--green-deep); }
+thead th { color: var(--cream); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.75rem 1rem; text-align: left; }
+tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cream); }
+
+/* CALLOUTS */
+.callout {
+  display: flex;
+  gap: 0.8rem;
+  padding: 1rem 1.2rem;
+  border-radius: 10px;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.callout-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.1rem; }
+.callout p { margin: 0; }
+
+.callout.tip { background: var(--green-pale); border: 1px solid rgba(82,183,136,0.3); color: #1A4A2E; }
+.callout.warning { background: var(--gold-light); border: 1px solid rgba(184,134,11,0.3); color: #5C4000; }
+.callout.info { background: #EEF4FF; border: 1px solid #C7D7FB; color: #1E3A7A; }
+.callout.danger { background: #FFF0F0; border: 1px solid #FFC5C5; color: #7A1E1E; }
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 100px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge-admin { background: var(--green-deep); color: var(--cream); }
+.badge-operador { background: var(--green-pale); color: var(--green-mid); }
+.badge-readonly { background: var(--cream-dark); color: var(--muted); }
+.badge-recomendar { background: #F0EDEA; color: var(--muted); }
+.badge-preparar { background: var(--gold-light); color: #7A5C00; }
+.badge-ejecutar { background: var(--green-pale); color: var(--green-mid); }
+.badge-new { background: #E3F2FD; color: #1565C0; font-size: 0.6rem; }
+
+/* LEVEL CARDS */
+.levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+
+.level-card {
+  border-radius: 12px;
+  padding: 1.2rem;
+  border: 1.5px solid;
+}
+
+.level-card.recomendar { background: #F8F7F5; border-color: #D0CBC3; }
+.level-card.preparar { background: var(--gold-light); border-color: rgba(184,134,11,0.3); }
+.level-card.ejecutar { background: var(--green-pale); border-color: rgba(82,183,136,0.4); }
+
+.level-num { font-size: 1.6rem; font-weight: 800; font-family: 'Playfair Display', serif; }
+.level-card.recomendar .level-num { color: var(--muted); }
+.level-card.preparar .level-num { color: #7A5C00; }
+.level-card.ejecutar .level-num { color: var(--green-mid); }
+
+.level-name { font-weight: 700; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase; margin: 0.3rem 0 0.5rem; }
+.level-card p { font-size: 0.78rem; margin: 0; }
+
+/* CHECKLIST */
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; margin: 0.8rem 0; }
+.checklist li { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; }
+.checklist li::before { content: '✓'; color: var(--green-mid); font-weight: 700; margin-top: 0.1rem; flex-shrink: 0; }
+.checklist li.no::before { content: '✗'; color: #C0392B; }
+
+/* ROI BOX */
+.roi-box {
+  background: var(--green-deep);
+  border-radius: 14px;
+  padding: 1.5rem 2rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin: 1rem 0;
+}
+
+.roi-item .num { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: #B8A878; font-weight: 700; }
+.roi-item .label { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 0.2rem; }
+
+/* PROCESS FLOW */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.flow-step {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  text-align: center;
+  min-width: 110px;
+}
+
+.flow-step .icon { font-size: 1.2rem; margin-bottom: 0.3rem; }
+.flow-step .name { font-size: 0.72rem; font-weight: 600; color: var(--green-deep); }
+.flow-step .sub { font-size: 0.65rem; color: var(--muted); margin-top: 0.1rem; }
+
+.flow-arrow {
+  color: var(--border);
+  font-size: 1.2rem;
+  padding: 0 0.3rem;
+  flex-shrink: 0;
+}
+
+/* ROLE TABLE */
+.role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+
+.role-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.2rem;
+}
+
+.role-card.admin { border-top: 3px solid var(--green-deep); }
+.role-card.operador { border-top: 3px solid var(--green-light); }
+.role-card.readonly { border-top: 3px solid var(--border); }
+
+/* PRINT */
+@media print {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .section { page-break-inside: avoid; }
+  .hero { background: var(--green-deep) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .main { margin-left: 0; }
+  .hero { padding: 2rem 1.5rem; }
+  .content { padding: 0 1.5rem 3rem; }
+  .levels { grid-template-columns: 1fr; }
+  .role-grid { grid-template-columns: 1fr; }
+  .roi-box { grid-template-columns: repeat(2, 1fr); }
+  .hero h1 { font-size: 1.8rem; }
+}
+
+/* TOP BAR */
+.topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title { font-weight: 600; font-size: 0.85rem; color: var(--muted); }
+
+.topbar-actions { display: flex; gap: 0.8rem; }
+
+.btn-print {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  background: var(--green-deep);
+  color: var(--cream);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-print:hover { background: var(--green-mid); }
+
+.version-badge {
+  background: var(--cream-dark);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+}
+
+/* DIVIDER */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1.5rem 0;
+}
+
+/* URL PILL */
+.url-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--cream-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: var(--green-mid);
+  font-weight: 600;
+}
+
+/* TWO COL */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin: 1rem 0; }
+@media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+/* HIGHLIGHT BOX */
+.highlight {
+  background: linear-gradient(135deg, var(--green-deep) 0%, #2D5A3F 100%);
+  border-radius: 14px;
+  padding: 1.8rem 2rem;
+  margin: 1.5rem 0;
+  color: var(--cream);
+}
+
+.highlight h3 { color: #B8A878; margin: 0 0 0.5rem; font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+.highlight p { color: rgba(255,255,255,0.7); font-size: 0.85rem; margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">Germi<span>na</span></div>
+    <div class="subtitle">Panel de Gestión</div>
+    <div class="badge">Manual de Usuario v1.0</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">Introducción</div>
+    <a href="#intro" class="nav-item"><span class="icon">📖</span> ¿Qué es Germina?</a>
+    <a href="#acceso" class="nav-item"><span class="icon">🔐</span> Cómo acceder</a>
+    <a href="#roles" class="nav-item"><span class="icon">👥</span> Roles de usuario</a>
+
+    <div class="nav-section-title">Gestión del Club</div>
+    <a href="#dashboard" class="nav-item"><span class="icon">📊</span> Dashboard</a>
+    <a href="#socios" class="nav-item"><span class="icon">🌿</span> Socios</a>
+    <a href="#cultivos" class="nav-item"><span class="icon">🪴</span> Cultivos</a>
+    <a href="#stock" class="nav-item"><span class="icon">📦</span> Stock</a>
+    <a href="#variedades" class="nav-item"><span class="icon">🧬</span> Variedades</a>
+    <a href="#pedidos" class="nav-item"><span class="icon">📋</span> Pedidos</a>
+    <a href="#dispensario" class="nav-item"><span class="icon">⚖️</span> Dispensario</a>
+    <a href="#aforo" class="nav-item"><span class="icon">🚪</span> Aforo</a>
+
+    <div class="nav-section-title">Inteligencia Artificial</div>
+    <a href="#agentes" class="nav-item"><span class="icon">🧠</span> Agentes IA</a>
+    <a href="#tareas" class="nav-item"><span class="icon">✅</span> Cola de Tareas</a>
+    <a href="#autopilot" class="nav-item"><span class="icon">🤖</span> Autopilot</a>
+    <a href="#roi" class="nav-item"><span class="icon">📈</span> ROI</a>
+    <a href="#escalaciones" class="nav-item"><span class="icon">🆘</span> Escalaciones</a>
+
+    <div class="nav-section-title">Configuración</div>
+    <a href="#importar" class="nav-item"><span class="icon">⬆️</span> Importar Socios</a>
+    <a href="#whatsapp" class="nav-item"><span class="icon">💬</span> WhatsApp</a>
+    <a href="#usuarios" class="nav-item"><span class="icon">👤</span> Usuarios</a>
+    <a href="#registro" class="nav-item"><span class="icon">📜</span> Registro</a>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-title">Manual de Usuario — Germina Panel de Gestión</div>
+    <div class="topbar-actions">
+      <span class="version-badge">Versión 1.0 · Agosto 2026</span>
+      <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">📖 Documentación Oficial</div>
+    <h1>Manual de Usuario<br><span>Germina</span></h1>
+    <p>Todo lo que necesitás saber para gestionar tu club con Germina: socios, cultivos, dispensaciones, e inteligencia artificial que trabaja por vos.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="num">14</div>
+        <div class="label">Secciones cubiertas</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">3</div>
+        <div class="label">Agentes de IA</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">100%</div>
+        <div class="label">En español</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- INTRO -->
+    <section class="section" id="intro">
+      <div class="section-header">
+        <div class="section-icon">📖</div>
+        <div>
+          <div class="section-title">¿Qué es Germina?</div>
+          <div class="section-sub">El sistema operativo de tu club cannábico</div>
+        </div>
+      </div>
+
+      <p>Germina es un sistema de gestión diseñado específicamente para clubes cannábicos. Centraliza todo lo que antes hacías en planillas, papeles o sistemas separados: el registro de socios, el control de cultivos, el inventario de stock, las dispensaciones del día, y mucho más.</p>
+
+      <p>Además de la gestión tradicional, Germina incorpora <strong>inteligencia artificial</strong> que trabaja en segundo plano analizando tu club, detectando situaciones que requieren atención, y haciendo sugerencias concretas para que nada se te escape.</p>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">🌿</div>
+          <div class="card-title">Gestión de socios</div>
+          <p>Alta, documentación, etapas del proceso y seguimiento completo de cada socio.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🪴</div>
+          <div class="card-title">Cultivos y stock</div>
+          <p>Seguimiento de ciclos de cultivo, cosechas y control de inventario disponible.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚖️</div>
+          <div class="card-title">Dispensaciones</div>
+          <p>Registro rápido de cada retiro con control de límites por socio y variedad.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🧠</div>
+          <div class="card-title">Inteligencia artificial</div>
+          <p>Agentes que detectan problemas y te sugieren acciones antes de que sea tarde.</p>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>No necesitás ser técnico para usar Germina. Todo está diseñado para que cualquier persona pueda operarlo desde el primer día, sin cursos ni capacitaciones previas.</p>
+      </div>
+    </section>
+
+    <!-- ACCESO -->
+    <section class="section" id="acceso">
+      <div class="section-header">
+        <div class="section-icon">🔐</div>
+        <div>
+          <div class="section-title">Cómo acceder al panel</div>
+          <div class="section-sub">Entrá desde cualquier dispositivo con internet</div>
+        </div>
+      </div>
+
+      <p>Germina funciona en el navegador, sin necesidad de instalar nada. Podés acceder desde la computadora del club, desde tu celular o desde cualquier lugar.</p>
+
+      <h3>Pasos para ingresar</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Abrí tu navegador</div>
+            <p>Funciona en Chrome, Firefox, Safari o Edge. Recomendamos Chrome para mejor experiencia.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Ingresá la dirección del panel</div>
+            <p>Escribí en la barra de dirección: <span class="url-pill">germina-app.onrender.com/admin</span></p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Completá usuario y contraseña</div>
+            <p>Ingresá el usuario y la contraseña que te asignó el administrador del club.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Hacé clic en "Ingresar"</div>
+            <p>Se abrirá el Dashboard principal con el resumen del club.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p><strong>Primera vez:</strong> Si es tu primer ingreso, el usuario administrador es <code>admin</code>. Cambiá la contraseña por defecto lo antes posible desde Configuración → Usuarios.</p>
+      </div>
+    </section>
+
+    <!-- ROLES -->
+    <section class="section" id="roles">
+      <div class="section-header">
+        <div class="section-icon">👥</div>
+        <div>
+          <div class="section-title">Roles de usuario</div>
+          <div class="section-sub">Quién puede hacer qué dentro del panel</div>
+        </div>
+      </div>
+
+      <p>Germina tiene tres niveles de acceso. Cada persona que usa el panel tiene asignado uno de estos roles. Solo el administrador puede crear y modificar usuarios.</p>
+
+      <div class="role-grid">
+        <div class="role-card admin">
+          <span class="badge badge-admin">ADMIN</span>
+          <h3 style="margin-top:0.8rem;">Administrador</h3>
+          <ul class="checklist">
+            <li>Acceso a todas las secciones</li>
+            <li>Crear y eliminar usuarios</li>
+            <li>Configurar agentes de IA</li>
+            <li>Configurar WhatsApp</li>
+            <li>Ver y modificar todo</li>
+          </ul>
+        </div>
+        <div class="role-card operador">
+          <span class="badge badge-operador">OPERADOR</span>
+          <h3 style="margin-top:0.8rem;">Operador</h3>
+          <ul class="checklist">
+            <li>Registrar socios y dispensaciones</li>
+            <li>Ver y aprobar tareas de IA</li>
+            <li>Gestionar pedidos y stock</li>
+            <li class="no">No puede configurar la IA</li>
+            <li class="no">No puede gestionar usuarios</li>
+          </ul>
+        </div>
+        <div class="role-card readonly">
+          <span class="badge badge-readonly">SOLO LECTURA</span>
+          <h3 style="margin-top:0.8rem;">Solo lectura</h3>
+          <ul class="checklist">
+            <li>Ver todas las secciones</li>
+            <li>Ver reportes y datos</li>
+            <li class="no">No puede modificar nada</li>
+            <li class="no">No puede aprobar tareas</li>
+            <li class="no">No puede registrar datos</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <p>El rol aparece en la esquina superior derecha del panel, junto a tu nombre. Si no tenés acceso a alguna sección, es porque tu rol no lo permite. Consultá al administrador para que te cambie el rol si es necesario.</p>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="section" id="dashboard">
+      <div class="section-header">
+        <div class="section-icon">📊</div>
+        <div>
+          <div class="section-title">Dashboard — Centro de control</div>
+          <div class="section-sub">El resumen de todo lo que pasa en tu club</div>
+        </div>
+      </div>
+
+      <p>El Dashboard es la primera pantalla que ves al entrar. Muestra en un solo vistazo el estado actual de tu club: actividad del día, alertas pendientes, métricas clave y accesos rápidos a las secciones más usadas.</p>
+
+      <h3>Qué vas a encontrar</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">📅</div>
+          <div class="card-title">Métricas del día</div>
+          <p>Dispensaciones de hoy, gramos totales entregados, socios atendidos, aforo actual y solicitudes nuevas.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔔</div>
+          <div class="card-title">Alertas activas</div>
+          <p>Cosechas próximas, pedidos sin despachar, socios en revisión. Todo lo que necesita tu atención hoy.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📊</div>
+          <div class="card-title">Métricas de socios</div>
+          <p>Total de socios, cuántos están activos, cuántos en revisión y la tasa de conversión solicitud → activo.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔍</div>
+          <div class="card-title">Funnel de socios</div>
+          <p>Visualización de cuántos socios están en cada etapa del proceso: solicitud, documentos, revisión, activos.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📈</div>
+          <div class="card-title">Nuevos socios</div>
+          <p>Gráfico de las últimas 8 semanas mostrando el flujo de nuevos ingresos al club.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">👁️</div>
+          <div class="card-title">Vista del socio</div>
+          <p>Botón que te lleva a ver exactamente lo que ve un socio al entrar al portal web del club.</p>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>Las alertas en naranja o amarillo son situaciones que <strong>requieren acción hoy</strong>. Siempre revisalas antes de empezar el día.</p>
+      </div>
+    </section>
+
+    <!-- SOCIOS -->
+    <section class="section" id="socios">
+      <div class="section-header">
+        <div class="section-icon">🌿</div>
+        <div>
+          <div class="section-title">Gestión de Socios</div>
+          <div class="section-sub">Alta, documentación y seguimiento completo de cada miembro</div>
+        </div>
+      </div>
+
+      <p>La sección de Socios es el corazón del sistema. Acá registrás cada persona que quiere ser parte del club, seguís el proceso de aprobación, gestionás su documentación y controlás el estado de sus cuotas.</p>
+
+      <h3>Proceso de alta de un socio</h3>
+      <div class="flow">
+        <div class="flow-step">
+          <div class="icon">📝</div>
+          <div class="name">Solicitud</div>
+          <div class="sub">Interesado completa el formulario</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="icon">📄</div>
+          <div class="name">Documentos</div>
+          <div class="sub">DNI, domicilio, ficha</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="icon">🔍</div>
+          <div class="name">Revisión</div>
+          <div class="sub">Verificación interna</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="icon">✅</div>
+          <div class="name">Activo</div>
+          <div class="sub">Socio habilitado</div>
+        </div>
+      </div>
+
+      <h3>Cómo registrar un nuevo socio manualmente</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Ir a Socios → Nuevo socio</div>
+            <p>En el menú lateral hacé clic en "Socios" y luego en el botón verde "+ Nuevo socio".</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Completar los datos personales</div>
+            <p>Nombre, apellido, DNI, fecha de nacimiento, email y teléfono. El DNI no puede repetirse en el sistema.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Elegir el estado inicial</div>
+            <p>El sistema asigna automáticamente el estado "Solicitud recibida". Podés avanzarlo a "Pendiente documentación" desde el mismo formulario.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Guardar y seguir</div>
+            <p>Al guardar, el socio aparece en la lista con su número de socio asignado automáticamente.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Datos de consumo — campos adicionales del formulario</h3>
+      <p>El formulario de solicitud incluye tres campos opcionales que permiten capturar el perfil de consumo de cada socio. Esta información se usa para entender mejor a los miembros del club y para generar analítica agregada anonimizada.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Opciones</th>
+              <th>Para qué sirve</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Motivo de consumo</strong></td>
+              <td>Medicinal · Bienestar · Recreativo · Mixto</td>
+              <td>Identifica si el socio consume por razones de salud, bienestar general o uso recreativo. Es el dato más importante para analítica externa.</td>
+            </tr>
+            <tr>
+              <td><strong>Frecuencia de uso</strong></td>
+              <td>Diario · Varios por semana · Semanal · Quincenal · Mensual o menos</td>
+              <td>Permite anticipar la demanda de dispensaciones y detectar socios que podrían necesitar seguimiento.</td>
+            </tr>
+            <tr>
+              <td><strong>Dosis habitual (gramos)</strong></td>
+              <td>Número libre (ej: 0.5, 1, 2)</td>
+              <td>Referencia para configurar el cupo mensual personalizado de cada socio y planificar el stock.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info" style="background:rgba(82,183,136,0.08);border-left:3px solid #52B788;padding:0.9rem 1.1rem;border-radius:0 8px 8px 0;margin:1rem 0;">
+        <span class="callout-icon">💡</span>
+        <p>Estos campos son <strong>opcionales</strong> para el socio. Si los completa, el dato queda registrado en su ficha y se suma automáticamente al panel de Analítica del equipo Germina. Ningún dato personal (nombre, DNI, email) sale del sistema — solo se exporta información anonimizada.</p>
+      </div>
+
+      <h3>Estados de un socio</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Qué significa</th>
+              <th>Qué hacer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Solicitud recibida</strong></td>
+              <td>El interesado completó el formulario pero todavía no entregó documentación</td>
+              <td>Contactarlo para pedir los documentos</td>
+            </tr>
+            <tr>
+              <td><strong>Pendiente documentación</strong></td>
+              <td>Le avisamos qué documentos necesita pero todavía no los entregó</td>
+              <td>Hacer seguimiento, recordarle</td>
+            </tr>
+            <tr>
+              <td><strong>En revisión</strong></td>
+              <td>Entregó los documentos, están siendo evaluados</td>
+              <td>Revisar y aprobar o rechazar</td>
+            </tr>
+            <tr>
+              <td><strong>Activo</strong></td>
+              <td>Socio aprobado y habilitado para dispensaciones</td>
+              <td>Gestión normal</td>
+            </tr>
+            <tr>
+              <td><strong>Suspendido</strong></td>
+              <td>Temporalmente inhabilitado (cuota impaga, incumplimiento)</td>
+              <td>Resolver la causa de la suspensión</td>
+            </tr>
+            <tr>
+              <td><strong>Baja</strong></td>
+              <td>Ya no es socio del club</td>
+              <td>Solo lectura del historial</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Ficha del socio</h3>
+      <p>Al hacer clic en cualquier socio de la lista accedés a su ficha completa, que incluye:</p>
+      <ul class="checklist">
+        <li>Datos personales y de contacto</li>
+        <li>Historial completo de dispensaciones</li>
+        <li>Estado de cuotas y pagos</li>
+        <li>Documentación adjunta</li>
+        <li>Notas internas del club</li>
+        <li>Fecha de alta y últimas visitas</li>
+      </ul>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p>Solo los socios en estado <strong>Activo</strong> pueden recibir dispensaciones. Si intentás registrar una dispensación para un socio suspendido o en revisión, el sistema lo va a bloquear.</p>
+      </div>
+    </section>
+
+    <!-- CULTIVOS -->
+    <section class="section" id="cultivos">
+      <div class="section-header">
+        <div class="section-icon">🪴</div>
+        <div>
+          <div class="section-title">Cultivos</div>
+          <div class="section-sub">Seguimiento del ciclo completo de cada planta</div>
+        </div>
+      </div>
+
+      <p>La sección de Cultivos te permite registrar y seguir cada cultivo del club desde la germinación hasta la cosecha. Podés ver en qué etapa está cada planta, qué variedad es y cuándo se espera la cosecha.</p>
+
+      <h3>Información de cada cultivo</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">🧬</div>
+          <div class="card-title">Variedad</div>
+          <p>La cepa o strain que se está cultivando, vinculada al catálogo de variedades del club.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📅</div>
+          <div class="card-title">Fecha de inicio</div>
+          <p>Cuándo comenzó el ciclo. El sistema calcula automáticamente los días transcurridos.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔄</div>
+          <div class="card-title">Etapa actual</div>
+          <p>Germinación, vegetativa, floración, cosecha. Podés actualizar la etapa con un clic.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📦</div>
+          <div class="card-title">Gramos cosechados</div>
+          <p>Al cosechar registrás el peso seco total, que pasa automáticamente al stock disponible.</p>
+        </div>
+      </div>
+
+      <h3>Alertas automáticas de cultivo</h3>
+      <p>Germina monitorea tus cultivos y te avisa en el Dashboard cuando:</p>
+      <ul class="checklist">
+        <li>Un cultivo tiene cosecha próxima (menos de 14 días estimados)</li>
+        <li>Una planta lleva muchos días en la misma etapa sin actualización</li>
+        <li>No hay cultivos en curso y el stock está bajo</li>
+      </ul>
+    </section>
+
+    <!-- STOCK -->
+    <section class="section" id="stock">
+      <div class="section-header">
+        <div class="section-icon">📦</div>
+        <div>
+          <div class="section-title">Stock</div>
+          <div class="section-sub">Control de inventario disponible para distribución</div>
+        </div>
+      </div>
+
+      <p>El stock registra la cantidad de producto disponible para dispensar, desglosado por variedad. Se actualiza automáticamente cuando registrás una cosecha o una dispensación.</p>
+
+      <h3>Movimientos de stock</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo de movimiento</th>
+              <th>Cómo se registra</th>
+              <th>Efecto en stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cosecha</strong></td>
+              <td>Desde la sección Cultivos, al marcar un cultivo como cosechado</td>
+              <td>Suma los gramos cosechados</td>
+            </tr>
+            <tr>
+              <td><strong>Dispensación</strong></td>
+              <td>Desde la sección Dispensario, al registrar el retiro de un socio</td>
+              <td>Resta los gramos dispensados</td>
+            </tr>
+            <tr>
+              <td><strong>Ajuste manual</strong></td>
+              <td>Desde la sección Stock, con el botón "Ajustar stock"</td>
+              <td>Suma o resta la cantidad indicada con nota justificatoria</td>
+            </tr>
+            <tr>
+              <td><strong>Merma</strong></td>
+              <td>Desde Stock, registrando merma o pérdida</td>
+              <td>Resta con registro del motivo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p>El Agente de Administración revisa el stock diariamente. Si el stock de alguna variedad cae por debajo del mínimo configurado, vas a recibir una alerta automática con recomendación de acción.</p>
+      </div>
+    </section>
+
+    <!-- VARIEDADES -->
+    <section class="section" id="variedades">
+      <div class="section-header">
+        <div class="section-icon">🧬</div>
+        <div>
+          <div class="section-title">Variedades</div>
+          <div class="section-sub">El catálogo de cepas del club</div>
+        </div>
+      </div>
+
+      <p>Las variedades son el catálogo de cepas disponibles en el club. Cada variedad tiene su perfil: nombre, tipo (índica, sativa, híbrido), porcentaje de THC/CBD estimado y descripción. Las variedades se vinculan a cultivos y dispensaciones.</p>
+
+      <h3>Para qué sirve tener el catálogo actualizado</h3>
+      <ul class="checklist">
+        <li>Al registrar una dispensación, elegís la variedad desde el catálogo</li>
+        <li>Los socios pueden ver las variedades disponibles en el portal web</li>
+        <li>El stock se desglosa por variedad para control exacto</li>
+        <li>Los cultivos quedan vinculados a la variedad que producen</li>
+      </ul>
+    </section>
+
+    <!-- PEDIDOS -->
+    <section class="section" id="pedidos">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <div>
+          <div class="section-title">Pedidos</div>
+          <div class="section-sub">Gestión de pedidos de socios pendientes de despacho</div>
+        </div>
+      </div>
+
+      <p>Los pedidos son solicitudes de retiro que hacen los socios. Pueden entrar automáticamente desde el portal web del socio o registrarse manualmente desde el panel. El Dashboard siempre muestra cuántos pedidos están pendientes de despacho.</p>
+
+      <h3>Estados de un pedido</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Significado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Pendiente</strong></td><td>El pedido llegó pero todavía no fue preparado</td></tr>
+            <tr><td><strong>En preparación</strong></td><td>Se está preparando el pedido</td></tr>
+            <tr><td><strong>Listo para retirar</strong></td><td>El pedido está preparado, el socio puede pasar</td></tr>
+            <tr><td><strong>Despachado</strong></td><td>El socio retiró su pedido (descuenta del stock)</td></tr>
+            <tr><td><strong>Cancelado</strong></td><td>El pedido fue cancelado sin despacharse</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DISPENSARIO -->
+    <section class="section" id="dispensario">
+      <div class="section-header">
+        <div class="section-icon">⚖️</div>
+        <div>
+          <div class="section-title">Dispensario</div>
+          <div class="section-sub">Registro de cada dispensación realizada en el club</div>
+        </div>
+      </div>
+
+      <p>El Dispensario es donde registrás cada vez que un socio retira su producto. Cada dispensación queda registrada con fecha, hora, variedad, gramos y quién la registró.</p>
+
+      <h3>Cómo registrar una dispensación</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Ir a Dispensario</div>
+            <p>Hacé clic en "Dispensario" en el menú lateral izquierdo.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Buscar al socio</div>
+            <p>Escribí el nombre o número de socio en el buscador. Solo aparecen socios activos.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Elegir variedad y cantidad</div>
+            <p>Seleccioná la variedad del menú desplegable e ingresá los gramos. El sistema verifica que haya stock suficiente.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Confirmar y registrar</div>
+            <p>Al confirmar, el stock se descuenta automáticamente y queda el registro permanente con fecha y hora.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout danger">
+        <span class="callout-icon">🚫</span>
+        <p>El sistema <strong>no permite</strong> registrar dispensaciones si el socio no está en estado Activo, si no hay stock suficiente de la variedad elegida, o si el socio superó el límite mensual configurado.</p>
+      </div>
+    </section>
+
+    <!-- AFORO -->
+    <section class="section" id="aforo">
+      <div class="section-header">
+        <div class="section-icon">🚪</div>
+        <div>
+          <div class="section-title">Aforo</div>
+          <div class="section-sub">Control de personas presentes en el club en tiempo real</div>
+        </div>
+      </div>
+
+      <p>La sección de Aforo permite registrar las entradas y salidas de socios, manteniendo un conteo exacto de cuántas personas hay en el club en cada momento. El Dashboard muestra el aforo actual en tiempo real.</p>
+
+      <h3>Cómo funciona</h3>
+      <ul class="checklist">
+        <li>Registrás la entrada de un socio con un clic (o escaneando su código)</li>
+        <li>Al irse, registrás la salida de la misma forma</li>
+        <li>El contador de aforo actual se actualiza automáticamente</li>
+        <li>El sistema puede alertarte si se supera el aforo máximo configurado</li>
+      </ul>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <p>El aforo máximo se configura en la sección de configuración del club. Una vez configurado, el sistema avisa cuando se está llegando al límite.</p>
+      </div>
+    </section>
+
+    <!-- AGENTES IA -->
+    <section class="section" id="agentes">
+      <div class="section-header">
+        <div class="section-icon dark">🧠</div>
+        <div>
+          <div class="section-title">Agentes de Inteligencia Artificial</div>
+          <div class="section-sub">Tu equipo virtual que trabaja en segundo plano las 24 horas</div>
+        </div>
+      </div>
+
+      <div class="highlight">
+        <h3>¿Qué es un agente de IA?</h3>
+        <p>Pensalo como un empleado que no duerme. Revisa continuamente toda la información del club, detecta situaciones que necesitan atención, y te avisa con recomendaciones concretas. Vos decidís si seguir su sugerencia o no.</p>
+      </div>
+
+      <p>Germina tiene <strong>tres agentes especializados</strong>, cada uno enfocado en un área distinta del club:</p>
+
+      <h3>Los 3 agentes</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">🌿</div>
+          <div class="card-title">Agente Socios</div>
+          <p>Monitorea el estado de todos los socios. Detecta solicitudes sin respuesta, cuotas vencidas y socios que llevan mucho tiempo sin actividad.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📊</div>
+          <div class="card-title">Agente Administración</div>
+          <p>Controla el stock, genera reportes diarios y hace seguimiento de cuotas impagas a nivel del club.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💬</div>
+          <div class="card-title">Agente WhatsApp</div>
+          <p>Responde consultas de socios por WhatsApp, envía recordatorios automáticos y escala conversaciones complejas a un humano.</p>
+        </div>
+      </div>
+
+      <h3>¿Qué detecta cada agente?</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Agente</th>
+              <th>Situación que detecta</th>
+              <th>Acción que propone</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="3"><strong>Socios</strong></td>
+              <td>Solicitudes sin respuesta más de 24 horas</td>
+              <td>Enviar email de seguimiento al interesado</td>
+            </tr>
+            <tr>
+              <td>Cuotas mensuales vencidas</td>
+              <td>Enviar recordatorio de pago por email</td>
+            </tr>
+            <tr>
+              <td>Socios sin actividad hace más de 60 días</td>
+              <td>Enviar mensaje de reactivación</td>
+            </tr>
+            <tr>
+              <td rowspan="3"><strong>Administración</strong></td>
+              <td>Stock de alguna variedad por debajo del mínimo</td>
+              <td>Alerta de reposición necesaria</td>
+            </tr>
+            <tr>
+              <td>Cada día a las 8am</td>
+              <td>Enviar reporte diario al administrador</td>
+            </tr>
+            <tr>
+              <td>Cuotas impagas acumuladas</td>
+              <td>Resumen de morosidad del club</td>
+            </tr>
+            <tr>
+              <td rowspan="2"><strong>WhatsApp</strong></td>
+              <td>Mensaje entrante de un socio</td>
+              <td>Respuesta automática con información del club</td>
+            </tr>
+            <tr>
+              <td>Pregunta que la IA no puede resolver</td>
+              <td>Escalar la conversación a un humano</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cómo ejecutar un escaneo</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Ir a "Agentes IA" en el menú lateral</div>
+            <p>Vas a ver los tres agentes con sus estadísticas.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Hacer clic en "Ejecutar escaneo ahora"</div>
+            <p>Los agentes van a revisar toda la información del club en busca de situaciones que requieran acción.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Revisar las tareas generadas</div>
+            <p>Las situaciones detectadas aparecen en la sección "Tareas" con la recomendación de cada agente.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Aprobar, rechazar o escalar</div>
+            <p>Para cada tarea podés aprobar que el agente actúe, rechazarla si no la considerás necesaria, o escalarla para que la revise un humano.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>Recomendamos ejecutar el escaneo al menos una vez por día, idealmente a primera hora de la mañana, para empezar el día con todas las situaciones del club identificadas.</p>
+      </div>
+    </section>
+
+    <!-- TAREAS -->
+    <section class="section" id="tareas">
+      <div class="section-header">
+        <div class="section-icon">✅</div>
+        <div>
+          <div class="section-title">Cola de Tareas</div>
+          <div class="section-sub">Las recomendaciones de la IA esperan tu decisión acá</div>
+        </div>
+      </div>
+
+      <p>Cada vez que los agentes detectan algo, crean una <strong>tarea</strong> con su recomendación. La sección de Tareas es donde revisás estas sugerencias y decidís qué hacer con cada una.</p>
+
+      <h3>Partes de una tarea</h3>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon">🏷️</div>
+          <div class="card-title">Agente y tipo</div>
+          <p>Qué agente la generó (Socios, Administración o WhatsApp) y qué tipo de situación detectó.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💡</div>
+          <div class="card-title">Recomendación</div>
+          <p>El texto exacto que la IA generó explicando qué detectó y qué propone hacer.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🎚️</div>
+          <div class="card-title">Nivel de autonomía</div>
+          <p>Si la tarea es para recomendar, preparar o ejecutar directamente (según tu configuración de Autopilot).</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Acciones disponibles</div>
+          <p>Botones para aprobar y ejecutar, rechazar, o escalar a revisión humana.</p>
+        </div>
+      </div>
+
+      <h3>Qué podés hacer con cada tarea</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Acción</th>
+              <th>Qué pasa</th>
+              <th>Cuándo usarla</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>✅ <strong>Aprobar y ejecutar</strong></td>
+              <td>El agente ejecuta la acción inmediatamente (envía el email, genera el reporte, etc.)</td>
+              <td>Cuando estás de acuerdo con la recomendación</td>
+            </tr>
+            <tr>
+              <td>❌ <strong>Rechazar</strong></td>
+              <td>La tarea se descarta y queda registrado el rechazo</td>
+              <td>Cuando la situación ya fue resuelta por otro medio o la recomendación no aplica</td>
+            </tr>
+            <tr>
+              <td>🆘 <strong>Escalar</strong></td>
+              <td>Pasa a la sección de Escalaciones y te llega un email con el detalle para revisarla con calma</td>
+              <td>Cuando la situación necesita más contexto humano antes de actuar</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Filtros de la cola de tareas</h3>
+      <p>Podés filtrar las tareas por:</p>
+      <ul class="checklist">
+        <li>Estado: Pendientes, Ejecutadas, Rechazadas, Todas</li>
+        <li>Agente: Todos los agentes, Solo Socios, Solo Administración</li>
+      </ul>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>Las tareas pendientes son las que necesitan tu atención. Siempre empezá por revisar las pendientes antes del escaneo del día.</p>
+      </div>
+    </section>
+
+    <!-- AUTOPILOT -->
+    <section class="section" id="autopilot">
+      <div class="section-header">
+        <div class="section-icon dark">🤖</div>
+        <div>
+          <div class="section-title">Autopilot</div>
+          <div class="section-sub">Vos decidís cuánta autonomía tiene la IA en cada acción</div>
+        </div>
+      </div>
+
+      <p>El Autopilot es donde configurás el nivel de independencia que querés darle a cada agente. No es todo o nada: podés darle más autonomía en las cosas que te generan confianza y menos en las que preferís controlar.</p>
+
+      <h3>Los 3 niveles de autonomía</h3>
+      <div class="levels">
+        <div class="level-card recomendar">
+          <div class="level-num">1</div>
+          <div class="level-name">Recomendar</div>
+          <p>La IA detecta la situación y te avisa. Vos decidís qué hacer. La IA no hace nada por su cuenta.</p>
+        </div>
+        <div class="level-card preparar">
+          <div class="level-num">2</div>
+          <div class="level-name">Preparar</div>
+          <p>La IA prepara todo (redacta el email, arma el reporte). Vos lo revisás y aprobás antes de que se envíe.</p>
+        </div>
+        <div class="level-card ejecutar">
+          <div class="level-num">3</div>
+          <div class="level-name">Ejecutar</div>
+          <p>La IA actúa automáticamente. Todo queda registrado en el log para que puedas revisarlo cuando quieras.</p>
+        </div>
+      </div>
+
+      <h3>¿Qué nivel elegir para empezar?</h3>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>Recomendamos empezar todos los agentes en nivel <strong>RECOMENDAR</strong>. A medida que la IA te genere confianza en cada tipo de acción, podés subirla a PREPARAR y luego a EJECUTAR. La autonomía se gana gradualmente.</p>
+      </div>
+
+      <h3>Ejemplo práctico</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Acción</th>
+              <th>Nivel sugerido</th>
+              <th>Por qué</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Recordatorio de cuota mensual</td>
+              <td><span class="badge badge-ejecutar">EJECUTAR</span></td>
+              <td>Es un email estándar, sin riesgo, y ahorras mucho tiempo si lo automatizás</td>
+            </tr>
+            <tr>
+              <td>Seguimiento de socio inactivo</td>
+              <td><span class="badge badge-preparar">PREPARAR</span></td>
+              <td>Cada caso puede ser diferente, mejor revisar el borrador antes de enviar</td>
+            </tr>
+            <tr>
+              <td>Alta de nuevo socio</td>
+              <td><span class="badge badge-recomendar">RECOMENDAR</span></td>
+              <td>Decisión importante, siempre mejor que la tome un humano</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ROI -->
+    <section class="section" id="roi">
+      <div class="section-header">
+        <div class="section-icon gold">📈</div>
+        <div>
+          <div class="section-title">Dashboard de ROI</div>
+          <div class="section-sub">Cuánto tiempo y dinero te está ahorrando la inteligencia artificial</div>
+        </div>
+      </div>
+
+      <p>El ROI (Retorno sobre la Inversión) te muestra en números concretos el impacto que están teniendo los agentes de IA en la operación del club. Calculamos el tiempo que la IA ahorró en tareas administrativas y lo convertimos en valor económico.</p>
+
+      <h3>Métricas que muestra</h3>
+      <div class="roi-box">
+        <div class="roi-item">
+          <div class="num">0.0hs</div>
+          <div class="label">Tiempo total ahorrado</div>
+        </div>
+        <div class="roi-item">
+          <div class="num">$0</div>
+          <div class="label">Valor económico (USD 15/h)</div>
+        </div>
+        <div class="roi-item">
+          <div class="num">0</div>
+          <div class="label">Acciones automatizadas</div>
+        </div>
+        <div class="roi-item">
+          <div class="num">$0</div>
+          <div class="label">Costo de IA invertido</div>
+        </div>
+      </div>
+
+      <h3>¿Cómo se calcula?</h3>
+      <p>Cada tipo de tarea tiene un tiempo estimado de trabajo manual asignado. Por ejemplo:</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tarea</th>
+              <th>Tiempo manual estimado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Responder consulta de socio</td><td>3 minutos</td></tr>
+            <tr><td>Alta de nuevo socio</td><td>15 minutos</td></tr>
+            <tr><td>Enviar recordatorio de cuota</td><td>5 minutos</td></tr>
+            <tr><td>Generar reporte diario</td><td>20 minutos</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Cuando Germina automatiza o prepara esa tarea, ese tiempo se suma al ahorro acumulado. El valor económico se calcula usando USD 15 por hora de trabajo administrativo.</p>
+    </section>
+
+    <!-- ESCALACIONES -->
+    <section class="section" id="escalaciones">
+      <div class="section-header">
+        <div class="section-icon">🆘</div>
+        <div>
+          <div class="section-title">Escalaciones — Fallback Humano</div>
+          <div class="section-sub">Cuando la IA no puede resolver algo sola</div>
+        </div>
+      </div>
+
+      <p>Las escalaciones son situaciones que los agentes detectaron pero que requieren una decisión humana para resolverse. Pueden generarse de dos formas: el agente la escala automáticamente porque no tiene suficiente contexto, o vos la escalás manualmente desde la cola de tareas.</p>
+
+      <h3>Cómo funciona</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">La escalación aparece en la sección</div>
+            <p>Con estado "Abierta" y un banner naranja alertando que requiere atención.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Te llega un email automático</div>
+            <p>Con el detalle de la situación y la recomendación original del agente, para que puedas revisarla con calma.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Tomás la decisión y la registrás</div>
+            <p>Al resolver la situación, hacé clic en "Marcar como resuelta" y describí brevemente qué hiciste.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Queda registrado en el historial</div>
+            <p>La escalación pasa a estado "Resuelta" con la fecha, hora y descripción de la resolución.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <p>Las escalaciones abiertas aparecen en el Dashboard como alertas. Revisalas todos los días ya que pueden corresponder a situaciones urgentes con socios.</p>
+      </div>
+    </section>
+
+    <!-- IMPORTAR -->
+    <section class="section" id="importar">
+      <div class="section-header">
+        <div class="section-icon">⬆️</div>
+        <div>
+          <div class="section-title">Importar Socios</div>
+          <div class="section-sub">Cargá un listado de socios desde una planilla en segundos</div>
+        </div>
+      </div>
+
+      <p>Si ya tenés un listado de socios en Excel, Google Sheets o cualquier otra planilla, podés importarlos todos de una vez en lugar de cargarlos uno por uno. El sistema detecta automáticamente si ya existe algún socio con el mismo DNI para evitar duplicados.</p>
+
+      <h3>Cómo importar socios</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Preparar el archivo CSV</div>
+            <p>Exportá tu planilla como CSV (archivo separado por comas). Si usás Excel: Archivo → Guardar como → CSV. Si usás Google Sheets: Archivo → Descargar → CSV.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Ir a "Importar Socios"</div>
+            <p>Scrolleá el menú lateral hasta encontrar "Importar Socios" o navegá directo desde el menú.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Subir el archivo</div>
+            <p>Arrastrá el archivo a la zona marcada o hacé clic para seleccionarlo desde tu computadora.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Mapear columnas</div>
+            <p>El sistema te muestra las columnas de tu archivo y te pide que las vincules con los campos de Germina (nombre, apellido, DNI, email, etc.).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-title">Revisar y confirmar</div>
+            <p>El sistema muestra cuántos socios va a importar, cuántos ya existen y cuántos tiene problemas. Confirmás y se importan los válidos.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Columnas que acepta el archivo</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>¿Obligatorio?</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Nombre</strong></td><td>✅ Sí</td><td>Nombre del socio</td></tr>
+            <tr><td><strong>Apellido</strong></td><td>Recomendado</td><td>Apellido del socio</td></tr>
+            <tr><td><strong>DNI</strong></td><td>Recomendado</td><td>Para detectar duplicados</td></tr>
+            <tr><td><strong>Email</strong></td><td>Recomendado</td><td>Para envío de comunicaciones</td></tr>
+            <tr><td><strong>Teléfono</strong></td><td>Opcional</td><td>Número de contacto</td></tr>
+            <tr><td><strong>Fecha de nacimiento</strong></td><td>Opcional</td><td>Para verificar mayoría de edad</td></tr>
+            <tr><td><strong>Motivo consumo</strong></td><td>Opcional</td><td>medicinal · bienestar · recreativo · mixto</td></tr>
+            <tr><td><strong>Frecuencia uso</strong></td><td>Opcional</td><td>diario · varios_semana · semanal · quincenal · mensual</td></tr>
+            <tr><td><strong>Dosis habitual g</strong></td><td>Opcional</td><td>Número en gramos por sesión (ej: 0.5)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <p>Podés importar solo con el campo Nombre y agregar el resto de datos después. Lo importante es arrancar con el listado cargado para poder gestionar desde Germina.</p>
+      </div>
+    </section>
+
+    <!-- WHATSAPP -->
+    <section class="section" id="whatsapp">
+      <div class="section-header">
+        <div class="section-icon">💬</div>
+        <div>
+          <div class="section-title">WhatsApp Business</div>
+          <div class="section-sub">Conectá el número del club para atención automática</div>
+        </div>
+      </div>
+
+      <p>Al conectar tu número de WhatsApp Business, el Agente WhatsApp puede responder consultas de socios automáticamente, enviar recordatorios y escalar conversaciones complejas al administrador.</p>
+
+      <h3>¿Qué puede hacer el Agente WhatsApp?</h3>
+      <ul class="checklist">
+        <li>Responder preguntas frecuentes de socios (horarios, variedades disponibles, estado de pedidos)</li>
+        <li>Enviar recordatorios de cuotas pendientes</li>
+        <li>Notificar cuando el pedido del socio está listo para retirar</li>
+        <li>Escalar la conversación al administrador cuando la consulta es demasiado específica</li>
+        <li>Registrar todos los mensajes en el log para seguimiento</li>
+      </ul>
+
+      <h3>Cómo conectar WhatsApp</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Crear cuenta en Meta Business</div>
+            <p>Necesitás una cuenta en Meta Business Suite y tener un número de WhatsApp Business verificado.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Obtener los datos de la API</div>
+            <p>En Meta Business Suite: WhatsApp → Configuración → encontrás el Phone Number ID, el Business Account ID y el Access Token.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Ingresar los datos en Germina</div>
+            <p>Ir a WhatsApp en el menú, completar los campos del formulario con los datos de Meta y hacer clic en "Guardar configuración".</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Configurar el webhook en Meta</div>
+            <p>Copiar la URL de webhook que muestra Germina y pegarla en la configuración de webhook de Meta Business. Usar el token de verificación que aparece en la pantalla.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-title">Activar el agente</div>
+            <p>Tildar la casilla "Activar WhatsApp" y guardar. A partir de ahora el agente empieza a recibir y responder mensajes.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <p>Conectar WhatsApp requiere una cuenta de Meta Business con número verificado. Si no tenés esto todavía, el resto de Germina funciona perfectamente sin WhatsApp.</p>
+      </div>
+    </section>
+
+    <!-- USUARIOS -->
+    <section class="section" id="usuarios">
+      <div class="section-header">
+        <div class="section-icon">👤</div>
+        <div>
+          <div class="section-title">Gestión de Usuarios</div>
+          <div class="section-sub">Controlá quién tiene acceso al panel y qué puede hacer</div>
+        </div>
+      </div>
+
+      <p>Desde esta sección el administrador puede crear cuentas para otras personas del club (secretaría, tesorero, socios de confianza) y asignarles el rol adecuado según lo que necesiten hacer.</p>
+
+      <h3>Cómo crear un nuevo usuario</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Ir a Usuarios</div>
+            <p>Solo los administradores pueden acceder a esta sección. Scrolleá el menú hasta encontrarla.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Hacer clic en "+ Agregar usuario"</div>
+            <p>Se abre un formulario para completar los datos del nuevo usuario.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Completar los datos</div>
+            <p>Usuario (nombre para iniciar sesión), nombre visible, contraseña y rol. La contraseña la elegís vos y se la compartís a la persona.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Guardar</div>
+            <p>El usuario queda creado y puede ingresar inmediatamente con sus credenciales.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Buenas prácticas de seguridad</h3>
+      <ul class="checklist">
+        <li>Cambiá la contraseña por defecto del administrador lo antes posible</li>
+        <li>Asigná el rol mínimo necesario (si alguien solo necesita ver datos, dale Solo lectura)</li>
+        <li>Desactivá los usuarios de personas que ya no trabajan en el club</li>
+        <li>Usá contraseñas distintas para cada usuario, no la misma para todos</li>
+      </ul>
+
+      <div class="callout danger">
+        <span class="callout-icon">🚫</span>
+        <p>El usuario <strong>admin</strong> no puede ser eliminado. Solo puede modificarse su contraseña. Es el usuario de último recurso por si no podés entrar con otro usuario.</p>
+      </div>
+    </section>
+
+    <!-- REGISTRO -->
+    <section class="section" id="registro">
+      <div class="section-header">
+        <div class="section-icon">📜</div>
+        <div>
+          <div class="section-title">Registro de Actividad</div>
+          <div class="section-sub">El historial completo de todo lo que pasó en el sistema</div>
+        </div>
+      </div>
+
+      <p>El Registro guarda un historial permanente de cada acción realizada en el panel: quién inició sesión, qué cambios hizo, qué agentes actuaron y cuándo. Este registro es de solo lectura y no puede modificarse ni eliminarse.</p>
+
+      <h3>Qué queda registrado</h3>
+      <ul class="checklist">
+        <li>Inicios de sesión (usuario, fecha, hora)</li>
+        <li>Alta, modificación y baja de socios</li>
+        <li>Dispensaciones registradas y por quién</li>
+        <li>Tareas de agentes aprobadas, rechazadas o escaladas</li>
+        <li>Cambios en la configuración del sistema</li>
+        <li>Acciones ejecutadas por los agentes de IA</li>
+        <li>Importaciones de socios</li>
+      </ul>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <p>El registro es útil en caso de disputas, auditorías o para investigar qué pasó en un momento específico. Conserva toda la actividad desde el primer día de uso.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CIERRE -->
+      <div style="text-align:center; padding: 2rem 0 1rem;">
+        <div style="font-size: 2rem; margin-bottom: 0.8rem;">🌿</div>
+        <div style="font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--green-deep); margin-bottom:0.4rem;">Germina — Panel de Gestión</div>
+        <div style="font-size:0.8rem; color:var(--muted);">Manual de Usuario v1.0 · Agosto 2026</div>
+        <div style="font-size:0.75rem; color:var(--muted); margin-top:0.3rem;">Para soporte técnico escribí a <strong>besparkcreativa@gmail.com</strong></div>
+      </div>
+
+    </section>
+
+  </div>
+</main>
+
+</body>
+</html>
