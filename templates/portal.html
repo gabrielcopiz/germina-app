@@ -354,7 +354,14 @@ a { color: inherit; text-decoration: none; }
 
 <header class="header">
   <div class="header-logo">Germi<span>na</span></div>
-  <div class="header-name">{{ s.nombre }}</div>
+  <div style="display:flex;align-items:center;gap:0.7rem;">
+    <div class="header-name">{{ s.nombre }}</div>
+    <button onclick="document.getElementById('modal-ayuda').classList.add('open')"
+      style="background:none;border:1px solid rgba(255,255,255,0.15);border-radius:50%;
+             width:28px;height:28px;color:rgba(255,255,255,0.5);font-size:0.78rem;
+             cursor:pointer;display:flex;align-items:center;justify-content:center;
+             flex-shrink:0;font-family:inherit;">?</button>
+  </div>
 </header>
 
 <div class="pages">
@@ -700,9 +707,98 @@ a { color: inherit; text-decoration: none; }
       <div id="qr-container"></div>
       <p style="text-align:center;font-size:0.7rem;color:var(--text3);margin-top:0.75rem;">Mostralo en el club para identificarte</p>
     </div>
-  </div>
+
+    <!-- Cómo usar el portal -->
+    <div class="card" style="border-color:rgba(200,164,74,0.2);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+        <div class="label">¿Cómo usar el portal?</div>
+        <span style="font-size:0.65rem;color:var(--gold);font-weight:600;">Guía rápida</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.7rem;">
+        <div style="display:flex;gap:0.8rem;align-items:flex-start;">
+          <span style="font-size:1.1rem;flex-shrink:0;">🏠</span>
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.15rem;">Inicio</div>
+            <div style="font-size:0.75rem;color:var(--text2);line-height:1.5;">Tu carnet digital, cupo mensual disponible y pedidos activos. Es tu pantalla principal.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.8rem;align-items:flex-start;">
+          <span style="font-size:1.1rem;flex-shrink:0;">🌿</span>
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.15rem;">Flores</div>
+            <div style="font-size:0.75rem;color:var(--text2);line-height:1.5;">Mirá el catálogo de variedades disponibles, pedí las que quieras y calificá las que ya probaste con estrellas y notas de cata.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.8rem;align-items:flex-start;">
+          <span style="font-size:1.1rem;flex-shrink:0;">📋</span>
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.15rem;">Historial</div>
+            <div style="font-size:0.75rem;color:var(--text2);line-height:1.5;">Todos tus retiros y pedidos con fechas y gramos. Es tu registro personal completo.</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.8rem;align-items:flex-start;">
+          <span style="font-size:1.1rem;flex-shrink:0;">👤</span>
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text);margin-bottom:0.15rem;">Perfil</div>
+            <div style="font-size:0.75rem;color:var(--text2);line-height:1.5;">Tus datos personales, estado de cuota, documentación y el QR para identificarte en el club. Acá estás ahora.</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid var(--border);">
+        <div style="font-size:0.72rem;color:var(--text3);text-align:center;">
+          ¿Tenés dudas? Contactá al club
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-perfil -->
 
 </div><!-- /pages -->
+
+<!-- ─── MODAL AYUDA ─── -->
+<div class="modal-overlay" id="modal-ayuda" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="font-size:1.1rem;margin-bottom:0.2rem;">¿Cómo funciona tu portal?</div>
+    <div style="font-size:0.75rem;color:var(--gold);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:1.25rem;">Germina · Guía rápida</div>
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div style="display:flex;gap:0.9rem;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(90,174,116,0.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🏠</div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.2rem;">Inicio — Tu carnet digital</div>
+          <div style="font-size:0.76rem;color:var(--text2);line-height:1.6;">Ves tu cupo mensual disponible, el estado de tu cuota y los pedidos que tenés en curso.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.9rem;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(90,174,116,0.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🌿</div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.2rem;">Flores — Catálogo y pedidos</div>
+          <div style="font-size:0.76rem;color:var(--text2);line-height:1.6;">Explorá las variedades disponibles, hacé pedidos y calificá lo que ya probaste con el sistema de cata: estrellas, sabores, efectos e intensidad.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.9rem;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(90,174,116,0.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">📋</div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.2rem;">Historial — Todos tus retiros</div>
+          <div style="font-size:0.76rem;color:var(--text2);line-height:1.6;">Registro completo de cada dispensación y pedido con fecha, variedad y gramos. Tu trazabilidad personal.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.9rem;align-items:flex-start;">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(90,174,116,0.15);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">👤</div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.2rem;">Perfil — Tus datos y QR</div>
+          <div style="font-size:0.76rem;color:var(--text2);line-height:1.6;">Tus datos personales, estado de cuota, documentación y el QR para identificarte cuando venís al club.</div>
+        </div>
+      </div>
+    </div>
+    <button onclick="document.getElementById('modal-ayuda').classList.remove('open')"
+      style="width:100%;margin-top:1.5rem;padding:0.85rem;background:rgba(255,255,255,0.08);
+             border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:var(--text);
+             font-size:0.85rem;font-family:inherit;cursor:pointer;">
+      Entendido
+    </button>
+  </div>
+</div>
 
 <nav class="tab-bar">
   <button class="tab-btn active" id="tab-inicio" onclick="goTab('inicio')">
