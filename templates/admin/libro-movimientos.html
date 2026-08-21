@@ -69,6 +69,8 @@
   </select>
   <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
   <button type="button" onclick="window.print()" class="btn btn-outline btn-sm">🖨️ Imprimir</button>
+  <a href="{{ url_for('admin_libro_movimientos_pdf') }}?desde={{ desde }}&hasta={{ hasta }}{% if var_fil %}&variedad={{ var_fil }}{% endif %}"
+     class="btn btn-outline btn-sm" style="text-decoration:none;">📄 Descargar PDF</a>
 </form>
 
 <!-- Encabezado formal de impresión -->

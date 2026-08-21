@@ -291,6 +291,9 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_exportar_pedidos') }}" class="nav-item">
       <span class="nav-icon">⬇️</span> Pedidos CSV
     </a>
+    <a href="{{ url_for('admin_exportar_dispensaciones') }}" class="nav-item">
+      <span class="nav-icon">⬇️</span> Dispensaciones CSV
+    </a>
     <div class="nav-section-label" style="margin-top:0.5rem;">Configuración</div>
     <a href="{{ url_for('admin_reprocann') }}" class="nav-item {% if request.endpoint == 'admin_reprocann' %}active{% endif %}">
       <span class="nav-icon">📄</span> REPROCANN

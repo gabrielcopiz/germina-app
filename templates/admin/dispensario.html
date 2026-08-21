@@ -269,6 +269,7 @@ window.LOTES = {{ lotes_disponibles | tojson }};
             <th>Socio</th>
             <th>Variedad</th>
             <th>g</th>
+            <th>Lote</th>
           </tr>
         </thead>
         <tbody>
@@ -282,6 +283,13 @@ window.LOTES = {{ lotes_disponibles | tojson }};
             </td>
             <td style="font-size:0.82rem;">{{ d.variedad }}</td>
             <td style="font-weight:700;color:var(--green-mid);">{{ d.gramos }}</td>
+            <td>
+              {% if d.lote_codigo %}
+              <span style="font-family:monospace;font-size:0.7rem;background:var(--green-pale);color:var(--green-deep);padding:0.1rem 0.4rem;border-radius:3px;font-weight:700;">{{ d.lote_codigo }}</span>
+              {% else %}
+              <span style="color:var(--muted);font-size:0.72rem;">—</span>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>

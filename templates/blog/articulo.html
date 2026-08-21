@@ -11,7 +11,20 @@
 <meta property="og:url" content="https://germina-app.onrender.com/blog/{{ art.slug }}">
 <link rel="canonical" href="https://germina-app.onrender.com/blog/{{ art.slug }}">
 <meta name="keywords" content="{{ art.keyword }}, cannabis social club, software cannabis Argentina">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"{{ art.titulo }}","description":"{{ art.meta_description or art.resumen }}","datePublished":"{{ art.created_at[:10] if art.created_at else '' }}","publisher":{"@type":"Organization","name":"Germina","url":"https://germina-clubs.netlify.app"}}</script>
+<script type="application/ld+json">{
+  "@context":"https://schema.org",
+  "@type":"Article",
+  "mainEntityOfPage":{"@type":"WebPage","@id":"https://germina-app.onrender.com/blog/{{ art.slug }}"},
+  "headline":"{{ art.titulo }}",
+  "description":"{{ art.meta_description or art.resumen }}",
+  "datePublished":"{{ art.created_at[:10] if art.created_at else '' }}",
+  "dateModified":"{{ art.updated_at[:10] if art.updated_at else (art.created_at[:10] if art.created_at else '') }}",
+  "author":{"@type":"Organization","name":"Germina","url":"https://germina-app.onrender.com"},
+  "publisher":{"@type":"Organization","name":"Germina","url":"https://germina-app.onrender.com"},
+  "keywords":"{{ art.keyword }}, cannabis social club, cannabis Argentina",
+  "inLanguage":"es-AR",
+  "url":"https://germina-app.onrender.com/blog/{{ art.slug }}"
+}</script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{

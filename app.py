@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from flask import (Flask, render_template, request, redirect, url_for,
-                   session, flash, jsonify, make_response, g)
+                   session, flash, jsonify, make_response, g, Response, send_file)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -2404,6 +2404,26 @@ def admin_exportar_pedidos():
     resp.headers['Content-Disposition'] = f'attachment; filename=cannawaka_pedidos_{date.today()}.csv'
     return resp
 
+@app.route('/admin/exportar/dispensaciones')
+@login_required
+def admin_exportar_dispensaciones():
+    db = get_db()
+    rows = db.execute('''
+        SELECT d.id, d.fecha, d.variedad, d.gramos, d.lote_codigo,
+               s.nombre, s.apellido, s.dni, s.reprocann_codigo,
+               d.notas, d.registrado_por
+        FROM dispensaciones d JOIN socios s ON s.id = d.socio_id
+        ORDER BY d.fecha DESC, d.id DESC
+    ''').fetchall()
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(['ID','Fecha','Variedad','Gramos','Lote','Nombre','Apellido','DNI','REPROCANN','Notas','Registrado por'])
+    for r in rows: w.writerow(list(r))
+    resp = make_response(out.getvalue())
+    resp.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    resp.headers['Content-Disposition'] = f'attachment; filename=germina_dispensaciones_{date.today()}.csv'
+    return resp
+
 # ═══════════════════════════════════════════════════════════════════════════
 #  CULTIVOS — TRAZABILIDAD
 # ═══════════════════════════════════════════════════════════════════════════
@@ -3284,6 +3304,25 @@ def blog():
         'SELECT id,slug,titulo,resumen,keyword,created_at FROM articulos WHERE publicado=1 ORDER BY id DESC'
     ).fetchall()
     return render_template('blog/index.html', articulos=articulos)
+
+@app.route('/sitemap.xml')
+def sitemap():
+    db = get_db()
+    arts = db.execute(
+        'SELECT slug, created_at FROM articulos WHERE publicado=1 ORDER BY id DESC'
+    ).fetchall()
+    base = 'https://germina-app.onrender.com'
+    lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        f'<url><loc>{base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>',
+        f'<url><loc>{base}/blog</loc><changefreq>daily</changefreq><priority>0.9</priority></url>',
+    ]
+    for a in arts:
+        lastmod = a['created_at'][:10] if a['created_at'] else date.today().isoformat()
+        lines.append(f'<url><loc>{base}/blog/{a["slug"]}</loc><lastmod>{lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
+    lines.append('</urlset>')
+    return Response('\n'.join(lines), mimetype='application/xml')
 
 @app.route('/blog/<slug>')
 def blog_articulo(slug):
@@ -5834,6 +5873,62 @@ def admin_informe_incb():
         hoy=date.today().isoformat(),
         anios=anios,
     )
+
+
+@app.route('/admin/libro-movimientos/pdf')
+@login_required
+def admin_libro_movimientos_pdf():
+    from pdf_germina import generar_libro_movimientos
+    db = get_db()
+    desde = request.args.get('desde', (date.today() - timedelta(days=90)).isoformat())
+    hasta = request.args.get('hasta', date.today().isoformat())
+    var_fil = request.args.get('variedad', '')
+    q_e = 'SELECT c.fecha, c.lote_codigo, c.variedad, c.responsable_cosecha as responsable, c.gramos_secos as gramos, c.thc_real_pct, c.cbd_real_pct, c.laboratorio, c.coa_status, cu.codigo as cultivo_cod FROM cosechas c LEFT JOIN cultivos cu ON cu.id=c.cultivo_id WHERE c.fecha BETWEEN ? AND ?'
+    args = [desde, hasta]
+    if var_fil:
+        q_e += ' AND c.variedad=?'; args.append(var_fil)
+    entradas = db.execute(q_e + ' ORDER BY c.fecha DESC', args).fetchall()
+    q_d = 'SELECT d.fecha, d.variedad, d.gramos, d.lote_codigo, d.notas, d.registrado_por, s.nombre||" "||s.apellido as socio, s.dni FROM dispensaciones d JOIN socios s ON s.id=d.socio_id WHERE d.fecha BETWEEN ? AND ?'
+    args2 = [desde, hasta]
+    if var_fil:
+        q_d += ' AND d.variedad=?'; args2.append(var_fil)
+    salidas_d = db.execute(q_d + ' ORDER BY d.fecha DESC', args2).fetchall()
+    buf = generar_libro_movimientos(list(entradas), list(salidas_d), desde, hasta)
+    return send_file(buf, mimetype='application/pdf', as_attachment=True,
+                     download_name=f'libro_movimientos_{desde}_{hasta}.pdf')
+
+@app.route('/admin/informe-incb/pdf')
+@login_required
+def admin_informe_incb_pdf():
+    from pdf_germina import generar_informe_incb
+    db = get_db()
+    anio = request.args.get('anio', str(date.today().year))
+    desde = f'{anio}-01-01'; hasta = f'{anio}-12-31'
+    club = db.execute('SELECT * FROM configuracion LIMIT 1').fetchone()
+    nombre_club = club['club_nombre'] if club and 'club_nombre' in club.keys() else 'Cannabis Social Club'
+    lotes = db.execute('''SELECT c.lote_codigo, c.variedad, c.fecha, c.gramos_secos,
+        c.thc_real_pct, c.cbd_real_pct, c.coa_status, c.pesticidas_status,
+        c.metales_status, c.microbiologia_status, c.laboratorio, c.num_informe_lab
+        FROM cosechas c WHERE c.fecha BETWEEN ? AND ? AND c.lote_codigo IS NOT NULL ORDER BY c.fecha''',
+        (desde, hasta)).fetchall()
+    produccion = db.execute('''SELECT variedad, COALESCE(SUM(gramos_secos),0) as total_g, COUNT(*) as lotes
+        FROM cosechas WHERE fecha BETWEEN ? AND ? GROUP BY variedad ORDER BY total_g DESC''',
+        (desde, hasta)).fetchall()
+    disp = db.execute('''SELECT variedad, COALESCE(SUM(gramos),0) as total_g FROM dispensaciones
+        WHERE fecha BETWEEN ? AND ? GROUP BY variedad''', (desde, hasta)).fetchall()
+    ped  = db.execute('''SELECT variedad, COALESCE(SUM(gramos),0) as total_g FROM pedidos
+        WHERE estado='entregado' AND fecha_pedido BETWEEN ? AND ? GROUP BY variedad''', (desde, hasta)).fetchall()
+    dist_dict = {}
+    for r in list(disp) + list(ped):
+        v = r['variedad']
+        if v not in dist_dict: dist_dict[v] = {'variedad':v,'total_g':0}
+        dist_dict[v]['total_g'] += r['total_g']
+    distribucion = sorted(dist_dict.values(), key=lambda x: x['total_g'], reverse=True)
+    total_socios = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo'").fetchone()[0]
+    socios_reprocann = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo' AND reprocann_codigo IS NOT NULL AND reprocann_codigo!=''").fetchone()[0]
+    buf = generar_informe_incb(nombre_club, anio, list(lotes), list(produccion), distribucion, total_socios, socios_reprocann)
+    return send_file(buf, mimetype='application/pdf', as_attachment=True,
+                     download_name=f'informe_incb_{anio}.pdf')
 
 
 _migrate()

@@ -911,3 +911,275 @@ def generar_manual():
     doc.build(s)
     buf.seek(0)
     return buf
+
+
+# ═══════════════════════════════════════════════════
+#  LIBRO DE MOVIMIENTOS
+# ═══════════════════════════════════════════════════
+
+def generar_libro_movimientos(entradas, salidas, desde, hasta):
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            leftMargin=2*cm, rightMargin=2*cm,
+                            topMargin=1.8*cm, bottomMargin=2*cm)
+
+    H0  = _st('h0', fontName='Helvetica-Bold', fontSize=16, textColor=G_MID, spaceBefore=0,  spaceAfter=4)
+    H1  = _st('h1', fontName='Helvetica-Bold', fontSize=11, textColor=G_MID, spaceBefore=14, spaceAfter=4)
+    SML = _st('sm', fontName='Helvetica-Oblique', fontSize=8, textColor=G_GRIS, spaceAfter=4, leading=11)
+    s = []
+
+    s.append(Paragraph('<font color="#1A3520"><b>Germi</b></font><font color="#C8A44A"><b>na</b></font> — Libro de Movimientos', H0))
+    s.append(HRFlowable(width='100%', thickness=1.5, color=G_MID, spaceAfter=6))
+    s.append(Paragraph(f'Período: {desde} al {hasta}   ·   Emitido: {date.today().isoformat()}', SML))
+    s.append(Spacer(1, 0.4*cm))
+
+    total_e = round(sum(float(r['gramos'] or 0) for r in entradas), 1)
+    total_s = round(sum(float(r['gramos'] or 0) for r in salidas), 1)
+    stock   = round(total_e - total_s, 1)
+    kpi_data = [
+        ['Total ingresado', 'Total distribuido', 'Stock actual', 'Lotes'],
+        [f'{total_e} g', f'{total_s} g', f'{stock} g', str(len(entradas))],
+    ]
+    kt = Table(kpi_data, colWidths=[3.8*cm]*4)
+    kt.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0), (-1,0),  G_MID),
+        ('TEXTCOLOR',     (0,0), (-1,0),  colors.white),
+        ('FONTNAME',      (0,0), (-1,0),  'Helvetica-Bold'),
+        ('FONTSIZE',      (0,0), (-1,-1), 9),
+        ('FONTNAME',      (0,1), (-1,1),  'Helvetica-Bold'),
+        ('FONTSIZE',      (0,1), (-1,1),  13),
+        ('ALIGN',         (0,0), (-1,-1), 'CENTER'),
+        ('BACKGROUND',    (0,1), (-1,1),  G_CREAM),
+        ('GRID',          (0,0), (-1,-1), 0.3, G_BORDER),
+        ('TOPPADDING',    (0,0), (-1,-1), 8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+    ]))
+    s.append(kt)
+    s.append(Spacer(1, 0.5*cm))
+
+    s.append(Paragraph('Entradas — Cosechas registradas', H1))
+    e_data = [['Fecha', 'Lote', 'Variedad', 'Cultivador', 'Peso seco', 'CoA', 'THC%', 'CBD%', 'Laboratorio']]
+    for r in entradas:
+        e_data.append([
+            str(r['fecha'] or ''),
+            str(r['lote_codigo'] or '—'),
+            str(r['variedad'] or ''),
+            str(r['responsable'] or '—'),
+            f"{float(r['gramos'] or 0):.1f} g",
+            str(r['coa_status'] or 'pendiente'),
+            f"{r['thc_real_pct']}%" if r['thc_real_pct'] else '—',
+            f"{r['cbd_real_pct']}%" if r['cbd_real_pct'] else '—',
+            str(r['laboratorio'] or '—'),
+        ])
+    et = _header_table(e_data, [1.8*cm, 2.8*cm, 2.5*cm, 2.5*cm, 1.8*cm, 1.7*cm, 1.2*cm, 1.2*cm, 2.5*cm])
+    s.append(et)
+    s.append(Spacer(1, 0.5*cm))
+
+    s.append(Paragraph('Salidas — Dispensaciones y pedidos entregados', H1))
+    sal_data = [['Fecha', 'Lote origen', 'Variedad', 'Socio', 'DNI', 'Gramos', 'Registrado por']]
+    for r in salidas:
+        sal_data.append([
+            str(r['fecha'] or ''),
+            str(r['lote_codigo'] or '—'),
+            str(r['variedad'] or ''),
+            str(r['socio'] or ''),
+            str(r['dni'] or '—'),
+            f"{float(r['gramos'] or 0):.1f} g",
+            str(r['registrado_por'] or '—'),
+        ])
+    st2 = _header_table(sal_data, [1.8*cm, 2.8*cm, 2.8*cm, 3.5*cm, 2.2*cm, 1.8*cm, 3.1*cm])
+    s.append(st2)
+    s.append(Spacer(1, 0.3*cm))
+    s.append(Paragraph(f'TOTAL SALIDAS: {total_s} g',
+                        _st('tot', fontName='Helvetica-Bold', fontSize=9, textColor=G_MID, spaceAfter=6)))
+
+    s.append(Spacer(1, 1*cm))
+    s.append(HRFlowable(width='100%', thickness=0.5, color=G_BORDER, spaceAfter=6))
+    s.append(Paragraph('Firma responsable: ___________________________   Fecha: _______________   Sello:',
+                        _st('fi', fontSize=9, textColor=G_GRIS, spaceAfter=4)))
+
+    doc.build(s)
+    buf.seek(0)
+    return buf
+
+
+# ═══════════════════════════════════════════════════
+#  INFORME INCB
+# ═══════════════════════════════════════════════════
+
+def generar_informe_incb(nombre_club, anio, lotes, produccion, distribucion, total_socios, socios_reprocann):
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            leftMargin=2*cm, rightMargin=2*cm,
+                            topMargin=1.8*cm, bottomMargin=2*cm)
+
+    H0  = _st('h0', fontName='Helvetica-Bold', fontSize=15, textColor=G_MID, spaceBefore=0,  spaceAfter=4)
+    H1  = _st('h1', fontName='Helvetica-Bold', fontSize=11, textColor=G_MID, spaceBefore=14, spaceAfter=4)
+    BOD = _st('bd', fontSize=9,  textColor=G_INK, spaceAfter=5, leading=13)
+    SML = _st('sm', fontName='Helvetica-Oblique', fontSize=8, textColor=G_GRIS, spaceAfter=4, leading=11)
+    s = []
+
+    s.append(Paragraph('<font color="#1A3520"><b>Germi</b></font><font color="#C8A44A"><b>na</b></font> — Informe INCB', H0))
+    s.append(HRFlowable(width='100%', thickness=1.5, color=G_MID, spaceAfter=4))
+    s.append(Paragraph('JUNTA INTERNACIONAL DE FISCALIZACIÓN DE ESTUPEFACIENTES', _st('sub', fontName='Helvetica-Bold', fontSize=8, textColor=G_GRIS, spaceAfter=2)))
+    s.append(Paragraph(f'Año de referencia: {anio}   ·   Emitido: {date.today().isoformat()}', SML))
+    s.append(Spacer(1, 0.4*cm))
+
+    s.append(Paragraph('1. Datos del establecimiento', H1))
+    club_data = [
+        ['Club', nombre_club],
+        ['País', 'Argentina'],
+        ['Marco legal', 'Ley 27.350 — Programa REPROCANN'],
+        ['Socios activos', str(total_socios)],
+        ['Socios con REPROCANN', str(socios_reprocann)],
+        ['Período informado', f'01/01/{anio} — 31/12/{anio}'],
+    ]
+    ct = Table(club_data, colWidths=[5*cm, 12*cm])
+    ct.setStyle(TableStyle([
+        ('FONTNAME',      (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTSIZE',      (0,0), (-1,-1), 9),
+        ('GRID',          (0,0), (-1,-1), 0.3, G_BORDER),
+        ('ROWBACKGROUNDS',(0,0), (-1,-1), [colors.white, G_CREAM]),
+        ('LEFTPADDING',   (0,0), (-1,-1), 8),
+        ('TOPPADDING',    (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+    ]))
+    s.append(ct)
+    s.append(Spacer(1, 0.4*cm))
+
+    s.append(Paragraph('2. Producción — Cannabis cosechado', H1))
+    prod_data = [['Variedad', 'Peso seco total (g)', 'N° lotes']]
+    total_prod = 0
+    for p in produccion:
+        prod_data.append([str(p['variedad']), f"{float(p['total_g']):.1f}", str(p['lotes'])])
+        total_prod += float(p['total_g'])
+    prod_data.append(['TOTAL', f'{round(total_prod,1):.1f}', str(len(lotes))])
+    pt = Table(prod_data, colWidths=[8*cm, 5*cm, 4*cm])
+    pt.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),  (-1,0),  G_MID),
+        ('TEXTCOLOR',     (0,0),  (-1,0),  colors.white),
+        ('FONTNAME',      (0,0),  (-1,0),  'Helvetica-Bold'),
+        ('FONTSIZE',      (0,0),  (-1,-1), 9),
+        ('ROWBACKGROUNDS',(0,1),  (-1,-2), [colors.white, G_CREAM]),
+        ('BACKGROUND',    (0,-1), (-1,-1), G_VERDE),
+        ('TEXTCOLOR',     (0,-1), (-1,-1), colors.white),
+        ('FONTNAME',      (0,-1), (-1,-1), 'Helvetica-Bold'),
+        ('GRID',          (0,0),  (-1,-1), 0.3, G_BORDER),
+        ('LEFTPADDING',   (0,0),  (-1,-1), 8),
+        ('TOPPADDING',    (0,0),  (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0),  (-1,-1), 6),
+        ('ALIGN',         (1,0),  (2,-1),  'CENTER'),
+    ]))
+    s.append(pt)
+    s.append(Spacer(1, 0.4*cm))
+
+    s.append(Paragraph('3. Distribución — Cannabis dispensado a socios', H1))
+    dist_data = [['Variedad', 'Total distribuido (g)']]
+    total_dist = 0
+    for d in distribucion:
+        dist_data.append([str(d['variedad']), f"{float(d['total_g']):.1f}"])
+        total_dist += float(d['total_g'])
+    dist_data.append(['TOTAL', f'{round(total_dist,1):.1f}'])
+    dt = Table(dist_data, colWidths=[10*cm, 7*cm])
+    dt.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),  (-1,0),  G_MID),
+        ('TEXTCOLOR',     (0,0),  (-1,0),  colors.white),
+        ('FONTNAME',      (0,0),  (-1,0),  'Helvetica-Bold'),
+        ('FONTSIZE',      (0,0),  (-1,-1), 9),
+        ('ROWBACKGROUNDS',(0,1),  (-1,-2), [colors.white, G_CREAM]),
+        ('BACKGROUND',    (0,-1), (-1,-1), G_VERDE),
+        ('TEXTCOLOR',     (0,-1), (-1,-1), colors.white),
+        ('FONTNAME',      (0,-1), (-1,-1), 'Helvetica-Bold'),
+        ('GRID',          (0,0),  (-1,-1), 0.3, G_BORDER),
+        ('LEFTPADDING',   (0,0),  (-1,-1), 8),
+        ('TOPPADDING',    (0,0),  (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0),  (-1,-1), 6),
+        ('ALIGN',         (1,0),  (1,-1),  'CENTER'),
+    ]))
+    s.append(dt)
+    s.append(Spacer(1, 0.4*cm))
+
+    stock_g = round(total_prod - total_dist, 1)
+    s.append(Paragraph('4. Reconciliación de existencias', H1))
+    bal_data = [
+        ['Concepto', 'Gramos (g)'],
+        ['Producción total (entradas)', f'{round(total_prod,1):.1f}'],
+        ['Distribución total (salidas)', f'–{round(total_dist,1):.1f}'],
+        ['Stock disponible estimado', f'{stock_g:.1f}'],
+    ]
+    bt = Table(bal_data, colWidths=[10*cm, 7*cm])
+    bt.setStyle(TableStyle([
+        ('BACKGROUND',    (0,0),  (-1,0),  G_MID),
+        ('TEXTCOLOR',     (0,0),  (-1,0),  colors.white),
+        ('FONTNAME',      (0,0),  (-1,0),  'Helvetica-Bold'),
+        ('FONTSIZE',      (0,0),  (-1,-1), 9),
+        ('ROWBACKGROUNDS',(0,1),  (-1,-2), [colors.white, G_CREAM]),
+        ('BACKGROUND',    (0,-1), (-1,-1), colors.HexColor('#EAF7EA')),
+        ('FONTNAME',      (0,-1), (-1,-1), 'Helvetica-Bold'),
+        ('GRID',          (0,0),  (-1,-1), 0.3, G_BORDER),
+        ('LEFTPADDING',   (0,0),  (-1,-1), 8),
+        ('TOPPADDING',    (0,0),  (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0),  (-1,-1), 6),
+        ('ALIGN',         (1,0),  (1,-1),  'CENTER'),
+    ]))
+    s.append(bt)
+    s.append(Spacer(1, 0.4*cm))
+
+    s.append(Paragraph('5. Registro de lotes — Certificados de Análisis (CoA)', H1))
+    lot_data = [['Lote', 'Variedad', 'Fecha', 'THC%', 'CBD%', 'CoA', 'Pesticidas', 'Metales', 'Microb.']]
+    for l in lotes:
+        lot_data.append([
+            str(l['lote_codigo'] or ''),
+            str(l['variedad'] or ''),
+            str(l['fecha'] or ''),
+            f"{l['thc_real_pct']}%" if l['thc_real_pct'] else '—',
+            f"{l['cbd_real_pct']}%" if l['cbd_real_pct'] else '—',
+            str(l['coa_status'] or 'pendiente'),
+            str(l['pesticidas_status'] or '—'),
+            str(l['metales_status'] or '—'),
+            str(l['microbiologia_status'] or '—'),
+        ])
+    if lotes:
+        lt = _header_table(lot_data, [2.8*cm, 2.5*cm, 1.8*cm, 1.3*cm, 1.3*cm, 1.8*cm, 2*cm, 1.8*cm, 1.7*cm])
+        s.append(lt)
+    else:
+        s.append(Paragraph('Sin lotes registrados en el período.', BOD))
+    s.append(Spacer(1, 0.4*cm))
+
+    s.append(Paragraph('6. Declaración de cumplimiento', H1))
+    checks = [
+        ['✓', 'Trazabilidad seed-to-sale documentada por lote (GACP/GMP)'],
+        ['✓', 'Registro de cosechas con número de lote LOT-AAAA-MM-XXXX'],
+        ['✓', 'Certificados de Análisis (CoA) por lote: THC%, CBD%, pesticidas, metales, microbiología'],
+        ['✓', 'Dispensaciones vinculadas a lote de origen con ID de socio y REPROCANN'],
+        ['✓', 'Libro de Movimientos (entradas/salidas) disponible para auditoría'],
+        ['✓', 'Socios registrados bajo Ley 27.350 — REPROCANN'],
+    ]
+    cht = Table(checks, colWidths=[0.6*cm, 16.4*cm])
+    cht.setStyle(TableStyle([
+        ('FONTSIZE',      (0,0), (-1,-1), 9),
+        ('TEXTCOLOR',     (0,0), (0,-1),  colors.HexColor('#166534')),
+        ('FONTNAME',      (0,0), (0,-1),  'Helvetica-Bold'),
+        ('TOPPADDING',    (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('LINEBELOW',     (0,0), (-1,-2), 0.2, G_BORDER),
+    ]))
+    s.append(cht)
+    s.append(Spacer(1, 0.8*cm))
+
+    firma_data = [[
+        Paragraph('Responsable técnico:\n\n\n___________________________\nNombre y firma', SML),
+        Paragraph('Director / Presidente:\n\n\n___________________________\nNombre y firma', SML),
+        Paragraph('Sello del club:\n\n\n\n', SML),
+    ]]
+    ft = Table(firma_data, colWidths=[5.5*cm, 5.5*cm, 6*cm])
+    ft.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP'), ('TOPPADDING', (0,0), (-1,-1), 4)]))
+    s.append(ft)
+    s.append(Spacer(1, 0.4*cm))
+    s.append(HRFlowable(width='100%', thickness=0.5, color=G_BORDER, spaceAfter=6))
+    s.append(Paragraph(f'Generado por Germina · Sistema de gestión GACP/REPROCANN · {date.today().isoformat()}',
+                        _st('fo', fontSize=7, textColor=G_GRIS, alignment=TA_CENTER, leading=10)))
+
+    doc.build(s)
+    buf.seek(0)
+    return buf

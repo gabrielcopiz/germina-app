@@ -85,6 +85,8 @@
   </select>
   <button type="submit" class="btn btn-primary btn-sm">Ver</button>
   <button type="button" onclick="window.print()" class="btn btn-outline btn-sm">🖨️ Imprimir</button>
+  <a href="{{ url_for('admin_informe_incb_pdf') }}?anio={{ anio }}"
+     class="btn btn-outline btn-sm" style="text-decoration:none;">📄 Descargar PDF</a>
 </form>
 
 <div class="grid-2" style="gap:1.5rem;align-items:start;">
