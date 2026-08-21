@@ -770,20 +770,26 @@ def generar_manual():
 
     indice = [
         ['#', 'Sección'],
-        ['1', 'Acceso al sistema'],
-        ['2', 'Panel de control (Dashboard)'],
-        ['3', 'Gestión de socios'],
-        ['4', 'Dispensario'],
-        ['5', 'Catálogo de variedades'],
-        ['6', 'Cuotas y membresías'],
-        ['7', 'Control de aforo'],
-        ['8', 'Portal del socio'],
-        ['9', 'Reportes y exportación'],
-        ['10','Preguntas frecuentes'],
+        ['1',  'Acceso al sistema'],
+        ['2',  'Panel de control (Dashboard)'],
+        ['3',  'Gestión de socios'],
+        ['4',  'Dispensario con trazabilidad de lote'],
+        ['5',  'Catálogo de variedades'],
+        ['6',  'Cuotas y membresías'],
+        ['7',  'Control de aforo'],
+        ['8',  'Portal del socio'],
+        ['9',  'Ciclo productivo — Cultivos y cosechas'],
+        ['10', 'Trazabilidad GACP — Datos del cultivo'],
+        ['11', 'Trazabilidad CoA — Certificado de Análisis por lote'],
+        ['12', 'Libro de Movimientos'],
+        ['13', 'Informe INCB'],
+        ['14', 'Reportes y exportación'],
+        ['15', 'Preguntas frecuentes'],
     ]
     s.append(_header_table(indice, [1.5*cm, 13.5*cm]))
     s.append(PageBreak())
 
+    # ── 1. ACCESO ──────────────────────────────────────────────
     s.append(Paragraph('1. Acceso al sistema', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph('Para acceder al panel de administración ingresá a la URL de tu club y completá los datos de acceso:', BOD))
@@ -796,6 +802,7 @@ def generar_manual():
     s.append(_header_table(acceso, [5*cm, 10*cm]))
     s.append(_tip('Recomendamos cambiar la contraseña la primera vez que ingreses. Compartila solo con personal autorizado.'))
 
+    # ── 2. DASHBOARD ───────────────────────────────────────────
     s.append(Paragraph('2. Panel de control (Dashboard)', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph('El Dashboard es la pantalla principal. Muestra el estado de tu club en tiempo real.', BOD))
@@ -806,6 +813,7 @@ def generar_manual():
     s.append(Paragraph('• <b>Cuotas vencidas</b>: socios con cuota expirada que requieren atención.', BUL))
     s.append(_tip('Si el número de alertas está en rojo, hay algo que requiere atención inmediata. Revisá la sección antes de arrancar el día.'))
 
+    # ── 3. SOCIOS ──────────────────────────────────────────────
     s.append(PageBreak())
     s.append(Paragraph('3. Gestión de socios', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
@@ -822,17 +830,24 @@ def generar_manual():
     s.append(_header_table(etapas, [3.5*cm, 5.5*cm, 6*cm]))
     s.append(_tip('Podés cambiar la etapa del socio directamente desde su ficha. El cambio queda registrado con fecha y hora.'))
 
+    # ── 4. DISPENSARIO ─────────────────────────────────────────
     s.append(PageBreak())
-    s.append(Paragraph('4. Dispensario', H0))
+    s.append(Paragraph('4. Dispensario con trazabilidad de lote', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
-    s.append(Paragraph('Ruta: menú lateral → <b>Dispensario</b>. Aquí registrás cada retiro de un socio.', BOD))
+    s.append(Paragraph('Ruta: menú lateral → <b>Dispensario</b>. Registrá cada retiro de un socio con trazabilidad completa.', BOD))
+    s.append(Paragraph('Pasos para registrar una dispensación:', H1))
     s.append(Paragraph('1. Buscá al socio por nombre o DNI.', BUL))
     s.append(Paragraph('2. Seleccioná la variedad del catálogo visual.', BUL))
-    s.append(Paragraph('3. Ingresá la cantidad en gramos a dispensar.', BUL))
-    s.append(Paragraph('4. Confirmá el retiro. El sistema verifica que no supere el cupo mensual.', BUL))
-    s.append(Paragraph('5. La dispensación queda registrada con trazabilidad completa.', BUL))
-    s.append(_tip('Si el socio ya consumió su cupo mensual, el sistema lo alerta antes de permitir confirmar.'))
+    s.append(Paragraph('3. Seleccioná el <b>lote de origen</b> (aparece automáticamente según la variedad elegida).', BUL))
+    s.append(Paragraph('4. Ingresá la cantidad en gramos a dispensar.', BUL))
+    s.append(Paragraph('5. Confirmá el retiro. El sistema verifica que no supere el cupo mensual.', BUL))
+    s.append(Paragraph('6. La dispensación queda registrada con número de lote para trazabilidad completa.', BUL))
+    s.append(Spacer(1, 0.3*cm))
+    s.append(Paragraph('Tabla de dispensaciones del día', H1))
+    s.append(Paragraph('La tabla lateral muestra todos los retiros del día con las columnas: Hora, Socio, Variedad, Gramos y <b>Lote</b>. El lote permite rastrear exactamente de qué cosecha provino cada entrega.', BOD))
+    s.append(_tip('Si el socio ya consumió su cupo mensual el sistema lo alerta antes de permitir confirmar. El lote vincula cada entrega a su cosecha de origen para cumplimiento REPROCANN.'))
 
+    # ── 5. VARIEDADES ──────────────────────────────────────────
     s.append(Paragraph('5. Catálogo de variedades', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph('Ruta: menú lateral → <b>Variedades</b>. Cargá y administrá todas las cepas disponibles.', BOD))
@@ -841,6 +856,7 @@ def generar_manual():
     s.append(Paragraph('• <b>Efectos</b>, <b>Indicaciones</b>, <b>Sabor</b>, <b>Imagen</b> (URL)', BUL))
     s.append(_tip('Podés desactivar variedades sin borrarlas. Las inactivas no aparecen en el dispensario ni en el portal.'))
 
+    # ── 6. CUOTAS ──────────────────────────────────────────────
     s.append(PageBreak())
     s.append(Paragraph('6. Cuotas y membresías', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
@@ -854,6 +870,7 @@ def generar_manual():
     s.append(_header_table(cuotas_t, [4*cm, 4*cm, 7*cm]))
     s.append(_tip('Las cuotas vencidas aparecen en el Dashboard. El portal del socio también muestra su estado de cuota.'))
 
+    # ── 7. AFORO ───────────────────────────────────────────────
     s.append(Paragraph('7. Control de aforo', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph('Ruta: menú lateral → <b>Aforo</b>. Control de socios presentes en tiempo real.', BOD))
@@ -862,25 +879,164 @@ def generar_manual():
     s.append(Paragraph('• La lista "Socios dentro ahora" muestra quién está presente.', BUL))
     s.append(_tip('El número de aforo aparece en el Dashboard. Haciendo clic llegás directo a esta pantalla.'))
 
+    # ── 8. PORTAL DEL SOCIO ────────────────────────────────────
     s.append(PageBreak())
     s.append(Paragraph('8. Portal del socio', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
     s.append(Paragraph('Cada socio tiene su portal personal desde el celular. Accede ingresando su DNI. No requiere contraseña.', BOD))
     s.append(Paragraph('• <b>Inicio</b>: carnet digital con QR, estado de cuota y cupo mensual.', BUL))
     s.append(Paragraph('• <b>Flores</b>: catálogo con fichas y calificación por estrellas.', BUL))
-    s.append(Paragraph('• <b>Historial</b>: todos los retiros agrupados por mes.', BUL))
+    s.append(Paragraph('• <b>Historial</b>: todos los retiros agrupados por mes, con número de lote incluido.', BUL))
     s.append(Paragraph('• <b>Perfil</b>: datos personales, documentación y QR de identificación.', BUL))
     s.append(Paragraph('<b>Acceso del socio</b>: Landing del club → botón "Soy socio" → ingresan DNI → acceden al portal.', BOD))
     s.append(_tip('El QR del carnet puede escanearse en el club para identificar al socio sin que ingrese datos.'))
 
-    s.append(Paragraph('9. Reportes y exportación', H0))
-    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
-    s.append(Paragraph('• <b>Informe del día</b>: resumen automático de dispensaciones, altas, cuotas y aforo.', BUL))
-    s.append(Paragraph('• <b>Exportar CSV</b>: lista completa de socios para Excel o Google Sheets.', BUL))
-    s.append(_tip('El informe del día es ideal para la reunión semanal del equipo.'))
-
+    # ── 9. CICLO PRODUCTIVO ────────────────────────────────────
     s.append(PageBreak())
-    s.append(Paragraph('10. Preguntas frecuentes', H0))
+    s.append(Paragraph('9. Ciclo productivo — Cultivos y cosechas', H0))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph('Ruta: menú lateral → <b>Cultivos</b>. Registrá el ciclo completo de producción desde la semilla hasta el stock.', BOD))
+    s.append(Paragraph('Ciclo completo de un cultivo:', H1))
+    ciclo = [
+        ['Etapa', 'Qué se registra'],
+        ['Semilla / Genética',  'Variedad, banco genético, fecha de inicio, técnica de cultivo (indoor/outdoor/greenhouse).'],
+        ['Vegetativa',          'Fecha de inicio, número de plantas, responsable técnico.'],
+        ['Floración',           'Fecha de inicio, observaciones, condiciones del ambiente.'],
+        ['Cosecha',             'Fecha, peso húmedo, responsable. El sistema asigna automáticamente un número de lote.'],
+        ['Secado / Curado',     'Peso inicial, peso final, merma documentada, condiciones de almacenamiento.'],
+        ['Stock',               'El peso seco ingresa al inventario vinculado al lote. Disponible para dispensar.'],
+    ]
+    s.append(_header_table(ciclo, [4*cm, 11*cm]))
+    s.append(Spacer(1, 0.3*cm))
+    s.append(Paragraph('Numeración automática de lotes', H1))
+    s.append(Paragraph(
+        'Al registrar una cosecha el sistema asigna automáticamente un <b>número de lote</b> con formato '
+        'internacional: <b>LOT-AAAA-MM-XXXX</b> (año-mes-número correlativo). '
+        'Este número vincula la cosecha con todas las dispensaciones que se realicen de esa partida.', BOD))
+    s.append(_tip('El número de lote es la clave de toda la trazabilidad. Permite rastrear cualquier entrega hasta su cosecha de origen.'))
+
+    # ── 10. GACP ───────────────────────────────────────────────
+    s.append(PageBreak())
+    s.append(Paragraph('10. Trazabilidad GACP — Datos del cultivo', H0))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph(
+        'GACP son las Buenas Prácticas Agrícolas y de Recolección (Good Agricultural and Collection Practices), '
+        'estándar de la OMS para plantas medicinales. Germina permite documentar estos datos por cultivo '
+        'para cumplir con requisitos de exportación e inspección internacional.', BOD))
+    s.append(Paragraph('Dónde completarlo: ficha del cultivo → sección <b>Datos GACP</b>.', BOD))
+    gacp_fields = [
+        ['Campo', 'Descripción'],
+        ['Fuente de agua',          'Origen del agua de riego (red, pozo, lluvia, etc.)'],
+        ['Insumos utilizados',      'Fertilizantes, sustratos, fitosanitarios empleados'],
+        ['Responsable técnico',     'Nombre del cultivador o ingeniero agrónomo responsable'],
+        ['Coordenadas GPS',         'Latitud y longitud del punto de cultivo'],
+        ['Altitud (m)',             'Metros sobre el nivel del mar'],
+        ['Humedad promedio (%)',     'Humedad relativa media del ambiente de cultivo'],
+        ['Temperatura mín/máx (°C)','Rango de temperatura registrado durante el ciclo'],
+        ['Observaciones',           'Incidentes, plagas, condiciones especiales del ciclo'],
+    ]
+    s.append(_header_table(gacp_fields, [5*cm, 10*cm]))
+    s.append(_tip('Los datos GACP son obligatorios para exportar cannabis medicinal desde Argentina. Completarlos desde el inicio evita tener que reconstruirlos después.'))
+
+    # ── 11. CoA ────────────────────────────────────────────────
+    s.append(PageBreak())
+    s.append(Paragraph('11. Trazabilidad CoA — Certificado de Análisis por lote', H0))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph(
+        'El Certificado de Análisis (CoA) documenta los resultados de laboratorio de cada lote. '
+        'Es requisito de los estándares GMP y de la INCB para el comercio internacional de cannabis medicinal.', BOD))
+    s.append(Paragraph('Dónde completarlo: ficha del cultivo → historial de cosechas → botón <b>Actualizar CoA</b> del lote correspondiente.', BOD))
+    coa_fields = [
+        ['Campo', 'Descripción'],
+        ['THC real (%)',            'Concentración de THC medida en laboratorio'],
+        ['CBD real (%)',            'Concentración de CBD medida en laboratorio'],
+        ['Terpenos (%)',            'Perfil de terpenos totales'],
+        ['Humedad de la muestra (%)', 'Porcentaje de humedad al momento del análisis'],
+        ['Laboratorio',             'Nombre del laboratorio que realizó el análisis'],
+        ['N° de informe',           'Código identificatorio del informe emitido por el lab'],
+        ['Fecha del análisis',      'Fecha en que se realizó el análisis'],
+        ['Pesticidas',              'Estado: aprobado / rechazado / pendiente'],
+        ['Metales pesados',         'Estado: aprobado / rechazado / pendiente'],
+        ['Microbiología',           'Estado: aprobado / rechazado / pendiente'],
+        ['Estado CoA',              'Estado general: pendiente / en proceso / aprobado'],
+    ]
+    s.append(_header_table(coa_fields, [5.5*cm, 9.5*cm]))
+    s.append(_tip('Un lote con CoA aprobado puede ser dispensado y exportado. Un lote con CoA pendiente aparece marcado en el Informe INCB y en el Libro de Movimientos.'))
+
+    # ── 12. LIBRO DE MOVIMIENTOS ───────────────────────────────
+    s.append(PageBreak())
+    s.append(Paragraph('12. Libro de Movimientos', H0))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph(
+        'Ruta: menú lateral → Trazabilidad → <b>Libro de Movimientos</b>. '
+        'Registro formal de todas las entradas y salidas de cannabis del club, '
+        'organizado por lote. Equivale al libro contable de movimientos exigido por organismos reguladores.', BOD))
+    s.append(Paragraph('Qué muestra:', H1))
+    lm_items = [
+        ['Sección', 'Contenido'],
+        ['KPIs superiores',    'Total ingresado (g) · Total distribuido (g) · Stock actual (g) · N° de lotes en el período'],
+        ['Balance por variedad', 'Tabla con entrada, salida y stock por cada cepa. Incluye barra visual de % distribuido.'],
+        ['Entradas',           'Todas las cosechas con lote, CoA status, THC%, CBD%, laboratorio y responsable.'],
+        ['Salidas',            'Todas las dispensaciones y pedidos entregados con lote de origen, socio y DNI.'],
+    ]
+    s.append(_header_table(lm_items, [4.5*cm, 10.5*cm]))
+    s.append(Spacer(1, 0.3*cm))
+    s.append(Paragraph('Filtros disponibles:', H1))
+    s.append(Paragraph('• <b>Desde / Hasta</b>: filtrá por rango de fechas.', BUL))
+    s.append(Paragraph('• <b>Variedad</b>: filtrá para ver solo una cepa específica.', BUL))
+    s.append(Paragraph('• <b>Imprimir</b>: genera una versión imprimible optimizada (oculta menús y filtros).', BUL))
+    s.append(Paragraph('• <b>Descargar PDF</b>: genera un PDF formal con membrete Germina, KPIs y tablas completas.', BUL))
+    s.append(_tip('El PDF del Libro de Movimientos respeta los filtros activos. Si filtrás por variedad o fecha, el PDF refleja exactamente esa selección.'))
+
+    # ── 13. INFORME INCB ───────────────────────────────────────
+    s.append(PageBreak())
+    s.append(Paragraph('13. Informe INCB', H0))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph(
+        'Ruta: menú lateral → Trazabilidad → <b>Informe INCB</b>. '
+        'La INCB (Junta Internacional de Fiscalización de Estupefacientes) es el organismo de la ONU '
+        'que supervisa el comercio internacional de sustancias controladas, incluyendo el cannabis medicinal. '
+        'Este informe reúne toda la información que ese organismo puede requerir.', BOD))
+    s.append(Paragraph('Secciones del informe:', H1))
+    incb_secs = [
+        ['Sección', 'Contenido'],
+        ['1. Datos del establecimiento', 'Nombre del club, país, marco legal (Ley 27.350), socios activos y socios con REPROCANN.'],
+        ['2. Producción',               'Cannabis cosechado por variedad con peso seco total y número de lotes.'],
+        ['3. Distribución',             'Cannabis dispensado a socios por variedad con totales.'],
+        ['4. Reconciliación',           'Fórmula formal: Producción − Distribución = Stock disponible.'],
+        ['5. Registro de lotes',        'Tabla de todos los lotes con CoA status (pesticidas, metales, microbiología).'],
+        ['6. Declaración de cumplimiento', 'Checklist GACP/GMP con espacio para firmas y sello del club.'],
+    ]
+    s.append(_header_table(incb_secs, [4.5*cm, 10.5*cm]))
+    s.append(Spacer(1, 0.3*cm))
+    s.append(Paragraph('Cómo usarlo:', H1))
+    s.append(Paragraph('• Seleccioná el <b>año</b> del informe con el selector en la parte superior.', BUL))
+    s.append(Paragraph('• Hacé clic en <b>Descargar PDF</b> para obtener el documento formal listo para presentar.', BUL))
+    s.append(Paragraph('• El PDF incluye espacios para firma del responsable técnico, director y sello del club.', BUL))
+    s.append(_tip('Este informe es el documento que presentás ante ANMAT, el Ministerio de Salud o cualquier organismo internacional que audite tu club. Tenerlo en un clic elimina semanas de trabajo manual.'))
+
+    # ── 14. REPORTES ───────────────────────────────────────────
+    s.append(PageBreak())
+    s.append(Paragraph('14. Reportes y exportación', H0))
+    s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
+    s.append(Paragraph('Ruta: menú lateral → sección <b>Exportar</b>. Todos los datos del club disponibles para descargar.', BOD))
+    reportes = [
+        ['Exportación', 'Contenido', 'Formato'],
+        ['Socios CSV',          'Lista completa de socios con etapa, DNI, REPROCANN, cuota y contacto.', 'CSV'],
+        ['Cultivos CSV',        'Registro de todos los cultivos con variedad, técnica y estado.', 'CSV'],
+        ['Pedidos CSV',         'Historial de pedidos con estado, socio, variedad y forma de pago.', 'CSV'],
+        ['Dispensaciones CSV',  'Todas las dispensaciones con socio, DNI, variedad, gramos y <b>número de lote</b>.', 'CSV'],
+        ['Libro de Movimientos','Entradas y salidas con KPIs y balance por variedad. Respeta filtros activos.', 'PDF'],
+        ['Informe INCB',        'Informe formal anual con 6 secciones, CoA por lote y bloque de firmas.', 'PDF'],
+        ['Propuesta comercial', 'Documento de venta personalizado para clubes interesados en Germina.', 'PDF'],
+    ]
+    s.append(_header_table(reportes, [4.5*cm, 7.5*cm, 3*cm]))
+    s.append(Spacer(1, 0.3*cm))
+    s.append(_tip('El CSV de Dispensaciones incluye el número de lote de cada entrega. Es el archivo que necesitás para cruzar datos con el laboratorio o para una auditoría de trazabilidad.'))
+
+    # ── 15. FAQ ────────────────────────────────────────────────
+    s.append(PageBreak())
+    s.append(Paragraph('15. Preguntas frecuentes', H0))
     s.append(HRFlowable(width='100%', thickness=0.4, color=G_BORDER, spaceAfter=10))
 
     faqs = [
@@ -896,6 +1052,18 @@ def generar_manual():
          'Desde el catálogo podés desactivarla con un clic. No aparece en el dispensario ni en el portal hasta que la reactives.'),
         ('¿Qué hago si olvidé la contraseña?',
          'Contactá a Germina y te reseteamos el acceso en el mismo día.'),
+        ('¿El número de lote se asigna automáticamente?',
+         'Sí. Al registrar una cosecha el sistema genera automáticamente el código de lote con formato LOT-AAAA-MM-XXXX. No necesitás hacer nada extra.'),
+        ('¿Es obligatorio completar el CoA de cada lote?',
+         'No es obligatorio para operar el sistema, pero sí es necesario para que el lote aparezca como "aprobado" en el Informe INCB y en el Libro de Movimientos. Los lotes sin CoA aparecen como "pendiente".'),
+        ('¿Qué pasa si dispenso sin seleccionar un lote?',
+         'La dispensación se registra igual pero sin vinculación de lote. Esto funciona pero reduce la trazabilidad. Recomendamos siempre seleccionar el lote correspondiente.'),
+        ('¿Puedo ver qué lote se usó en cada dispensación pasada?',
+         'Sí. En el CSV de Dispensaciones y en la tabla Salidas del Libro de Movimientos aparece el número de lote de cada entrega histórica.'),
+        ('¿El Informe INCB lo genera el sistema solo?',
+         'Sí. Va a Trazabilidad → Informe INCB, seleccionás el año y hacés clic en Descargar PDF. El sistema reúne todos los datos automáticamente.'),
+        ('¿Los datos GACP son obligatorios?',
+         'No son obligatorios para el funcionamiento del sistema, pero son necesarios para certificaciones de exportación (GACP/GMP). Completarlos desde el inicio de cada cultivo es la mejor práctica.'),
     ]
     for q, a in faqs:
         s.append(Paragraph(f'P: {q}', FAQ_Q))
@@ -904,6 +1072,7 @@ def generar_manual():
     s.append(Spacer(1, 1*cm))
     s.append(HRFlowable(width='100%', thickness=1, color=G_MID, spaceAfter=10))
     s.append(Paragraph(
+        f'Manual actualizado: {date.today().isoformat()}<br/>'
         '¿Necesitás ayuda? Escribinos a <b>besparkcreativa@gmail.com</b><br/>'
         'Respondemos en menos de 24 horas hábiles.',
         _st('ct', fontSize=10, textColor=G_GRIS, alignment=TA_CENTER, leading=15)))
