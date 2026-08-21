@@ -485,6 +485,25 @@ def _seed_articulos(db):
         )
     db.commit()
 
+def _seed_articulos_generados(db):
+    """Carga artículos de articulos_generados.json — persisten entre deploys vía git."""
+    import json as _json
+    json_path = os.path.join(os.path.dirname(__file__), 'articulos_generados.json')
+    if not os.path.exists(json_path):
+        return
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            arts = _json.load(f)
+        for art in arts:
+            db.execute(
+                'INSERT OR IGNORE INTO articulos (slug,titulo,resumen,contenido,keyword,meta_description) VALUES (?,?,?,?,?,?)',
+                (art['slug'], art['titulo'], art.get('resumen',''), art.get('contenido',''),
+                 art.get('keyword',''), art.get('meta_description',''))
+            )
+        db.commit()
+    except Exception:
+        pass
+
 def _migrate():
     db = sqlite3.connect(DB_PATH)
     # socios extras
@@ -1047,6 +1066,8 @@ def _migrate():
             UNIQUE(club_id, username)
         )
     ''')
+    _seed_articulos_generados(db)
+
     # Seed del admin existente (no lo pisa si ya existe)
     import hashlib as _hl
     _admin_hash = _hl.sha256(ADMIN_PASS.encode('utf-8')).hexdigest()
@@ -3293,7 +3314,16 @@ def api_generar_articulo():
             (art['slug'], art['titulo'], art['resumen'], contenido, art['keyword'], art['meta_description'])
         )
         db.commit()
-        return jsonify({'ok': True, 'slug': art['slug'], 'titulo': art['titulo'], 'keyword': keyword})
+        return jsonify({
+            'ok':              True,
+            'slug':            art['slug'],
+            'titulo':          art['titulo'],
+            'keyword':         keyword,
+            'resumen':         art['resumen'],
+            'meta_description':art['meta_description'],
+            'contenido':       contenido,
+            'cluster':         cluster,
+        })
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
 
