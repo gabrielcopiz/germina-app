@@ -135,6 +135,7 @@
 
 <script>
 window.SOCIOS = {{ socios_activos | tojson }};
+window.LOTES = {{ lotes_disponibles | tojson }};
 </script>
 
 <div class="disp-layout">
@@ -228,6 +229,15 @@ window.SOCIOS = {{ socios_activos | tojson }};
           <label for="gramos">Gramos</label>
           <input type="number" name="gramos" id="gramos" class="form-control-a"
                  placeholder="0.0" step="0.1" min="0.1" max="100" required>
+        </div>
+
+        <!-- Selector de lote (trazabilidad) -->
+        <div class="form-group-a" id="lote-selector-wrap" style="display:none;">
+          <label>Lote de origen <span style="font-weight:400;color:var(--muted);font-size:0.7rem;">(trazabilidad — recomendado)</span></label>
+          <select name="cosecha_id" id="cosecha_id_sel" class="form-control-a">
+            <option value="">Sin vincular a lote</option>
+          </select>
+          <div id="lote-tag-preview" style="margin-top:0.3rem;font-size:0.72rem;color:var(--green-mid);"></div>
         </div>
 
         <div class="form-group-a">
@@ -396,6 +406,8 @@ function selectVariedad(el) {
   if (banner && txt) { txt.textContent = nombre; banner.style.display = 'inline-flex'; }
   var grid = document.getElementById('var-grid');
   if (grid) grid.style.display = 'none';
+  // Cargar lotes disponibles para esta variedad
+  actualizarLotes(nombre);
 }
 function clearVariedad() {
   document.getElementById('variedad_hidden').value = '';
@@ -404,6 +416,36 @@ function clearVariedad() {
   var grid = document.getElementById('var-grid');
   if (banner) banner.style.display = 'none';
   if (grid) grid.style.display = 'grid';
+  // Ocultar selector de lote
+  var loteWrap = document.getElementById('lote-selector-wrap');
+  if (loteWrap) loteWrap.style.display = 'none';
+}
+function actualizarLotes(variedad) {
+  var loteWrap = document.getElementById('lote-selector-wrap');
+  var sel = document.getElementById('cosecha_id_sel');
+  var preview = document.getElementById('lote-tag-preview');
+  var lotes = (window.LOTES || {})[variedad] || [];
+  if (!loteWrap || !sel) return;
+  sel.innerHTML = '<option value="">Sin vincular a lote</option>';
+  if (lotes.length > 0) {
+    lotes.forEach(function(l) {
+      var opt = document.createElement('option');
+      opt.value = l.id;
+      opt.textContent = l.lote + ' — ' + l.disponible_g + 'g disponibles (' + l.fecha + ')' + (l.coa === 'aprobado' ? ' ✓CoA' : '');
+      sel.appendChild(opt);
+    });
+    loteWrap.style.display = 'block';
+  } else {
+    loteWrap.style.display = 'none';
+  }
+  sel.addEventListener('change', function() {
+    var chosen = lotes.find(function(l) { return String(l.id) === sel.value; });
+    if (chosen && preview) {
+      preview.textContent = 'Lote: ' + chosen.lote + ' · Stock: ' + chosen.disponible_g + 'g';
+    } else if (preview) {
+      preview.textContent = '';
+    }
+  });
 }
 </script>
 {% endblock %}

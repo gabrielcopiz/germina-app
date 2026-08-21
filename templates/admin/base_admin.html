@@ -274,6 +274,13 @@ tbody tr:hover { background: var(--cream); cursor: pointer; }
     <a href="{{ url_for('admin_whatsapp') }}" class="nav-item {% if request.endpoint == 'admin_whatsapp' %}active{% endif %}">
       <span class="nav-icon">💬</span> WhatsApp
     </a>
+    <div class="nav-section-label" style="margin-top:0.5rem;">Trazabilidad</div>
+    <a href="{{ url_for('admin_libro_movimientos') }}" class="nav-item {% if request.endpoint == 'admin_libro_movimientos' %}active{% endif %}" style="background:rgba(200,164,74,0.05);border:1px solid rgba(200,164,74,0.15);">
+      <span class="nav-icon">📒</span> <span style="color:var(--gold);">Libro de Movimientos</span>
+    </a>
+    <a href="{{ url_for('admin_informe_incb') }}" class="nav-item {% if request.endpoint == 'admin_informe_incb' %}active{% endif %}">
+      <span class="nav-icon">🌐</span> Informe INCB
+    </a>
     <div class="nav-section-label" style="margin-top:0.5rem;">Exportar</div>
     <a href="{{ url_for('admin_exportar') }}" class="nav-item">
       <span class="nav-icon">⬇️</span> Socios CSV

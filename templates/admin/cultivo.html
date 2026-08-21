@@ -187,7 +187,29 @@
             <label>Notas <span style="font-weight:400;color:var(--muted);">opcional</span></label>
             <textarea name="notas" class="form-control-a" rows="2" placeholder="Observaciones de la cosecha..."></textarea>
           </div>
-          <div style="display:flex;justify-content:flex-end;">
+          <!-- Datos de laboratorio (CoA inicial) -->
+          <div style="margin-top:0.5rem;padding:0.7rem 0.9rem;background:var(--green-pale);border-radius:8px;border:1px solid rgba(45,92,56,0.15);">
+            <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--green-deep);margin-bottom:0.5rem;">🧪 Datos de laboratorio (CoA — opcional al cosecha, completar después si no están)</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">
+              <div class="form-group-a">
+                <label>THC real (%)</label>
+                <input type="number" name="thc_real_pct" class="form-control-a" step="0.01" min="0" max="100" placeholder="ej: 19.5">
+              </div>
+              <div class="form-group-a">
+                <label>CBD real (%)</label>
+                <input type="number" name="cbd_real_pct" class="form-control-a" step="0.01" min="0" max="100" placeholder="ej: 0.8">
+              </div>
+              <div class="form-group-a">
+                <label>Laboratorio</label>
+                <input type="text" name="laboratorio" class="form-control-a" placeholder="Nombre del lab">
+              </div>
+            </div>
+            <div class="form-group-a">
+              <label>Condiciones de almacenamiento</label>
+              <input type="text" name="condiciones_almacenamiento" class="form-control-a" placeholder="ej: Temperatura 15–20°C, Humedad 55–65%, contenedor hermético oscuro">
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:0.8rem;">
             <button type="submit" class="btn btn-gold btn-sm">🌾 Registrar cosecha</button>
           </div>
         </form>
@@ -212,24 +234,121 @@
       </div>
       <div class="card-body">
         {% for cos in cosechas %}
-        <div class="cosecha-card">
-          <div>
-            <div class="cosecha-fecha">{{ fmt_fecha_larga(cos.fecha) }}</div>
-            <div class="text-xs text-muted">{{ cos.num_plantas }} planta{% if cos.num_plantas != 1 %}s{% endif %} · {{ cos.registrado_por }}</div>
-            {% if cos.notas %}<div class="text-sm text-muted" style="margin-top:0.2rem;">{{ cos.notas }}</div>{% endif %}
+        <div class="cosecha-card" style="flex-direction:column;align-items:stretch;gap:0.5rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+            <div>
+              <div class="cosecha-fecha">{{ fmt_fecha_larga(cos.fecha) }}</div>
+              <div class="text-xs text-muted">{{ cos.num_plantas }} planta{% if cos.num_plantas != 1 %}s{% endif %} · {{ cos.registrado_por }}</div>
+              {% if cos.lote_codigo %}
+              <div style="margin-top:0.3rem;">
+                <span style="font-family:monospace;font-size:0.72rem;background:var(--green-pale);color:var(--green-deep);padding:0.15rem 0.5rem;border-radius:4px;font-weight:700;">{{ cos.lote_codigo }}</span>
+                {% if cos.coa_status == 'aprobado' %}
+                <span style="font-size:0.68rem;background:#C8F0D0;color:#1A5C30;padding:0.1rem 0.4rem;border-radius:4px;font-weight:600;margin-left:0.3rem;">CoA ✓</span>
+                {% elif cos.coa_status == 'pendiente' %}
+                <span style="font-size:0.68rem;background:#FEF3CD;color:#7A5C00;padding:0.1rem 0.4rem;border-radius:4px;font-weight:600;margin-left:0.3rem;">CoA pendiente</span>
+                {% endif %}
+              </div>
+              {% endif %}
+              {% if cos.notas %}<div class="text-sm text-muted" style="margin-top:0.2rem;">{{ cos.notas }}</div>{% endif %}
+            </div>
+            <div class="cosecha-pesos">
+              <div class="cosecha-peso">
+                <div class="cosecha-peso-num">{{ cos.peso_seco_g|round(1) }}g</div>
+                <div class="cosecha-peso-label">Seco</div>
+              </div>
+              <div class="cosecha-peso">
+                <div class="cosecha-peso-num" style="color:var(--muted);">{{ cos.peso_humedo_g|round(1) }}g</div>
+                <div class="cosecha-peso-label">Húmedo</div>
+              </div>
+              <div class="cosecha-peso">
+                <div class="estrellas">{{ '⭐' * cos.calidad }}</div>
+                <div class="cosecha-peso-label">Calidad</div>
+              </div>
+            </div>
           </div>
-          <div class="cosecha-pesos">
-            <div class="cosecha-peso">
-              <div class="cosecha-peso-num">{{ cos.peso_seco_g|round(1) }}g</div>
-              <div class="cosecha-peso-label">Seco</div>
-            </div>
-            <div class="cosecha-peso">
-              <div class="cosecha-peso-num" style="color:var(--muted);">{{ cos.peso_humedo_g|round(1) }}g</div>
-              <div class="cosecha-peso-label">Húmedo</div>
-            </div>
-            <div class="cosecha-peso">
-              <div class="estrellas">{{ '⭐' * cos.calidad }}</div>
-              <div class="cosecha-peso-label">Calidad</div>
+          <!-- Panel CoA expandible -->
+          <div>
+            <button type="button" onclick="toggleCoa({{ cos.id }})" style="font-size:0.72rem;color:var(--green-mid);background:none;border:none;cursor:pointer;padding:0;font-weight:600;">
+              🧪 {{ 'Ver / editar Certificado de Análisis' }}
+            </button>
+            <div id="coa-{{ cos.id }}" style="display:none;margin-top:0.6rem;">
+              <form method="POST" action="{{ url_for('admin_cosecha_coa', cid=cos.id) }}">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:0.5rem;">
+                  <div class="form-group-a">
+                    <label>THC real (%)</label>
+                    <input type="number" name="thc_real_pct" class="form-control-a" step="0.01" value="{{ cos.thc_real_pct or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>CBD real (%)</label>
+                    <input type="number" name="cbd_real_pct" class="form-control-a" step="0.01" value="{{ cos.cbd_real_pct or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>Terpenos (%)</label>
+                    <input type="number" name="terpenos_pct" class="form-control-a" step="0.01" value="{{ cos.terpenos_pct or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>Humedad muestra (%)</label>
+                    <input type="number" name="humedad_muestra_pct" class="form-control-a" step="0.1" value="{{ cos.humedad_muestra_pct or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>Laboratorio</label>
+                    <input type="text" name="laboratorio" class="form-control-a" value="{{ cos.laboratorio or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>N° Informe Lab</label>
+                    <input type="text" name="num_informe_lab" class="form-control-a" value="{{ cos.num_informe_lab or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>Fecha análisis</label>
+                    <input type="date" name="fecha_analisis" class="form-control-a" value="{{ cos.fecha_analisis or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>Responsable cosecha</label>
+                    <input type="text" name="responsable_cosecha" class="form-control-a" value="{{ cos.responsable_cosecha or '' }}">
+                  </div>
+                  <div class="form-group-a">
+                    <label>Estado CoA</label>
+                    <select name="coa_status" class="form-control-a">
+                      <option value="pendiente" {% if cos.coa_status == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                      <option value="aprobado" {% if cos.coa_status == 'aprobado' %}selected{% endif %}>Aprobado</option>
+                      <option value="rechazado" {% if cos.coa_status == 'rechazado' %}selected{% endif %}>Rechazado</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:0.5rem;">
+                  <div class="form-group-a">
+                    <label>Plaguicidas</label>
+                    <select name="pesticidas_status" class="form-control-a">
+                      <option value="pendiente" {% if cos.pesticidas_status == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                      <option value="aprobado" {% if cos.pesticidas_status == 'aprobado' %}selected{% endif %}>✓ Aprobado</option>
+                      <option value="rechazado" {% if cos.pesticidas_status == 'rechazado' %}selected{% endif %}>✗ Rechazado</option>
+                    </select>
+                  </div>
+                  <div class="form-group-a">
+                    <label>Metales pesados</label>
+                    <select name="metales_status" class="form-control-a">
+                      <option value="pendiente" {% if cos.metales_status == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                      <option value="aprobado" {% if cos.metales_status == 'aprobado' %}selected{% endif %}>✓ Aprobado</option>
+                      <option value="rechazado" {% if cos.metales_status == 'rechazado' %}selected{% endif %}>✗ Rechazado</option>
+                    </select>
+                  </div>
+                  <div class="form-group-a">
+                    <label>Microbiología</label>
+                    <select name="microbiologia_status" class="form-control-a">
+                      <option value="pendiente" {% if cos.microbiologia_status == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                      <option value="aprobado" {% if cos.microbiologia_status == 'aprobado' %}selected{% endif %}>✓ Aprobado</option>
+                      <option value="rechazado" {% if cos.microbiologia_status == 'rechazado' %}selected{% endif %}>✗ Rechazado</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group-a">
+                  <label>Condiciones de almacenamiento</label>
+                  <input type="text" name="condiciones_almacenamiento" class="form-control-a" value="{{ cos.condiciones_almacenamiento or '' }}" placeholder="ej: 15–20°C, 55–65% HR, contenedor hermético oscuro">
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                  <button type="submit" class="btn btn-primary btn-sm">💾 Guardar CoA</button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -289,6 +408,63 @@
       </div>
     </div>
 
+    <!-- Datos GACP -->
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-header">
+        <span class="card-title">🌿 Datos GACP / GMP</span>
+        <span style="font-size:0.68rem;color:var(--muted);">Good Agricultural and Collection Practices — OMS</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('admin_cultivo_gacp', cid=c.id) }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+            <div class="form-group-a">
+              <label>Fuente de agua</label>
+              <input type="text" name="gacp_fuente_agua" class="form-control-a" value="{{ c.gacp_fuente_agua or '' }}" placeholder="ej: Red potable, Pozo filtrado, Lluvia">
+            </div>
+            <div class="form-group-a">
+              <label>Responsable técnico</label>
+              <input type="text" name="gacp_responsable_tecnico" class="form-control-a" value="{{ c.gacp_responsable_tecnico or '' }}" placeholder="Nombre y matrícula">
+            </div>
+            <div class="form-group-a">
+              <label>Latitud</label>
+              <input type="number" name="gacp_lat" class="form-control-a" step="0.000001" value="{{ c.gacp_lat or '' }}" placeholder="-34.603722">
+            </div>
+            <div class="form-group-a">
+              <label>Longitud</label>
+              <input type="number" name="gacp_lon" class="form-control-a" step="0.000001" value="{{ c.gacp_lon or '' }}" placeholder="-58.381592">
+            </div>
+            <div class="form-group-a">
+              <label>Altitud (m.s.n.m.)</label>
+              <input type="number" name="gacp_altitud_m" class="form-control-a" step="1" value="{{ c.gacp_altitud_m or '' }}" placeholder="ej: 25">
+            </div>
+            <div class="form-group-a">
+              <label>Humedad promedio (%)</label>
+              <input type="number" name="gacp_humedad_pct" class="form-control-a" step="0.1" value="{{ c.gacp_humedad_pct or '' }}" placeholder="ej: 60">
+            </div>
+            <div class="form-group-a">
+              <label>Temperatura mínima (°C)</label>
+              <input type="number" name="gacp_temp_min_c" class="form-control-a" step="0.1" value="{{ c.gacp_temp_min_c or '' }}" placeholder="ej: 18">
+            </div>
+            <div class="form-group-a">
+              <label>Temperatura máxima (°C)</label>
+              <input type="number" name="gacp_temp_max_c" class="form-control-a" step="0.1" value="{{ c.gacp_temp_max_c or '' }}" placeholder="ej: 26">
+            </div>
+          </div>
+          <div class="form-group-a">
+            <label>Insumos utilizados (fertilizantes, fitosanitarios)</label>
+            <textarea name="gacp_insumos" class="form-control-a" rows="2" placeholder="ej: Guano de lombriz, Trichoderma, sin pesticidas sintéticos...">{{ c.gacp_insumos or '' }}</textarea>
+          </div>
+          <div class="form-group-a">
+            <label>Observaciones GACP</label>
+            <textarea name="gacp_observaciones" class="form-control-a" rows="2" placeholder="Cualquier observación relevante para el cumplimiento GACP...">{{ c.gacp_observaciones or '' }}</textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary btn-sm">💾 Guardar datos GACP</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Agregar nota de seguimiento al log -->
     <div class="card" style="margin-bottom:1.5rem;">
       <div class="card-header"><span class="card-title">Registrar seguimiento</span></div>
@@ -342,6 +518,11 @@
 <script>
 const hoy = new Date().toISOString().split('T')[0];
 document.querySelectorAll('input[type="date"]').forEach(el => { if(!el.value) el.value = hoy; });
+
+function toggleCoa(id) {
+  const el = document.getElementById('coa-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
 
 function setEtapaCultivo(cid, etapa, btn, color) {
   const fd = new FormData();

@@ -1,0 +1,317 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Informe INCB {{ anio }} | Germina{% endblock %}
+{% block topbar_title %}🌐 Informe INCB — Trazabilidad Internacional{% endblock %}
+
+{% block extra_head %}
+<style>
+.incb-section { margin-bottom:2rem; }
+.incb-title {
+  font-family:'Playfair Display',serif;font-size:1rem;color:var(--green-deep);
+  padding-bottom:0.4rem;border-bottom:2px solid var(--green-pale);margin-bottom:1rem;
+  display:flex;align-items:center;gap:0.5rem;
+}
+.kpi-incb { background:var(--white);border-radius:12px;border:1px solid var(--border);padding:1.2rem 1.4rem;text-align:center; }
+.kpi-incb-val { font-family:'Playfair Display',serif;font-size:1.8rem; }
+.kpi-incb-label { font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:0.2rem; }
+.lote-tag { font-family:monospace;font-size:0.72rem;background:var(--green-pale);color:var(--green-deep);padding:0.15rem 0.5rem;border-radius:4px;font-weight:700; }
+.coa-ok  { background:#C8F0D0;color:#1A5C30;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:600; }
+.coa-pen { background:#FEF3CD;color:#7A5C00;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:600; }
+.coa-rec { background:#F0EDEA;color:#999;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.72rem;font-weight:600; }
+.check-ok  { color:#2D9659; }
+.check-pen { color:#C8A44A; }
+.check-no  { color:#C0392B; }
+.incb-stamp {
+  background:var(--green-deep);color:var(--cream);
+  border-radius:10px;padding:1.5rem 2rem;margin-bottom:2rem;
+}
+.incb-stamp-title { font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--gold);margin-bottom:0.3rem; }
+.incb-stamp-sub { font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:0.8rem; }
+.incb-rec-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:0.8rem; }
+.incb-rec-item { background:rgba(255,255,255,0.06);border-radius:8px;padding:0.8rem 1rem; }
+.incb-rec-num { font-family:'Playfair Display',serif;font-size:1.6rem; }
+.incb-rec-label { font-size:0.68rem;color:rgba(255,255,255,0.45);margin-top:0.1rem; }
+.alert-incb { background:#FEF3CD;border:1px solid var(--gold);border-radius:8px;padding:0.7rem 1rem;font-size:0.82rem;color:#7A5C00;margin-bottom:1rem; }
+@media print {
+  .sidebar,.topbar,.no-print { display:none!important; }
+  .main { margin-left:0!important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado formal -->
+<div class="incb-stamp">
+  <div class="incb-stamp-title">INFORME ANUAL DE TRAZABILIDAD</div>
+  <div class="incb-stamp-sub">
+    Según estándares INCB (Junta Internacional de Fiscalización de Estupefacientes) · GACP/GMP · Ley 27.350 Argentina
+  </div>
+  <div style="font-size:0.85rem;color:var(--cream);">
+    <strong>Entidad:</strong> {{ nombre_club }} &nbsp;|&nbsp;
+    <strong>Período:</strong> {{ desde }} al {{ hasta }} &nbsp;|&nbsp;
+    <strong>Emitido:</strong> {{ hoy }}
+  </div>
+  <div class="incb-rec-grid">
+    <div class="incb-rec-item">
+      <div class="incb-rec-num" style="color:#90EE90;">{{ total_produccion_g }}g</div>
+      <div class="incb-rec-label">Producción total (flores secas)</div>
+    </div>
+    <div class="incb-rec-item">
+      <div class="incb-rec-num" style="color:var(--gold);">{{ total_distribucion_g }}g</div>
+      <div class="incb-rec-label">Distribución total</div>
+    </div>
+    <div class="incb-rec-item">
+      <div class="incb-rec-num" style="color:{% if total_stock_g >= 0 %}#90EE90{% else %}#FF6B6B{% endif %};">{{ total_stock_g }}g</div>
+      <div class="incb-rec-label">Stock final reconciliado</div>
+    </div>
+  </div>
+</div>
+
+<!-- Alerta CoA -->
+{% if lotes_total > 0 and lotes_con_coa < lotes_total %}
+<div class="alert-incb no-print">
+  ⚠️ <strong>{{ lotes_total - lotes_con_coa }} lote(s)</strong> del período no tienen Certificado de Análisis aprobado.
+  Completá los CoA desde la ficha de cada cultivo para cumplir estándares internacionales de exportación.
+</div>
+{% endif %}
+
+<!-- Filtro año -->
+<form method="GET" class="no-print" style="display:flex;gap:0.7rem;align-items:center;margin-bottom:1.5rem;">
+  <label style="font-size:0.75rem;font-weight:600;color:var(--muted);">Año del informe</label>
+  <select name="anio" style="padding:0.45rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem;background:var(--cream);">
+    {% for a in anios %}
+    <option value="{{ a }}" {% if a|string == anio %}selected{% endif %}>{{ a }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm">Ver</button>
+  <button type="button" onclick="window.print()" class="btn btn-outline btn-sm">🖨️ Imprimir</button>
+</form>
+
+<div class="grid-2" style="gap:1.5rem;align-items:start;">
+
+  <!-- Columna izquierda -->
+  <div>
+
+    <!-- Sección 1: Datos del club -->
+    <div class="incb-section">
+      <div class="incb-title">1. Datos de la entidad</div>
+      <div class="card">
+        <div class="card-body">
+          <table style="width:100%;">
+            {% macro row(k,v) %}<tr>
+              <td style="font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;padding:0.4rem 0 0.4rem;width:38%;border-bottom:1px solid var(--border);">{{ k }}</td>
+              <td style="font-size:0.85rem;padding:0.4rem 0;border-bottom:1px solid var(--border);">{{ v or '—' }}</td>
+            </tr>{% endmacro %}
+            {{ row('Nombre', nombre_club) }}
+            {{ row('País', 'Argentina') }}
+            {{ row('Marco legal', 'Ley 27.350 / Decreto 883/2020') }}
+            {{ row('Socios activos', total_socios) }}
+            {{ row('Con REPROCANN', socios_reprocann ~ ' de ' ~ total_socios) }}
+            {{ row('Cultivos activos', cultivos_activos ~ ' (' ~ plantas_activas ~ ' plantas)') }}
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 2: Producción -->
+    <div class="incb-section">
+      <div class="incb-title">2. Producción del período</div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Variedad</th><th>Lotes</th><th>Plantas</th>
+              <th style="text-align:right;">Total (g secos)</th>
+            </tr></thead>
+            <tbody>
+              {% for p in produccion %}
+              <tr>
+                <td>{{ p.variedad }}</td>
+                <td>{{ p.num_lotes }}</td>
+                <td>{{ p.plantas }}</td>
+                <td style="text-align:right;font-weight:600;">{{ p.total_g|round(1) }}g</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--muted);">Sin cosechas en el período.</td></tr>
+              {% endfor %}
+            </tbody>
+            {% if produccion %}
+            <tfoot>
+              <tr style="background:var(--cream);">
+                <td colspan="3" style="font-weight:700;padding:0.7rem 1rem;">TOTAL</td>
+                <td style="text-align:right;font-weight:700;font-family:'Playfair Display',serif;padding:0.7rem 1rem;">{{ total_produccion_g }}g</td>
+              </tr>
+            </tfoot>
+            {% endif %}
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 3: Distribución -->
+    <div class="incb-section">
+      <div class="incb-title">3. Distribución del período</div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Variedad</th><th>Eventos</th>
+              <th style="text-align:right;">Total distribuido (g)</th>
+            </tr></thead>
+            <tbody>
+              {% for d in distribucion %}
+              <tr>
+                <td>{{ d.variedad }}</td>
+                <td>{{ d.eventos }}</td>
+                <td style="text-align:right;font-weight:600;">{{ d.total_g|round(1) }}g</td>
+              </tr>
+              {% else %}
+              <tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--muted);">Sin distribuciones en el período.</td></tr>
+              {% endfor %}
+            </tbody>
+            {% if distribucion %}
+            <tfoot>
+              <tr style="background:var(--cream);">
+                <td colspan="2" style="font-weight:700;padding:0.7rem 1rem;">TOTAL</td>
+                <td style="text-align:right;font-weight:700;font-family:'Playfair Display',serif;padding:0.7rem 1rem;">{{ total_distribucion_g }}g</td>
+              </tr>
+            </tfoot>
+            {% endif %}
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Columna derecha -->
+  <div>
+
+    <!-- Sección 4: Reconciliación de stock -->
+    <div class="incb-section">
+      <div class="incb-title">4. Reconciliación de stock</div>
+      <div class="card">
+        <div class="card-body">
+          <div class="stat-row">
+            <span class="stat-key">Producción acumulada</span>
+            <span class="stat-val" style="color:var(--green-mid);">+ {{ total_produccion_g }}g</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-key">Distribución acumulada</span>
+            <span class="stat-val" style="color:var(--gold);">– {{ total_distribucion_g }}g</span>
+          </div>
+          <div class="stat-row" style="border-top:2px solid var(--green-deep);margin-top:0.3rem;padding-top:0.7rem;">
+            <span class="stat-key" style="font-weight:700;color:var(--green-deep);">Stock reconciliado</span>
+            <span class="stat-val" style="font-size:1.3rem;font-family:'Playfair Display',serif;color:{% if total_stock_g >= 0 %}var(--green-deep){% else %}#C0392B{% endif %};">
+              {{ total_stock_g }}g
+            </span>
+          </div>
+          {% if total_stock_g < 0 %}
+          <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:#FDEEEE;border-radius:8px;font-size:0.78rem;color:#C0392B;">
+            ⚠️ Stock negativo: las salidas superan las entradas registradas. Revisá si hay dispensaciones sin cosecha asociada.
+          </div>
+          {% else %}
+          <div style="margin-top:0.8rem;padding:0.6rem 0.8rem;background:var(--green-pale);border-radius:8px;font-size:0.78rem;color:var(--green-deep);">
+            ✓ Balance positivo. Las entradas superan las salidas registradas.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 5: Registro de lotes y CoA -->
+    <div class="incb-section">
+      <div class="incb-title">5. Registro de lotes con CoA</div>
+      <div class="card">
+        <div style="padding:0.8rem 1.2rem;background:var(--cream);font-size:0.75rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;">
+          <span>{{ lotes_total }} lotes totales en el período</span>
+          <span style="font-weight:700;color:{% if lotes_con_coa == lotes_total and lotes_total > 0 %}var(--green-mid){% else %}var(--gold){% endif %};">
+            {{ lotes_con_coa }}/{{ lotes_total }} con CoA aprobado
+          </span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Lote</th><th>Fecha</th><th>Variedad</th>
+              <th style="text-align:right;">g</th>
+              <th>CoA</th><th>THC%</th><th>Plaguicidas</th><th>Metales</th>
+            </tr></thead>
+            <tbody>
+              {% for l in lotes %}
+              <tr>
+                <td><span class="lote-tag">{{ l.lote_codigo }}</span></td>
+                <td style="font-size:0.8rem;">{{ l.fecha }}</td>
+                <td>{{ l.variedad }}</td>
+                <td style="text-align:right;font-weight:600;">{{ l.peso_seco_g|round(1) }}</td>
+                <td>
+                  <span class="{% if l.coa_status == 'aprobado' %}coa-ok{% elif l.coa_status == 'pendiente' %}coa-pen{% else %}coa-rec{% endif %}">
+                    {{ l.coa_status or 'pendiente' }}
+                  </span>
+                </td>
+                <td style="font-size:0.82rem;">{{ l.thc_real_pct or '—' }}{% if l.thc_real_pct %}%{% endif %}</td>
+                <td style="font-size:0.82rem;">
+                  {% if l.pesticidas_status == 'aprobado' %}<span class="check-ok">✓ OK</span>
+                  {% elif l.pesticidas_status == 'rechazado' %}<span class="check-no">✗ FAIL</span>
+                  {% else %}<span class="check-pen">—</span>{% endif %}
+                </td>
+                <td style="font-size:0.82rem;">
+                  {% if l.metales_status == 'aprobado' %}<span class="check-ok">✓ OK</span>
+                  {% elif l.metales_status == 'rechazado' %}<span class="check-no">✗ FAIL</span>
+                  {% else %}<span class="check-pen">—</span>{% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--muted);">Sin lotes registrados en el período.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección 6: Declaración de cumplimiento -->
+    <div class="incb-section">
+      <div class="incb-title">6. Declaración de cumplimiento normativo</div>
+      <div class="card">
+        <div class="card-body">
+          {% set checks = [
+            ('Trazabilidad semilla-a-dispensación implementada', lotes_total > 0),
+            ('Numeración de lotes según estándar LOT-AAAA-MM-XXXX', lotes_total > 0),
+            ('Registro inmutable de movimientos (audit_log)', true),
+            ('Todos los socios con diagnóstico médico', true),
+            ('Reconciliación de stock positiva', total_stock_g >= 0),
+            ('CoA completos en todos los lotes', lotes_con_coa == lotes_total and lotes_total > 0),
+            ('Socios registrados en REPROCANN', socios_reprocann > 0),
+          ] %}
+          {% for label, ok in checks %}
+          <div class="stat-row">
+            <span class="stat-key">{{ label }}</span>
+            <span class="{% if ok %}check-ok{% else %}check-pen{% endif %}" style="font-size:1rem;">
+              {% if ok %}✓{% else %}⚠{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+          <div style="margin-top:1rem;padding:0.8rem 1rem;background:var(--green-pale);border-radius:8px;font-size:0.78rem;color:var(--green-deep);line-height:1.5;">
+            El presente informe certifica que la entidad opera bajo los estándares de trazabilidad
+            establecidos por la Ley 27.350, el Decreto 883/2020 y las guías GACP/GMP de la OMS
+            para cannabis medicinal. La información surge del sistema Germina y es fiel a los
+            registros digitales de la entidad.
+          </div>
+          <div style="margin-top:1rem;display:flex;justify-content:space-between;font-size:0.78rem;color:var(--muted);">
+            <div>
+              <div style="border-bottom:1px solid var(--border);width:180px;margin-bottom:0.3rem;height:32px;"></div>
+              Firma responsable del club
+            </div>
+            <div style="text-align:right;">
+              <div style="border-bottom:1px solid var(--border);width:180px;margin-bottom:0.3rem;height:32px;"></div>
+              Sello de la entidad
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

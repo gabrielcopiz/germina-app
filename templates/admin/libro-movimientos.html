@@ -1,0 +1,255 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Libro de Movimientos | Germina{% endblock %}
+{% block topbar_title %}📒 Libro de Movimientos — Trazabilidad completa{% endblock %}
+
+{% block extra_head %}
+<style>
+.lm-kpi { background:var(--white);border-radius:12px;border:1px solid var(--border);padding:1.2rem 1.4rem;text-align:center; }
+.lm-kpi-val { font-family:'Playfair Display',serif;font-size:1.9rem;color:var(--green-deep); }
+.lm-kpi-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:0.2rem; }
+.lm-tab-header { display:flex;gap:0.4rem;margin-bottom:0.1rem; }
+.lm-tab-btn { padding:0.4rem 1rem;border-radius:8px 8px 0 0;border:1px solid var(--border);border-bottom:none;font-size:0.8rem;font-weight:600;cursor:pointer;background:var(--cream);color:var(--muted); }
+.lm-tab-btn.active { background:var(--white);color:var(--green-deep); }
+.lm-tab-pane { display:none; }
+.lm-tab-pane.active { display:block; }
+.lote-tag { font-family:monospace;font-size:0.72rem;background:var(--green-pale);color:var(--green-deep);padding:0.15rem 0.5rem;border-radius:4px;font-weight:700; }
+.coa-ok  { background:#C8F0D0;color:#1A5C30; }
+.coa-pen { background:#FEF3CD;color:#7A5C00; }
+.coa-no  { background:#F0EDEA;color:#999; }
+.mov-entrada { border-left:3px solid var(--green-mid); }
+.mov-salida  { border-left:3px solid var(--gold); }
+.bal-row { display:flex;align-items:center;gap:1rem;padding:0.7rem 1rem;border-bottom:1px solid var(--border); }
+.bal-var { flex:1;font-weight:600;font-size:0.88rem; }
+.bal-num { min-width:80px;text-align:right;font-family:'Playfair Display',serif;font-size:1.1rem; }
+.bal-ok  { color:var(--green-mid); }
+.bal-neg { color:#C0392B; }
+.filter-bar { display:flex;gap:0.7rem;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem; }
+.filter-bar input,.filter-bar select { padding:0.45rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem;background:var(--cream);font-family:'Inter',sans-serif; }
+@media print {
+  .sidebar,.topbar,.filter-bar,.lm-tab-header,.no-print { display:none!important; }
+  .main { margin-left:0!important; }
+  .lm-tab-pane { display:block!important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- KPIs balance global -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+  <div class="lm-kpi" style="border-top:3px solid var(--green-mid);">
+    <div class="lm-kpi-val">{{ total_entrada }}g</div>
+    <div class="lm-kpi-label">Total ingresado (cosechas)</div>
+  </div>
+  <div class="lm-kpi" style="border-top:3px solid var(--gold);">
+    <div class="lm-kpi-val">{{ total_salida }}g</div>
+    <div class="lm-kpi-label">Total distribuido</div>
+  </div>
+  <div class="lm-kpi" style="border-top:3px solid {% if total_stock >= 0 %}var(--green-deep){% else %}#C0392B{% endif %};">
+    <div class="lm-kpi-val {% if total_stock < 0 %}bal-neg{% endif %}">{{ total_stock }}g</div>
+    <div class="lm-kpi-label">Stock actual</div>
+  </div>
+  <div class="lm-kpi" style="border-top:3px solid var(--border);">
+    <div class="lm-kpi-val">{{ entradas|length }}</div>
+    <div class="lm-kpi-label">Lotes en período</div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<form method="GET" class="filter-bar no-print">
+  <label style="font-size:0.75rem;font-weight:600;color:var(--muted);">Desde</label>
+  <input type="date" name="desde" value="{{ desde }}">
+  <label style="font-size:0.75rem;font-weight:600;color:var(--muted);">Hasta</label>
+  <input type="date" name="hasta" value="{{ hasta }}">
+  <select name="variedad">
+    <option value="">Todas las variedades</option>
+    {% for v in variedades_list %}
+    <option value="{{ v }}" {% if v == var_fil %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+  <button type="button" onclick="window.print()" class="btn btn-outline btn-sm">🖨️ Imprimir</button>
+</form>
+
+<!-- Encabezado formal de impresión -->
+<div style="display:none;" class="print-header">
+  <p style="font-size:0.8rem;color:#666;margin-bottom:0.5rem;">LIBRO DE MOVIMIENTOS DE CANNABIS MEDICINAL</p>
+  <p style="font-size:0.85rem;font-weight:600;">{{ nombre_club if club else 'Cannabis Social Club' }}</p>
+  <p style="font-size:0.75rem;color:#666;">Período: {{ desde }} al {{ hasta }} — Emitido: {{ hoy }}</p>
+  <hr style="margin:0.5rem 0;">
+</div>
+
+<!-- Tabs -->
+<div class="lm-tab-header no-print">
+  <div class="lm-tab-btn active" onclick="switchTab(this,'tab-balance')">📊 Balance por variedad</div>
+  <div class="lm-tab-btn" onclick="switchTab(this,'tab-entradas')">📥 Entradas ({{ entradas|length }})</div>
+  <div class="lm-tab-btn" onclick="switchTab(this,'tab-salidas')">📤 Salidas ({{ salidas|length }})</div>
+</div>
+
+<!-- TAB: Balance -->
+<div id="tab-balance" class="lm-tab-pane active">
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Balance por variedad — todo el historial</span>
+    <span class="text-xs text-muted">Entrada = cosechas · Salida = dispensaciones + pedidos entregados</span>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div style="padding:0.5rem 1rem;background:var(--cream);display:flex;gap:1rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);">
+      <div style="flex:1;">Variedad</div>
+      <div style="min-width:80px;text-align:right;">Entrada (g)</div>
+      <div style="min-width:80px;text-align:right;">Salida (g)</div>
+      <div style="min-width:80px;text-align:right;">Stock (g)</div>
+      <div style="min-width:120px;text-align:right;">% distribuido</div>
+    </div>
+    {% for b in balance %}
+    <div class="bal-row">
+      <div class="bal-var">{{ b.variedad }}</div>
+      <div class="bal-num" style="color:var(--green-mid);">+{{ b.entrada_g }}</div>
+      <div class="bal-num" style="color:var(--gold);">-{{ b.salida_g }}</div>
+      <div class="bal-num {% if b.stock_g < 0 %}bal-neg{% else %}bal-ok{% endif %}">{{ b.stock_g }}</div>
+      <div style="min-width:120px;">
+        {% set pct = ((b.salida_g / b.entrada_g * 100)|round(1)) if b.entrada_g > 0 else 0 %}
+        <div style="text-align:right;font-size:0.75rem;color:var(--muted);margin-bottom:0.2rem;">{{ pct }}%</div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:{{ [pct,100]|min }}%;background:var(--gold);"></div></div>
+      </div>
+    </div>
+    {% else %}
+    <div style="padding:2rem;text-align:center;color:var(--muted);font-size:0.85rem;">Sin movimientos registrados.</div>
+    {% endfor %}
+    <!-- Total -->
+    {% if balance %}
+    <div class="bal-row" style="background:var(--green-deep);border-bottom:none;">
+      <div class="bal-var" style="color:var(--cream);font-weight:700;">TOTAL</div>
+      <div class="bal-num" style="color:#90EE90;">+{{ total_entrada }}</div>
+      <div class="bal-num" style="color:var(--gold);">-{{ total_salida }}</div>
+      <div class="bal-num" style="color:{% if total_stock >= 0 %}#90EE90{% else %}#FF6B6B{% endif %};">{{ total_stock }}</div>
+      <div style="min-width:120px;"></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+</div>
+
+<!-- TAB: Entradas -->
+<div id="tab-entradas" class="lm-tab-pane">
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Registro de entradas — Cosechas con número de lote</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Lote</th>
+          <th>Variedad</th>
+          <th>Cultivo</th>
+          <th>Cultivador</th>
+          <th style="text-align:right;">Peso seco (g)</th>
+          <th>CoA</th>
+          <th>THC%</th>
+          <th>CBD%</th>
+          <th>Laboratorio</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entradas %}
+        <tr class="mov-entrada">
+          <td>{{ e.fecha }}</td>
+          <td><span class="lote-tag">{{ e.lote_codigo or '—' }}</span></td>
+          <td>{{ e.variedad }}</td>
+          <td style="font-family:monospace;font-size:0.8rem;">{{ e.cultivo_cod }}</td>
+          <td>{{ e.responsable }}</td>
+          <td style="text-align:right;font-weight:600;">{{ e.gramos|round(1) }}</td>
+          <td>
+            <span class="badge {% if e.coa_status == 'aprobado' %}coa-ok{% elif e.coa_status == 'pendiente' %}coa-pen{% else %}coa-no{% endif %}">
+              {{ e.coa_status or 'pendiente' }}
+            </span>
+          </td>
+          <td>{{ e.thc_real_pct or '—' }}{% if e.thc_real_pct %}%{% endif %}</td>
+          <td>{{ e.cbd_real_pct or '—' }}{% if e.cbd_real_pct %}%{% endif %}</td>
+          <td style="font-size:0.8rem;color:var(--muted);">{{ e.laboratorio or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted);">Sin cosechas en el período seleccionado.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if entradas %}
+      <tfoot>
+        <tr style="background:var(--cream);">
+          <td colspan="5" style="font-weight:700;font-size:0.82rem;padding:0.7rem 1rem;">TOTAL ENTRADAS</td>
+          <td style="text-align:right;font-weight:700;font-family:'Playfair Display',serif;padding:0.7rem 1rem;">{{ entradas|sum(attribute='gramos')|round(1) }}g</td>
+          <td colspan="4"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+</div>
+
+<!-- TAB: Salidas -->
+<div id="tab-salidas" class="lm-tab-pane">
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Registro de salidas — Dispensaciones y pedidos entregados</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Lote origen</th>
+          <th>Variedad</th>
+          <th>Socio</th>
+          <th>DNI</th>
+          <th style="text-align:right;">Gramos</th>
+          <th>Registrado por</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in salidas %}
+        <tr class="mov-salida">
+          <td>{{ s.fecha or '—' }}</td>
+          <td>
+            {% if s.lote_codigo %}
+            <span class="lote-tag">{{ s.lote_codigo }}</span>
+            {% else %}
+            <span style="color:var(--muted);font-size:0.75rem;">sin lote</span>
+            {% endif %}
+          </td>
+          <td>{{ s.variedad }}</td>
+          <td>{{ s.socio }}</td>
+          <td style="font-family:monospace;font-size:0.8rem;">{{ s.dni or '—' }}</td>
+          <td style="text-align:right;font-weight:600;">{{ s.gramos|round(1) }}</td>
+          <td style="font-size:0.8rem;color:var(--muted);">{{ s.registrado_por or '—' }}</td>
+          <td style="font-size:0.78rem;color:var(--muted);">{{ s.notas or '' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);">Sin salidas en el período seleccionado.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if salidas %}
+      <tfoot>
+        <tr style="background:var(--cream);">
+          <td colspan="5" style="font-weight:700;font-size:0.82rem;padding:0.7rem 1rem;">TOTAL SALIDAS</td>
+          <td style="text-align:right;font-weight:700;font-family:'Playfair Display',serif;padding:0.7rem 1rem;">{{ salidas|sum(attribute='gramos')|round(1) }}g</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+</div>
+
+<script>
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.lm-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.lm-tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+</script>
+{% endblock %}

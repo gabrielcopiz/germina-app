@@ -250,6 +250,19 @@ def _next_codigo_pedido(db):
     row = db.execute("SELECT MAX(CAST(SUBSTR(codigo,4) AS INTEGER)) FROM pedidos WHERE codigo LIKE 'PD-%'").fetchone()[0]
     return f"PD-{(row or 0)+1:04d}"
 
+def _next_lote_codigo(db, fecha=None):
+    """Genera número de lote internacional: LOT-AAAA-MM-XXXX"""
+    if not fecha:
+        fecha = date.today().isoformat()
+    anio = fecha[:4]
+    mes  = fecha[5:7]
+    prefix = f"LOT-{anio}-{mes}-"
+    row = db.execute(
+        "SELECT MAX(CAST(SUBSTR(lote_codigo, ?) AS INTEGER)) FROM cosechas WHERE lote_codigo LIKE ?",
+        (len(prefix) + 1, prefix + '%')
+    ).fetchone()[0]
+    return f"{prefix}{(row or 0)+1:04d}"
+
 # Registrar globals que dependen de constantes (se llama al final del módulo)
 def _register_globals():
     app.jinja_env.globals.update(
@@ -680,15 +693,61 @@ def _migrate():
             except Exception:
                 pass
 
-    # ── Columnas m² en cultivos ──────────────────────────────────────────────
+    # ── Columnas m² y GACP en cultivos ──────────────────────────────────────
     cols_cu = {r[1] for r in db.execute("PRAGMA table_info(cultivos)")}
     for col, typedef in {
-        'm2_interior': 'REAL',
-        'm2_exterior': 'REAL',
+        'm2_interior':              'REAL',
+        'm2_exterior':              'REAL',
+        'gacp_fuente_agua':         'TEXT',
+        'gacp_insumos':             'TEXT',
+        'gacp_responsable_tecnico': 'TEXT',
+        'gacp_lat':                 'REAL',
+        'gacp_lon':                 'REAL',
+        'gacp_altitud_m':           'REAL',
+        'gacp_humedad_pct':         'REAL',
+        'gacp_temp_min_c':          'REAL',
+        'gacp_temp_max_c':          'REAL',
+        'gacp_observaciones':       'TEXT',
     }.items():
         if col not in cols_cu:
             try:
                 db.execute(f'ALTER TABLE cultivos ADD COLUMN {col} {typedef}')
+            except Exception:
+                pass
+
+    # ── Campos CoA extendidos en cosechas ────────────────────────────────────
+    cols_coa = {r[1] for r in db.execute("PRAGMA table_info(cosechas)")}
+    for col, typedef in {
+        'thc_real_pct':          'REAL',
+        'cbd_real_pct':          'REAL',
+        'lote_codigo':           'TEXT',
+        'laboratorio':           'TEXT',
+        'fecha_analisis':        'TEXT',
+        'num_informe_lab':       'TEXT',
+        'terpenos_pct':          'REAL',
+        'pesticidas_status':     "TEXT DEFAULT 'pendiente'",
+        'metales_status':        "TEXT DEFAULT 'pendiente'",
+        'microbiologia_status':  "TEXT DEFAULT 'pendiente'",
+        'humedad_muestra_pct':   'REAL',
+        'coa_status':            "TEXT DEFAULT 'pendiente'",
+        'responsable_cosecha':   'TEXT',
+        'condiciones_almacenamiento': 'TEXT',
+    }.items():
+        if col not in cols_coa:
+            try:
+                db.execute(f'ALTER TABLE cosechas ADD COLUMN {col} {typedef}')
+            except Exception:
+                pass
+
+    # ── Trazabilidad lote → dispensación ─────────────────────────────────────
+    cols_disp = {r[1] for r in db.execute("PRAGMA table_info(dispensaciones)")}
+    for col, typedef in {
+        'cosecha_id':  'INTEGER',
+        'lote_codigo': 'TEXT',
+    }.items():
+        if col not in cols_disp:
+            try:
+                db.execute(f'ALTER TABLE dispensaciones ADD COLUMN {col} {typedef}')
             except Exception:
                 pass
 
@@ -1999,19 +2058,25 @@ def admin_dispensario():
     hoy = date.today().isoformat()
 
     if request.method == 'POST':
-        socio_id = request.form.get('socio_id')
-        variedad = (request.form.get('variedad','') or request.form.get('variedad_manual','')).strip()
-        gramos   = float(request.form.get('gramos', 0) or 0)
-        notas    = request.form.get('notas','').strip()
+        socio_id   = request.form.get('socio_id')
+        variedad   = (request.form.get('variedad','') or request.form.get('variedad_manual','')).strip()
+        gramos     = float(request.form.get('gramos', 0) or 0)
+        notas      = request.form.get('notas','').strip()
+        cosecha_id = request.form.get('cosecha_id','').strip() or None
+        lote_cod   = None
+        if cosecha_id:
+            row = db.execute('SELECT lote_codigo FROM cosechas WHERE id=?', (cosecha_id,)).fetchone()
+            if row:
+                lote_cod = row['lote_codigo']
         if socio_id and variedad and gramos > 0:
             db.execute(
-                "INSERT INTO dispensaciones (socio_id, variedad, gramos, fecha, notas) VALUES (?,?,?,?,?)",
-                (socio_id, variedad, gramos, hoy, notas)
+                "INSERT INTO dispensaciones (socio_id, variedad, gramos, fecha, notas, cosecha_id, lote_codigo) VALUES (?,?,?,?,?,?,?)",
+                (socio_id, variedad, gramos, hoy, notas, cosecha_id, lote_cod)
             )
             _log_tarea(db, 'dispensacion', entity_type='socio', entity_id=int(socio_id),
-                       result=f'{gramos}g de {variedad}')
+                       result=f'{gramos}g de {variedad}' + (f' — Lote {lote_cod}' if lote_cod else ''))
             db.commit()
-            flash(f'Dispensación registrada: {gramos}g de {variedad}')
+            flash(f'Dispensación registrada: {gramos}g de {variedad}' + (f' (Lote {lote_cod})' if lote_cod else ''))
         return redirect(url_for('admin_dispensario'))
 
     socios_activos = db.execute(
@@ -2031,12 +2096,37 @@ def admin_dispensario():
 
     total_hoy_g = sum(d['gramos'] for d in dispensaciones_hoy)
 
+    # Lotes con stock disponible para selección en dispensario
+    lotes_disponibles_raw = db.execute('''
+        SELECT co.id, co.lote_codigo, co.fecha, co.peso_seco_g, co.coa_status,
+               cu.variedad,
+               COALESCE((SELECT SUM(d.gramos) FROM dispensaciones d WHERE d.cosecha_id = co.id), 0) as entregado_g
+        FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
+        WHERE co.lote_codigo IS NOT NULL
+        ORDER BY cu.variedad, co.fecha DESC
+    ''').fetchall()
+    lotes_disponibles = {}
+    for l in lotes_disponibles_raw:
+        disp = round((l['peso_seco_g'] or 0) - (l['entregado_g'] or 0), 1)
+        if disp > 0:
+            v = l['variedad']
+            if v not in lotes_disponibles:
+                lotes_disponibles[v] = []
+            lotes_disponibles[v].append({
+                'id': l['id'],
+                'lote': l['lote_codigo'],
+                'fecha': l['fecha'],
+                'disponible_g': disp,
+                'coa': l['coa_status'],
+            })
+
     return render_template('admin/dispensario.html',
         socios_activos=[dict(s) for s in socios_activos],
         variedades_catalogo=[dict(v) for v in variedades_catalogo],
         dispensaciones_hoy=dispensaciones_hoy,
         total_hoy_g=round(total_hoy_g, 1),
         hoy=hoy,
+        lotes_disponibles=lotes_disponibles,
     )
 
 
@@ -2504,11 +2594,20 @@ def admin_registrar_cosecha(cid):
     calidad    = int(f.get('calidad', 3) or 3)
     notas      = f.get('notas','').strip()
     prof       = f.get('registrado_por','Admin').strip() or 'Admin'
+    lote       = _next_lote_codigo(db, fecha)
+    thc        = f.get('thc_real_pct','').strip() or None
+    cbd        = f.get('cbd_real_pct','').strip() or None
+    lab        = f.get('laboratorio','').strip() or None
+    resp_cos   = f.get('responsable_cosecha','').strip() or prof
+    cond_alm   = f.get('condiciones_almacenamiento','').strip() or None
 
     db.execute('''
-        INSERT INTO cosechas (cultivo_id, fecha, num_plantas, peso_humedo_g, peso_seco_g, calidad, notas, registrado_por)
-        VALUES (?,?,?,?,?,?,?,?)
-    ''', (cid, fecha, n_plant, peso_h, peso_s, calidad, notas, prof))
+        INSERT INTO cosechas (cultivo_id, fecha, num_plantas, peso_humedo_g, peso_seco_g,
+            calidad, notas, registrado_por, lote_codigo, thc_real_pct, cbd_real_pct,
+            laboratorio, responsable_cosecha, condiciones_almacenamiento, coa_status)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'pendiente')
+    ''', (cid, fecha, n_plant, peso_h, peso_s, calidad, notas, prof,
+          lote, thc, cbd, lab, resp_cos, cond_alm))
     # avanza etapa a cosecha si no estaba
     c = db.execute('SELECT etapa_actual FROM cultivos WHERE id=?', (cid,)).fetchone()
     if c and c['etapa_actual'] not in ('cosecha','curado','finalizado'):
@@ -2517,7 +2616,10 @@ def admin_registrar_cosecha(cid):
         db.execute('''INSERT INTO etapas_cultivo (cultivo_id, etapa_anterior, etapa_nueva, notas, registrado_por)
                       VALUES (?,?,'cosecha','Cosecha registrada',?)''',
                    (cid, c['etapa_actual'], prof))
+    _log_tarea(db, 'registro_cosecha', entity_type='cultivo', entity_id=cid,
+               result=f'{peso_s}g secos — Lote {lote}')
     db.commit()
+    flash(f'Cosecha registrada. Lote asignado: {lote}')
     return redirect(url_for('admin_cultivo', cid=cid))
 
 @app.route('/admin/cultivo/<int:cid>/estado', methods=['POST'])
@@ -5437,6 +5539,303 @@ def admin_nomina():
 
 # Inicializar DB siempre al arrancar — funciona con Gunicorn y ejecución directa
 init_db()
+# ═══════════════════════════════════════════════════════════════════════════
+#  TRAZABILIDAD INTERNACIONAL
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.route('/admin/cosecha/<int:cid>/coa', methods=['POST'])
+@login_required
+@write_required
+def admin_cosecha_coa(cid):
+    """Actualiza el Certificado de Análisis de una cosecha."""
+    db = get_db()
+    f  = request.form
+    db.execute('''
+        UPDATE cosechas SET
+            thc_real_pct         = ?,
+            cbd_real_pct         = ?,
+            terpenos_pct         = ?,
+            laboratorio          = ?,
+            num_informe_lab      = ?,
+            fecha_analisis       = ?,
+            pesticidas_status    = ?,
+            metales_status       = ?,
+            microbiologia_status = ?,
+            humedad_muestra_pct  = ?,
+            condiciones_almacenamiento = ?,
+            responsable_cosecha  = ?,
+            coa_status           = ?
+        WHERE id = ?
+    ''', (
+        f.get('thc_real_pct','').strip() or None,
+        f.get('cbd_real_pct','').strip() or None,
+        f.get('terpenos_pct','').strip() or None,
+        f.get('laboratorio','').strip() or None,
+        f.get('num_informe_lab','').strip() or None,
+        f.get('fecha_analisis','').strip() or None,
+        f.get('pesticidas_status','pendiente'),
+        f.get('metales_status','pendiente'),
+        f.get('microbiologia_status','pendiente'),
+        f.get('humedad_muestra_pct','').strip() or None,
+        f.get('condiciones_almacenamiento','').strip() or None,
+        f.get('responsable_cosecha','').strip() or None,
+        f.get('coa_status','pendiente'),
+        cid,
+    ))
+    db.commit()
+    # Detectar cultivo padre para redirigir
+    cos = db.execute('SELECT cultivo_id FROM cosechas WHERE id=?', (cid,)).fetchone()
+    flash('Certificado de Análisis actualizado.')
+    return redirect(url_for('admin_cultivo', cid=cos['cultivo_id']) if cos else url_for('admin_cultivos'))
+
+
+@app.route('/admin/cultivo/<int:cid>/gacp', methods=['POST'])
+@login_required
+@write_required
+def admin_cultivo_gacp(cid):
+    """Guarda campos GACP del cultivo."""
+    db = get_db()
+    f  = request.form
+    db.execute('''
+        UPDATE cultivos SET
+            gacp_fuente_agua         = ?,
+            gacp_insumos             = ?,
+            gacp_responsable_tecnico = ?,
+            gacp_lat                 = ?,
+            gacp_lon                 = ?,
+            gacp_altitud_m           = ?,
+            gacp_humedad_pct         = ?,
+            gacp_temp_min_c          = ?,
+            gacp_temp_max_c          = ?,
+            gacp_observaciones       = ?
+        WHERE id = ?
+    ''', (
+        f.get('gacp_fuente_agua','').strip() or None,
+        f.get('gacp_insumos','').strip() or None,
+        f.get('gacp_responsable_tecnico','').strip() or None,
+        f.get('gacp_lat','').strip() or None,
+        f.get('gacp_lon','').strip() or None,
+        f.get('gacp_altitud_m','').strip() or None,
+        f.get('gacp_humedad_pct','').strip() or None,
+        f.get('gacp_temp_min_c','').strip() or None,
+        f.get('gacp_temp_max_c','').strip() or None,
+        f.get('gacp_observaciones','').strip() or None,
+        cid,
+    ))
+    db.commit()
+    flash('Datos GACP actualizados.')
+    return redirect(url_for('admin_cultivo', cid=cid))
+
+
+@app.route('/admin/libro-movimientos')
+@login_required
+def admin_libro_movimientos():
+    """Libro de Movimientos formal (estándar GACP/GMP internacional)."""
+    db = get_db()
+    desde = request.args.get('desde', (date.today() - timedelta(days=90)).isoformat())
+    hasta = request.args.get('hasta', date.today().isoformat())
+    var_fil = request.args.get('variedad', '')
+
+    # Entradas: cosechas
+    q_ent = '''
+        SELECT co.id, co.fecha, co.lote_codigo, cu.variedad, cu.codigo as cultivo_cod,
+               co.peso_seco_g as gramos, co.coa_status, co.thc_real_pct, co.cbd_real_pct,
+               co.laboratorio, co.num_informe_lab, s.nombre || ' ' || s.apellido as responsable
+        FROM cosechas co
+        JOIN cultivos cu ON cu.id = co.cultivo_id
+        JOIN socios s ON s.id = cu.socio_id
+        WHERE co.fecha BETWEEN ? AND ?
+    '''
+    params_ent = [desde, hasta]
+    if var_fil:
+        q_ent += ' AND cu.variedad = ?'
+        params_ent.append(var_fil)
+    q_ent += ' ORDER BY co.fecha DESC'
+    entradas = [dict(r) for r in db.execute(q_ent, params_ent).fetchall()]
+
+    # Salidas: dispensaciones
+    q_sal = '''
+        SELECT d.id, d.fecha, d.lote_codigo, d.variedad, d.gramos,
+               s.nombre || ' ' || s.apellido as socio, s.dni,
+               d.notas, d.registrado_por, d.cosecha_id
+        FROM dispensaciones d JOIN socios s ON s.id = d.socio_id
+        WHERE d.fecha BETWEEN ? AND ?
+    '''
+    params_sal = [desde, hasta]
+    if var_fil:
+        q_sal += ' AND d.variedad = ?'
+        params_sal.append(var_fil)
+    q_sal += ' ORDER BY d.fecha DESC'
+    salidas_disp = [dict(r) for r in db.execute(q_sal, params_sal).fetchall()]
+
+    # Salidas: pedidos entregados
+    q_ped = '''
+        SELECT p.id, p.fecha_entrega as fecha, NULL as lote_codigo, p.variedad, p.gramos,
+               s.nombre || ' ' || s.apellido as socio, s.dni,
+               p.notas, p.registrado_por, NULL as cosecha_id
+        FROM pedidos p JOIN socios s ON s.id = p.socio_id
+        WHERE p.estado='entregado' AND p.fecha_entrega BETWEEN ? AND ?
+    '''
+    params_ped = [desde, hasta]
+    if var_fil:
+        q_ped += ' AND p.variedad = ?'
+        params_ped.append(var_fil)
+    q_ped += ' ORDER BY p.fecha_entrega DESC'
+    salidas_ped = [dict(r) for r in db.execute(q_ped, params_ped).fetchall()]
+
+    salidas = sorted(salidas_disp + salidas_ped, key=lambda x: x['fecha'] or '', reverse=True)
+
+    # Balance por variedad (todo el historial, no filtrado por fecha)
+    variedades_stock = db.execute('''
+        SELECT cu.variedad,
+               COALESCE(SUM(co.peso_seco_g),0) as total_entrada_g
+        FROM cosechas co JOIN cultivos cu ON cu.id = co.cultivo_id
+        GROUP BY cu.variedad
+    ''').fetchall()
+
+    balance = []
+    for row in variedades_stock:
+        v = row['variedad']
+        salida_disp = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM dispensaciones WHERE variedad=?", (v,)
+        ).fetchone()[0] or 0
+        salida_ped = db.execute(
+            "SELECT COALESCE(SUM(gramos),0) FROM pedidos WHERE variedad=? AND estado='entregado'", (v,)
+        ).fetchone()[0] or 0
+        total_e = round(row['total_entrada_g'], 1)
+        total_s = round(salida_disp + salida_ped, 1)
+        balance.append({
+            'variedad': v,
+            'entrada_g': total_e,
+            'salida_g': total_s,
+            'stock_g': round(total_e - total_s, 1),
+        })
+    balance.sort(key=lambda x: x['variedad'])
+
+    total_entrada = round(sum(b['entrada_g'] for b in balance), 1)
+    total_salida  = round(sum(b['salida_g'] for b in balance), 1)
+    total_stock   = round(total_entrada - total_salida, 1)
+
+    variedades_list = [r[0] for r in db.execute(
+        "SELECT DISTINCT cu.variedad FROM cosechas co JOIN cultivos cu ON cu.id=co.cultivo_id ORDER BY cu.variedad"
+    ).fetchall()]
+
+    club = db.execute("SELECT * FROM clubs WHERE id=1").fetchone()
+
+    return render_template('admin/libro-movimientos.html',
+        entradas=entradas, salidas=salidas,
+        balance=balance,
+        total_entrada=total_entrada, total_salida=total_salida, total_stock=total_stock,
+        desde=desde, hasta=hasta, var_fil=var_fil,
+        variedades_list=variedades_list,
+        club=club,
+        hoy=date.today().isoformat(),
+    )
+
+
+@app.route('/admin/informe-incb')
+@login_required
+def admin_informe_incb():
+    """Informe para la INCB (Junta Internacional de Fiscalización de Estupefacientes)."""
+    db = get_db()
+    anio = request.args.get('anio', str(date.today().year))
+    desde = f'{anio}-01-01'
+    hasta = f'{anio}-12-31'
+
+    club = db.execute("SELECT * FROM clubs WHERE id=1").fetchone()
+    nombre_club = club['nombre'] if club else 'Cannabis Social Club'
+
+    # Lotes del período con CoA
+    lotes = db.execute('''
+        SELECT co.lote_codigo, co.fecha, cu.variedad, co.peso_seco_g,
+               co.thc_real_pct, co.cbd_real_pct, co.laboratorio,
+               co.num_informe_lab, co.fecha_analisis,
+               co.pesticidas_status, co.metales_status, co.microbiologia_status,
+               co.coa_status, cu.codigo as cultivo_cod,
+               s.nombre || ' ' || s.apellido as cultivador,
+               cu.gacp_responsable_tecnico,
+               COALESCE((SELECT SUM(d.gramos) FROM dispensaciones d WHERE d.cosecha_id=co.id),0) as dispensado_g
+        FROM cosechas co
+        JOIN cultivos cu ON cu.id = co.cultivo_id
+        JOIN socios s ON s.id = cu.socio_id
+        WHERE co.fecha BETWEEN ? AND ? AND co.lote_codigo IS NOT NULL
+        ORDER BY co.fecha
+    ''', (desde, hasta)).fetchall()
+
+    # Producción total por variedad
+    produccion = db.execute('''
+        SELECT cu.variedad,
+               COUNT(co.id) as num_lotes,
+               COALESCE(SUM(co.peso_seco_g),0) as total_g,
+               COALESCE(SUM(co.num_plantas),0) as plantas
+        FROM cosechas co JOIN cultivos cu ON cu.id=co.cultivo_id
+        WHERE co.fecha BETWEEN ? AND ?
+        GROUP BY cu.variedad ORDER BY total_g DESC
+    ''', (desde, hasta)).fetchall()
+
+    # Distribución total por variedad
+    disp = db.execute('''
+        SELECT variedad, COALESCE(SUM(gramos),0) as total_g, COUNT(*) as eventos
+        FROM dispensaciones WHERE fecha BETWEEN ? AND ?
+        GROUP BY variedad ORDER BY total_g DESC
+    ''', (desde, hasta)).fetchall()
+    ped = db.execute('''
+        SELECT variedad, COALESCE(SUM(gramos),0) as total_g, COUNT(*) as eventos
+        FROM pedidos WHERE estado='entregado' AND fecha_pedido BETWEEN ? AND ?
+        GROUP BY variedad ORDER BY total_g DESC
+    ''', (desde, hasta)).fetchall()
+    dist_dict = {}
+    for r in list(disp) + list(ped):
+        v = r['variedad']
+        if v not in dist_dict:
+            dist_dict[v] = {'variedad': v, 'total_g': 0, 'eventos': 0}
+        dist_dict[v]['total_g'] += r['total_g']
+        dist_dict[v]['eventos'] += r['eventos']
+    distribucion = sorted(dist_dict.values(), key=lambda x: x['total_g'], reverse=True)
+
+    # Balance global
+    total_produccion_g = sum(p['total_g'] for p in produccion)
+    total_distribucion_g = sum(d['total_g'] for d in distribucion)
+    total_stock_g = round(total_produccion_g - total_distribucion_g, 1)
+
+    # Socios activos con REPROCANN
+    socios_reprocann = db.execute(
+        "SELECT COUNT(*) FROM socios WHERE etapa='activo' AND reprocann_codigo IS NOT NULL AND reprocann_codigo != ''"
+    ).fetchone()[0]
+    total_socios = db.execute("SELECT COUNT(*) FROM socios WHERE etapa='activo'").fetchone()[0]
+
+    # Cultivos activos
+    cultivos_activos = db.execute("SELECT COUNT(*) FROM cultivos WHERE estado='activo'").fetchone()[0]
+    plantas_activas = db.execute(
+        "SELECT COALESCE(SUM(num_plantas),0) FROM cultivos WHERE estado='activo'"
+    ).fetchone()[0]
+
+    # CoA coverage
+    lotes_con_coa = sum(1 for l in lotes if l['coa_status'] == 'aprobado')
+    lotes_total   = len(lotes)
+
+    anios = list(range(date.today().year, date.today().year - 5, -1))
+
+    return render_template('admin/informe-incb.html',
+        club=club, nombre_club=nombre_club,
+        anio=anio, desde=desde, hasta=hasta,
+        lotes=lotes,
+        produccion=produccion,
+        distribucion=distribucion,
+        total_produccion_g=round(total_produccion_g, 1),
+        total_distribucion_g=round(total_distribucion_g, 1),
+        total_stock_g=total_stock_g,
+        socios_reprocann=socios_reprocann,
+        total_socios=total_socios,
+        cultivos_activos=cultivos_activos,
+        plantas_activas=plantas_activas,
+        lotes_con_coa=lotes_con_coa,
+        lotes_total=lotes_total,
+        hoy=date.today().isoformat(),
+        anios=anios,
+    )
+
+
 _migrate()
 
 if __name__ == '__main__':
